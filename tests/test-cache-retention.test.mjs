@@ -89,6 +89,8 @@ const {
   getStorageUsageBytes,
   performCacheGarbageCollection,
   clearUserCache,
+  parseDateToMs,
+  CACHE_CLEARED_EVENT,
   PRESERVED_SETTINGS_KEYS,
   STORAGE_LAST_CACHE_CLEANUP,
   STORAGE_CACHED_FEED,
@@ -206,6 +208,32 @@ test("3.1 Old news older than 45 days are pruned, fresh news are retained", () =
   assert.ok(remainingIds.includes("pinned-5"), "Pinned item must remain regardless of age")
 })
 
+test("3.2 Russian DD.MM.YYYY and verbal date formats are correctly parsed and pruned by TTL", () => {
+  mockStorage.clear()
+  const now = new Date("2026-09-08T12:00:00Z")
+
+  const feedWithRuDates = [
+    { id: "ru-fresh-1", title: "Новость 1 сентября", date: "01.09.2026", isPinned: false },
+    { id: "ru-old-2", title: "Старая новость 25 июля", date: "25.07.2026", isPinned: false },
+    { id: "ru-verbal-old-3", title: "Старая новость словами", date: "15 июля 2026", isPinned: false },
+    { id: "ru-verbal-fresh-4", title: "Свежая новость словами", date: "5 сентября 2026", isPinned: false },
+    { id: "ru-pinned-old-5", title: "Закрепленная старая", date: "10.05.2026", isPinned: true },
+  ]
+
+  mockStorage.setItem(STORAGE_CACHED_FEED, JSON.stringify(feedWithRuDates))
+  const gcResult = performCacheGarbageCollection({ ttlDays: 45, refDate: now })
+
+  assert.strictEqual(gcResult.removedFeedItems, 2, "Must remove exactly 2 unpinned old Russian-date items")
+  const remainingFeed = JSON.parse(mockStorage.getItem(STORAGE_CACHED_FEED))
+  const remainingIds = remainingFeed.map((i) => i.id)
+
+  assert.ok(remainingIds.includes("ru-fresh-1"), "01.09.2026 must be kept")
+  assert.ok(!remainingIds.includes("ru-old-2"), "25.07.2026 (>45d) must be purged")
+  assert.ok(!remainingIds.includes("ru-verbal-old-3"), "15 июля 2026 (>45d) must be purged")
+  assert.ok(remainingIds.includes("ru-verbal-fresh-4"), "5 сентября 2026 must be kept")
+  assert.ok(remainingIds.includes("ru-pinned-old-5"), "Pinned item must be kept")
+})
+
 // --- SUITE 4: Schedule Past Weeks Retention Policy ---
 console.log("\n--- SUITE 4: Schedule Past Weeks Pruning ---")
 
@@ -234,6 +262,46 @@ test("4.1 Past schedule weeks older than 4 weeks (28 days) are pruned", () => {
   assert.strictEqual(remainingSched[3].date, "2026-10-05")
 })
 
+test("4.2 Schedule DD.MM.YYYY dates: future dates (e.g. 05.10.2026) are KEPT and past (10.08.2026) are pruned", () => {
+  mockStorage.clear()
+  const now = new Date("2026-09-28T12:00:00Z")
+
+  const scheduleRuDates = [
+    { date: "10.08.2026", weekday: "Понедельник", classes: [] }, // ~49 days ago (purged)
+    { date: "21.09.2026", weekday: "Понедельник", classes: [] }, // 7 days ago (kept)
+    { date: "28.09.2026", weekday: "Понедельник", classes: [] }, // today (kept)
+    { date: "05.10.2026", weekday: "Понедельник", classes: [] }, // future month (MUST BE KEPT, not pruned by '0' < '2' string bug)
+  ]
+
+  mockStorage.setItem("timacad_custom_sched_АГ-205", JSON.stringify(scheduleRuDates))
+  const gcResult = performCacheGarbageCollection({ pastWeeksToKeep: 4, refDate: now })
+
+  assert.strictEqual(gcResult.prunedScheduleDays, 1, "Must prune exactly 1 past day")
+  const remaining = JSON.parse(mockStorage.getItem("timacad_custom_sched_АГ-205"))
+  assert.strictEqual(remaining.length, 3)
+  assert.ok(remaining.some((d) => d.date === "05.10.2026"), "Future date 05.10.2026 must be preserved!")
+})
+
+test("4.3 When ALL schedule days expire, key is completely removed with no zombie [] left", () => {
+  mockStorage.clear()
+  const now = new Date("2026-09-28T12:00:00Z")
+
+  const ancientSchedule = [
+    { date: "2026-05-01", weekday: "Пт", classes: [] },
+    { date: "2026-05-08", weekday: "Пт", classes: [] },
+  ]
+
+  mockStorage.setItem("timacad_custom_sched_EXPIRED", JSON.stringify(ancientSchedule))
+  const gcResult = performCacheGarbageCollection({ pastWeeksToKeep: 4, refDate: now })
+
+  assert.strictEqual(gcResult.prunedScheduleDays, 2)
+  assert.strictEqual(
+    mockStorage.getItem("timacad_custom_sched_EXPIRED"),
+    null,
+    "Completely expired schedule key must be removed from storage"
+  )
+})
+
 // --- SUITE 5: Temporary PDF Buffers Removal ---
 console.log("\n--- SUITE 5: Temporary PDF Buffer Cleanup ---")
 
@@ -259,6 +327,22 @@ test("5.1 Temporary PDF parsing buffers and sessionStorage caches are purged", (
   assert.strictEqual(globalThis.sessionStorage.getItem("timacad_pdf_buffer_sess"), null)
 
   assert.strictEqual(mockStorage.getItem("rgau_theme"), "light", "User setting must be preserved")
+})
+
+test("5.2 Multiple adjacent buffer keys are purged without in-place index shifting skips", () => {
+  mockStorage.clear()
+  // Create 6 alternating keys: buffer, setting, buffer, setting, buffer, buffer
+  mockStorage.setItem("timacad_pdf_b1", "data1")
+  mockStorage.setItem("rgau_theme", "dark")
+  mockStorage.setItem("temp_pdf_b2", "data2")
+  mockStorage.setItem("rgau_role", "student")
+  mockStorage.setItem("pdf_cache_b3", "data3")
+  mockStorage.setItem("rgau_pdf_b4", "data4")
+
+  const res = performCacheGarbageCollection()
+  assert.strictEqual(res.removedPdfBuffers, 4, "All 4 buffers must be purged without skipping")
+  assert.strictEqual(mockStorage.getItem("rgau_theme"), "dark")
+  assert.strictEqual(mockStorage.getItem("rgau_role"), "student")
 })
 
 // --- SUITE 6: User "Clear Cache" with Settings Preservation ---
@@ -301,6 +385,55 @@ test("6.1 clearUserCache wipes heavy data while strictly preserving group, role,
   assert.strictEqual(mockStorage.getItem("rgau_ios_a2hs_dismissed"), "true", "iOS prompt state preserved")
 
   assert.ok(mockStorage.getItem(STORAGE_LAST_CACHE_CLEANUP) !== null, "Cleanup timestamp recorded")
+})
+
+test("6.2 clearUserCache dispatches CACHE_CLEARED_EVENT for immediate UI state synchronization", () => {
+  let eventDispatched = false
+  const origWindow = globalThis.window
+  globalThis.window = {
+    dispatchEvent: (evt) => {
+      if (evt.type === CACHE_CLEARED_EVENT) eventDispatched = true
+    },
+  }
+  globalThis.CustomEvent = class {
+    constructor(type) { this.type = type }
+  }
+
+  clearUserCache(true)
+  assert.strictEqual(eventDispatched, true, "CACHE_CLEARED_EVENT must be dispatched to window")
+
+  globalThis.window = origWindow
+})
+
+// --- SUITE 7: Date Parsing Helper Robustness ---
+console.log("\n--- SUITE 7: Date Parsing Helper Robustness ---")
+
+test("7.1 parseDateToMs parses ISO, DD.MM.YYYY and verbal Russian formats reliably", () => {
+  // ISO
+  const isoMs = parseDateToMs("2026-09-08")
+  assert.ok(isoMs !== null)
+  assert.strictEqual(new Date(isoMs).getUTCFullYear(), 2026)
+  assert.strictEqual(new Date(isoMs).getUTCMonth(), 8) // 0-indexed September
+  assert.strictEqual(new Date(isoMs).getUTCDate(), 8)
+
+  // DD.MM.YYYY
+  const ddmmyyyyMs = parseDateToMs("25.07.2026")
+  assert.ok(ddmmyyyyMs !== null)
+  assert.strictEqual(new Date(ddmmyyyyMs).getUTCFullYear(), 2026)
+  assert.strictEqual(new Date(ddmmyyyyMs).getUTCMonth(), 6) // July
+  assert.strictEqual(new Date(ddmmyyyyMs).getUTCDate(), 25)
+
+  // Russian verbal
+  const ruVerbalMs = parseDateToMs("12 сентября 2026")
+  assert.ok(ruVerbalMs !== null)
+  assert.strictEqual(new Date(ruVerbalMs).getUTCFullYear(), 2026)
+  assert.strictEqual(new Date(ruVerbalMs).getUTCMonth(), 8)
+  assert.strictEqual(new Date(ruVerbalMs).getUTCDate(), 12)
+
+  // Invalid / Null
+  assert.strictEqual(parseDateToMs(null), null)
+  assert.strictEqual(parseDateToMs(""), null)
+  assert.strictEqual(parseDateToMs("invalid-date-string"), null)
 })
 
 console.log("\n==================================================================")

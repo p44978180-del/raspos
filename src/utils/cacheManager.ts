@@ -13,6 +13,9 @@ export const STORAGE_CACHED_FEED = "rgau_cached_feed"
 export const STORAGE_CACHED_SCHEDULE = "rgau_cached_schedule"
 export const STORAGE_AUTO_SYNC = "timacad_auto_sync"
 export const STORAGE_LAST_CACHE_CLEANUP = "rgau_last_cache_cleanup"
+export const STORAGE_LAST_SYNC = "rgau_last_sync_timestamp"
+export const STORAGE_LAST_DISPLAY = "rgau_last_sync_display"
+export const CACHE_CLEARED_EVENT = "rgau-cache-cleared"
 import type { TimacadFeedItem } from "../data/timacadFeedData"
 
 /** Keys that MUST NOT be deleted during cache cleanup */
@@ -23,6 +26,8 @@ export const PRESERVED_SETTINGS_KEYS: readonly string[] = [
   "rgau_role",
   "rgau_dorm",
   STORAGE_AUTO_SYNC,
+  STORAGE_LAST_SYNC,
+  STORAGE_LAST_DISPLAY,
   "rgau_ios_a2hs_dismissed",
   "rgau_onboarded",
   "rgau_notifications",
@@ -151,7 +156,53 @@ function encodeUtf8Length(str: string): number {
 }
 
 function isPdfBufferKey(key: string): boolean {
-  return /^(timacad_pdf_|pdf_cache_|temp_pdf_|rgau_pdf_|pdf_buffer)/i.test(key)
+  if (/^(timacad_pdf_|pdf_cache_|temp_pdf_|rgau_pdf_|pdf_buffer|pdfjs|temp_buffer|temp_upload|rgau_temp_)/i.test(key)) {
+    return true
+  }
+  const lower = key.toLowerCase()
+  return lower.includes("pdf") && (lower.includes("temp") || lower.includes("cache") || lower.includes("buffer") || lower.includes("stream"))
+}
+
+/**
+ * Safely parses various date formats to UTC millisecond timestamp:
+ * 1. ISO 8601 / standard YYYY-MM-DD (e.g. "2026-09-08")
+ * 2. Russian format DD.MM.YYYY (e.g. "25.07.2026" or "05.10.2026")
+ * 3. Russian verbal format (e.g. "12 сентября 2026" or "1 сентября")
+ */
+export function parseDateToMs(dateStr: string | undefined | null): number | null {
+  if (!dateStr || typeof dateStr !== "string") return null
+  const trimmed = dateStr.trim()
+  if (!trimmed) return null
+
+  // 1. Check DD.MM.YYYY
+  const ddmmyyyy = trimmed.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
+  if (ddmmyyyy) {
+    const day = parseInt(ddmmyyyy[1], 10)
+    const month = parseInt(ddmmyyyy[2], 10) - 1
+    const year = parseInt(ddmmyyyy[3], 10)
+    const d = new Date(Date.UTC(year, month, day))
+    return isNaN(d.getTime()) ? null : d.getTime()
+  }
+
+  // 2. Check Russian verbal dates like "12 сентября 2026"
+  const ruMonths: Record<string, number> = {
+    янв: 0, фев: 1, мар: 2, апр: 3, май: 4, мая: 4,
+    июн: 5, июл: 6, авг: 7, сен: 8, окт: 9, ноя: 10, дек: 11,
+  }
+  const ruTextMatch = trimmed.match(/^(\d{1,2})\s+([а-яё]+)(?:\s+(\d{4}))?/i)
+  if (ruTextMatch) {
+    const day = parseInt(ruTextMatch[1], 10)
+    const monthStr = ruTextMatch[2].toLowerCase().slice(0, 3)
+    const year = ruTextMatch[3] ? parseInt(ruTextMatch[3], 10) : 2026
+    if (ruMonths[monthStr] !== undefined) {
+      const d = new Date(Date.UTC(year, ruMonths[monthStr], day))
+      return isNaN(d.getTime()) ? null : d.getTime()
+    }
+  }
+
+  // 3. Standard ISO / YYYY-MM-DD
+  const parsed = new Date(trimmed).getTime()
+  return isNaN(parsed) ? null : parsed
 }
 
 /**
@@ -191,19 +242,19 @@ export function performCacheGarbageCollection(
   }
 
   const ttlMs = ttlDays * 24 * 3600 * 1000
-  const scheduleThresholdDate = new Date(refDate.getTime() - pastWeeksToKeep * 7 * 24 * 3600 * 1000)
-  const scheduleThresholdStr = scheduleThresholdDate.toISOString().split("T")[0]
+  const thresholdMs = refDate.getTime() - (pastWeeksToKeep * 7 * 24 * 3600 * 1000)
 
   try {
-    // 1. Clean up temporary PDF buffers
-    const keysToRemove: string[] = []
+    // Snapshot existing keys to avoid index shifting during in-loop mutations
+    const allKeys: string[] = []
     for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key && isPdfBufferKey(key)) {
-        keysToRemove.push(key)
-      }
+      const k = localStorage.key(i)
+      if (k) allKeys.push(k)
     }
-    for (const key of keysToRemove) {
+
+    // 1. Clean up temporary PDF buffers
+    const pdfKeysToRemove = allKeys.filter(isPdfBufferKey)
+    for (const key of pdfKeysToRemove) {
       localStorage.removeItem(key)
       removedPdfBuffers++
     }
@@ -237,9 +288,9 @@ export function performCacheGarbageCollection(
             if (item.isPinned) return true
             if (!item.date) return true
 
-            // Check item date against TTL
-            const itemTime = new Date(item.date).getTime()
-            if (isNaN(itemTime)) return true
+            // Parse date safely across ISO and Russian formats
+            const itemTime = parseDateToMs(item.date)
+            if (itemTime === null) return true // retain if date cannot be parsed
 
             const ageMs = refDate.getTime() - itemTime
             return ageMs <= ttlMs
@@ -255,28 +306,39 @@ export function performCacheGarbageCollection(
       } catch {}
     }
 
-    // 3. Prune past weeks from custom schedules (timacad_custom_sched_*)
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (key && key.startsWith("timacad_custom_sched_")) {
-        const rawSched = localStorage.getItem(key)
-        if (rawSched) {
-          try {
-            const days = JSON.parse(rawSched)
-            if (Array.isArray(days)) {
-              const originalDaysCount = days.length
-              const filteredDays = days.filter((d: { date?: string }) => {
-                if (!d.date) return true
-                return d.date >= scheduleThresholdStr
-              })
-              const prunedCount = originalDaysCount - filteredDays.length
-              if (prunedCount > 0) {
-                prunedScheduleDays += prunedCount
+    // 3. Prune past weeks from custom and cached schedules
+    const scheduleKeys = allKeys.filter((k) => 
+      k.startsWith("timacad_custom_sched_") ||
+      k.startsWith("timacad_sched_") ||
+      k.startsWith("rgau_sched_") ||
+      k.startsWith("rgau_schedule_")
+    )
+
+    for (const key of scheduleKeys) {
+      const rawSched = localStorage.getItem(key)
+      if (rawSched) {
+        try {
+          const days = JSON.parse(rawSched)
+          if (Array.isArray(days)) {
+            const originalDaysCount = days.length
+            const filteredDays = days.filter((d: { date?: string }) => {
+              if (!d.date) return true
+              const dayMs = parseDateToMs(d.date)
+              if (dayMs === null) return true // retain if unparseable
+              return dayMs >= thresholdMs
+            })
+            const prunedCount = originalDaysCount - filteredDays.length
+            if (prunedCount > 0) {
+              prunedScheduleDays += prunedCount
+              if (filteredDays.length === 0) {
+                // If all days expired, completely remove key so no zombie [] lingers
+                localStorage.removeItem(key)
+              } else {
                 localStorage.setItem(key, JSON.stringify(filteredDays))
               }
             }
-          } catch {}
-        }
+          }
+        } catch {}
       }
     }
     if (prunedScheduleDays > 0) {
@@ -338,22 +400,25 @@ export function clearUserCache(preserveSettings: boolean = true): {
         }
       }
 
-      // Keys to remove: caches & buffers
-      const keysToRemove: string[] = []
+      // Snapshot keys before removal
+      const allKeys: string[] = []
       for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (!key) continue
-        if (
-          key === STORAGE_CACHED_FEED ||
-          key === STORAGE_CACHED_SCHEDULE ||
-          key.startsWith("timacad_custom_sched_") ||
-          isPdfBufferKey(key) ||
-          key.startsWith("cache_") ||
-          key.startsWith("temp_")
-        ) {
-          keysToRemove.push(key)
-        }
+        const k = localStorage.key(i)
+        if (k) allKeys.push(k)
       }
+
+      // Keys to remove: caches & buffers
+      const keysToRemove = allKeys.filter((key) =>
+        key === STORAGE_CACHED_FEED ||
+        key === STORAGE_CACHED_SCHEDULE ||
+        key.startsWith("timacad_custom_sched_") ||
+        key.startsWith("timacad_sched_") ||
+        key.startsWith("rgau_sched_") ||
+        key.startsWith("rgau_schedule_") ||
+        isPdfBufferKey(key) ||
+        key.startsWith("cache_") ||
+        key.startsWith("temp_")
+      )
 
       for (const k of keysToRemove) {
         localStorage.removeItem(k)
@@ -372,6 +437,11 @@ export function clearUserCache(preserveSettings: boolean = true): {
     }
 
     localStorage.setItem(STORAGE_LAST_CACHE_CLEANUP, new Date().toISOString())
+
+    // Dispatch global event so React components can update immediately
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent(CACHE_CLEARED_EVENT))
+    }
   } catch {}
 
   const finalUsage = getStorageUsageBytes()

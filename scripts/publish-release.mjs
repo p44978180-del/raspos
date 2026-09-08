@@ -9,8 +9,8 @@ const ROOT = path.resolve(__dirname, "..")
 
 const OWNER = "p44978180-del"
 const REPO = "raspos"
-const TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || process.argv[2]
-if (!TOKEN) {
+const TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || (process.argv[2] && !process.argv[2].startsWith("--") ? process.argv[2] : null)
+if (!TOKEN && !process.argv.includes("--package-only")) {
   console.error("Error: GitHub access token is required. Pass via GITHUB_TOKEN env var or CLI argument.")
   process.exit(1)
 }
@@ -101,11 +101,39 @@ async function requestGitHub(endpoint, method = "GET", body = null, isUpload = f
   return { ok: res.ok, status: res.status, data: json || text }
 }
 
+function packageAssets() {
+  console.log("📦 1. Compiling production web bundle (npm run build)...")
+  execSync("npm run build", { cwd: ROOT, stdio: "inherit" })
+
+  console.log("\n📦 2. Synchronizing Capacitor Android assets (npm run sync:android)...")
+  execSync("npm run sync:android", { cwd: ROOT, stdio: "inherit" })
+
+  console.log("\n📦 3. Compressing PWA distribution (rgau-raspos-v1.0.0-pwa.zip)...")
+  execSync(`powershell -Command "Compress-Archive -Path dist/* -DestinationPath '${ASSETS[0].path}' -Force"`, { cwd: ROOT, stdio: "inherit" })
+
+  console.log("\n📦 4. Compressing Android assets distribution (rgau-raspos-v1.0.0-android-assets.zip)...")
+  execSync(`powershell -Command "Compress-Archive -Path android/* -DestinationPath '${ASSETS[1].path}' -Force"`, { cwd: ROOT, stdio: "inherit" })
+  console.log("\n✔ Packaging completed successfully!\n")
+}
+
 async function main() {
+  const isPackageOnly = process.argv.includes("--package-only")
+  const skipPackage = process.argv.includes("--skip-package")
+
   console.log("══════════════════════════════════════════════════════════════════")
-  console.log("🚀 PUBLISHING OFFICIAL RELEASE TO GITHUB RELEASES")
+  console.log(isPackageOnly ? "📦 PACKAGING RELEASE ASSETS" : "🚀 PUBLISHING OFFICIAL RELEASE TO GITHUB RELEASES")
   console.log(`Repository: ${OWNER}/${REPO} | Tag: ${TAG}`)
   console.log("══════════════════════════════════════════════════════════════════\n")
+
+  // Auto-package if requested or if assets are missing
+  const needsPackaging = !skipPackage && (isPackageOnly || !fs.existsSync(ASSETS[0].path) || !fs.existsSync(ASSETS[1].path))
+  if (needsPackaging) {
+    packageAssets()
+    if (isPackageOnly) {
+      console.log("Assets packaged successfully. Exiting (--package-only).")
+      return
+    }
+  }
 
   // 1. Verify assets exist
   for (const asset of ASSETS) {

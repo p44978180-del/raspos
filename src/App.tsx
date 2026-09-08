@@ -30,6 +30,7 @@ import {
   clearUserCache,
   formatBytes,
   performCacheGarbageCollection,
+  CACHE_CLEARED_EVENT,
   type StorageUsageInfo,
 } from "./utils/cacheManager"
 
@@ -6683,9 +6684,7 @@ function PageProfile({
     const res = clearUserCache(true)
     setCacheUsage(getStorageUsageBytes())
     setClearConfirmOpen(false)
-    if (hasCustomSchedule) {
-      onResetOfficial?.()
-    }
+    onResetOfficial?.()
     onToast?.(
       `Кэш очищен. Освобождено: ${res.formattedFreed || "0 КБ"}. Настройки (группа, роль, тема) сохранены.`,
       "success",
@@ -7944,6 +7943,24 @@ export default function App() {
     setCustomScheduleActive(false)
     addToast("Расписание сброшено к официальным данным РГАУ-МСХА", "info")
   }
+
+  // Synchronize React states when cache is cleared
+  useEffect(() => {
+    const handleCacheCleared = () => {
+      setTimacadFeed([...OFFICIAL_TIMACAD_FEED])
+      try {
+        localStorage.removeItem(`timacad_custom_sched_${groupId}`)
+      } catch {}
+      const updated = buildSchedule(groupId)
+      setAllDays(updated)
+      ALL_DAYS = updated
+      setCustomScheduleActive(false)
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener(CACHE_CLEARED_EVENT, handleCacheCleared)
+      return () => window.removeEventListener(CACHE_CLEARED_EVENT, handleCacheCleared)
+    }
+  }, [groupId])
 
   const [groupSheetOpen, setGroupSheetOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)

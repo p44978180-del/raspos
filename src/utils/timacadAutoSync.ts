@@ -7,6 +7,8 @@ import {
   clearUserCache,
   formatBytes,
   STORAGE_LAST_CACHE_CLEANUP,
+  CACHE_CLEARED_EVENT,
+  parseDateToMs,
   type GarbageCollectionResult,
   type StorageUsageInfo,
 } from "./cacheManager"
@@ -17,6 +19,8 @@ export {
   clearUserCache,
   formatBytes,
   STORAGE_LAST_CACHE_CLEANUP,
+  CACHE_CLEARED_EVENT,
+  parseDateToMs,
   type GarbageCollectionResult,
   type StorageUsageInfo,
 }
