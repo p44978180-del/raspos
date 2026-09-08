@@ -88,7 +88,14 @@ jobs:
 
       # Step 10: Grant executable permissions to Gradle wrapper
       - name: Ensure Gradle Wrapper Executable
-        run: chmod +x android/gradlew
+        run: |
+          chmod +x android/gradlew
+          WRAPPER_JAR="android/gradle/wrapper/gradle-wrapper.jar"
+          if [ ! -f "$WRAPPER_JAR" ] || [ $(wc -c < "$WRAPPER_JAR") -lt 1000 ]; then
+            echo "Regenerating Gradle wrapper using system gradle..."
+            (cd android && gradle wrapper --gradle-version 8.14.3)
+          fi
+          chmod +x android/gradlew
 
       # Step 11: Compile Debug APK (immediately installable on student devices)
       - name: Build Debug APK
