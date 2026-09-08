@@ -2,8 +2,28 @@ import { defineConfig, type HtmlTagDescriptor, type Plugin } from "vite"
 import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import path from "node:path"
+import fs from "node:fs"
 
-import siteConfiguration from "./.figma/make/site.json"
+let siteConfiguration: any = {
+  title: "РГАУ-МСХА Расписание",
+  description: "Официальное расписание занятий, кампус и сервисы РГАУ-МСХА им. К.А. Тимирязева",
+  robots: {
+    index: false,
+  },
+  accessibility: {
+    addBypassLinks: false,
+    ignoreReducedMotion: false,
+  },
+}
+
+try {
+  const siteJsonPath = path.resolve(__dirname, "./.figma/make/site.json")
+  if (fs.existsSync(siteJsonPath)) {
+    siteConfiguration = JSON.parse(fs.readFileSync(siteJsonPath, "utf-8"))
+  }
+} catch {
+  // Use fallback configuration
+}
 
 // Vite config — https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {

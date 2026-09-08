@@ -1,0 +1,10 @@
+{
+  "description": "Provides students with a comprehensive schedule including class times, locations, instructors, and events, plus advanced search and week/month views.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
