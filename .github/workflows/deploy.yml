@@ -1,0 +1,92 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+# Grant minimal permissions required for GitHub Pages deployment
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment to avoid conflicting deployment states
+concurrency:
+  group: 'pages'
+  cancel-in-progress: false
+
+jobs:
+  # Job 1: Compile, typecheck, and package the static web application
+  build:
+    name: Build & Verify
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Set up pnpm matching .mise.toml
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.3
+
+      # Set up Node 22 with pnpm store caching
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'pnpm'
+
+      # Install exact locked dependencies
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Enforce zero TypeScript compilation errors
+      - name: Verify TypeScript types
+        run: pnpm exec tsc --noEmit
+
+      # Configure GitHub Pages metadata
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
+
+      # Build production bundle with relative/configured base path
+      - name: Build web application
+        run: pnpm run build
+        env:
+          BASE_URL: ${{ steps.pages.outputs.base_path || './' }}
+
+      # Verify production bundle integrity
+      - name: Verify build artifacts
+        run: |
+          if [ ! -f "dist/index.html" ]; then
+            echo "::error::Build verification failed: dist/index.html not found!"
+            exit 1
+          fi
+          if [ ! -f "dist/manifest.webmanifest" ] && [ ! -f "dist/manifest.json" ]; then
+            echo "::error::Build verification failed: Web App Manifest missing in dist/!"
+            exit 1
+          fi
+          echo "Verified dist/ contains $(ls -1 dist | wc -l) top-level assets."
+
+      # Upload static artifacts for GitHub Pages deployment
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+  # Job 2: Deploy packaged artifacts to GitHub Pages environment
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
