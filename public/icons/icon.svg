@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="timiryazevBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3A631E"/>
+      <stop offset="50%" stop-color="#2D5016"/>
+      <stop offset="100%" stop-color="#1B330D"/>
+    </linearGradient>
+
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F5DF88"/>
+      <stop offset="45%" stop-color="#D4AF37"/>
+      <stop offset="100%" stop-color="#9E7B10"/>
+    </linearGradient>
+
+    <linearGradient id="ivoryGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F4F1EB"/>
+    </linearGradient>
+
+    <filter id="subtleShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#0B1506" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Background Base: Rounded Squircle -->
+  <rect width="512" height="512" rx="112" fill="url(#timiryazevBg)"/>
+
+  <!-- Outer Concentric Golden Rings -->
+  <circle cx="256" cy="256" r="222" fill="none" stroke="url(#goldGrad)" stroke-width="3" opacity="0.75"/>
+  <circle cx="256" cy="256" r="213" fill="none" stroke="#F4F1EB" stroke-width="1.5" stroke-dasharray="4 6" opacity="0.35"/>
+  <circle cx="256" cy="256" r="202" fill="#1F3A0F" opacity="0.3"/>
+
+  <!-- University Emblem Group -->
+  <g filter="url(#subtleShadow)">
+    <!-- Neoclassical Academic Building / Portico Facade -->
+    <path d="M 170 188 L 256 138 L 342 188 Z" fill="url(#ivoryGrad)"/>
+    <path d="M 186 185 L 256 145 L 326 185 Z" fill="url(#timiryazevBg)" opacity="0.2"/>
+    <circle cx="256" cy="170" r="9" fill="url(#goldGrad)"/>
+    <circle cx="256" cy="170" r="5" fill="#2D5016"/>
+
+    <!-- Architrave / Entablature Beam -->
+    <rect x="162" y="188" width="188" height="12" rx="2" fill="url(#ivoryGrad)"/>
+    <rect x="166" y="196" width="180" height="4" fill="url(#goldGrad)"/>
+
+    <!-- 4 Fluted Columns -->
+    <rect x="180" y="200" width="16" height="78" rx="1.5" fill="url(#ivoryGrad)"/>
+    <rect x="178" y="200" width="20" height="5" rx="1" fill="url(#goldGrad)"/>
+    <rect x="178" y="274" width="20" height="4" rx="1" fill="url(#goldGrad)"/>
+
+    <rect x="224" y="200" width="16" height="78" rx="1.5" fill="url(#ivoryGrad)"/>
+    <rect x="222" y="200" width="20" height="5" rx="1" fill="url(#goldGrad)"/>
+    <rect x="222" y="274" width="20" height="4" rx="1" fill="url(#goldGrad)"/>
+
+    <rect x="272" y="200" width="16" height="78" rx="1.5" fill="url(#ivoryGrad)"/>
+    <rect x="270" y="200" width="20" height="5" rx="1" fill="url(#goldGrad)"/>
+    <rect x="270" y="274" width="20" height="4" rx="1" fill="url(#goldGrad)"/>
+
+    <rect x="316" y="200" width="16" height="78" rx="1.5" fill="url(#ivoryGrad)"/>
+    <rect x="314" y="200" width="20" height="5" rx="1" fill="url(#goldGrad)"/>
+    <rect x="314" y="274" width="20" height="4" rx="1" fill="url(#goldGrad)"/>
+
+    <!-- Stepped Foundation (3 tiers) -->
+    <rect x="164" y="278" width="184" height="6" rx="1" fill="url(#goldGrad)"/>
+    <rect x="156" y="284" width="200" height="8" rx="2" fill="url(#ivoryGrad)"/>
+    <rect x="148" y="292" width="216" height="10" rx="2" fill="url(#ivoryGrad)"/>
+
+    <!-- Twin Agrarian Golden Wheat Ears -->
+    <path d="M 230 380 C 180 370 115 320 110 240 C 108 215 116 190 125 170" fill="none" stroke="url(#goldGrad)" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="120" cy="180" rx="9" ry="15" transform="rotate(-30 120 180)" fill="url(#goldGrad)"/>
+    <ellipse cx="112" cy="205" rx="9" ry="15" transform="rotate(-20 112 205)" fill="url(#goldGrad)"/>
+    <ellipse cx="110" cy="235" rx="9" ry="15" transform="rotate(-5 110 235)" fill="url(#goldGrad)"/>
+    <ellipse cx="114" cy="265" rx="9" ry="15" transform="rotate(15 114 265)" fill="url(#goldGrad)"/>
+    <ellipse cx="126" cy="295" rx="9" ry="15" transform="rotate(30 126 295)" fill="url(#goldGrad)"/>
+    <ellipse cx="146" cy="325" rx="9" ry="15" transform="rotate(45 146 325)" fill="url(#goldGrad)"/>
+    <ellipse cx="174" cy="350" rx="9" ry="15" transform="rotate(60 174 350)" fill="url(#goldGrad)"/>
+    <ellipse cx="206" cy="368" rx="9" ry="15" transform="rotate(75 206 368)" fill="url(#goldGrad)"/>
+
+    <path d="M 282 380 C 332 370 397 320 402 240 C 404 215 396 190 387 170" fill="none" stroke="url(#goldGrad)" stroke-width="4" stroke-linecap="round"/>
+    <ellipse cx="392" cy="180" rx="9" ry="15" transform="rotate(30 392 180)" fill="url(#goldGrad)"/>
+    <ellipse cx="400" cy="205" rx="9" ry="15" transform="rotate(20 400 205)" fill="url(#goldGrad)"/>
+    <ellipse cx="402" cy="235" rx="9" ry="15" transform="rotate(5 402 235)" fill="url(#goldGrad)"/>
+    <ellipse cx="398" cy="265" rx="9" ry="15" transform="rotate(-15 398 265)" fill="url(#goldGrad)"/>
+    <ellipse cx="386" cy="295" rx="9" ry="15" transform="rotate(-30 386 295)" fill="url(#goldGrad)"/>
+    <ellipse cx="366" cy="325" rx="9" ry="15" transform="rotate(-45 366 325)" fill="url(#goldGrad)"/>
+    <ellipse cx="338" cy="350" rx="9" ry="15" transform="rotate(-60 338 350)" fill="url(#goldGrad)"/>
+    <ellipse cx="306" cy="368" rx="9" ry="15" transform="rotate(-75 306 368)" fill="url(#goldGrad)"/>
+
+    <!-- Center Plaque & Cartouche -->
+    <rect x="146" y="324" width="220" height="42" rx="12" fill="#19300D" stroke="url(#goldGrad)" stroke-width="2.5"/>
+    <text x="256" y="352" text-anchor="middle" fill="#FFFFFF" font-family="'Manrope', -apple-system, sans-serif" font-size="22" font-weight="800" letter-spacing="2.5">РГАУ-МСХА</text>
+    <text x="256" y="394" text-anchor="middle" fill="url(#goldGrad)" font-family="'JetBrains Mono', monospace" font-size="15" font-weight="700" letter-spacing="4">★ 1865 ★</text>
+  </g>
+</svg>

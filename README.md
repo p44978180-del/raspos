@@ -23,11 +23,20 @@ pnpm dev
 ## 📦 Сборка
 
 ```bash
-pnpm build          # Веб-сборка
-pnpm build:android  # Android APK
-pnpm sync:schedule  # Синхронизация расписания с timacad.ru
-pnpm typecheck      # Проверка типов
-pnpm test           # Тесты
+# Веб-сборка
+pnpm build
+
+# Android APK
+pnpm build:android
+
+# Синхронизация расписания с timacad.ru
+pnpm sync:schedule
+
+# Проверка типов
+pnpm typecheck
+
+# Тесты
+pnpm test
 ```
 
 ## 🏗️ Технологии
@@ -36,7 +45,33 @@ pnpm test           # Тесты
 - **Vite 8** — сборщик
 - **Tailwind CSS v4** — стилизация
 - **Capacitor** — нативная сборка Android
-- **GitHub Actions** — CI/CD
+- **GitHub Actions** — CI/CD (деплой на GitHub Pages + сборка APK + ночная синхронизация расписания)
+
+## 📁 Структура проекта
+
+```
+src/
+├── App.tsx                    # Основное приложение
+├── index.css                  # Глобальные стили и Tailwind
+├── main.tsx                   # Точка входа React
+├── components/
+│   ├── BellScheduleSheet.tsx  # Расписание звонков
+│   ├── CampusMapPins.tsx      # SVG-пины карты кампуса
+│   ├── IosInstallPrompt.tsx   # Баннер установки на iOS
+│   └── PdfUploadModal.tsx     # Загрузка PDF расписания
+├── utils/
+│   └── timacadPdfParser.ts    # Парсер PDF расписания
+└── data/
+    └── official-schedule.json # Актуальное расписание (42 группы)
+
+scripts/
+└── sync-schedule.mjs          # Ночной парсер расписания с timacad.ru
+
+.github/workflows/
+├── deploy.yml                 # Деплой на GitHub Pages
+├── build-android.yml          # Сборка Android APK
+└── daily-sync.yml             # Ежедневный парсинг расписания
+```
 
 ## 📄 Лицензия
 
