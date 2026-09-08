@@ -168,14 +168,16 @@ export function CampusBadge({
           {showIcon && !label && (
             <HouseRoofIcon size={numSize <= 30 ? 12 : 14} className="text-white drop-shadow" />
           )}
-          {label !== undefined && label !== null && (
+          {label !== undefined && label !== null && label !== "" && (
             <span
               className={`font-black tracking-tighter leading-none text-white ${
                 numSize <= 30 ? "text-[10px]" : "text-xs"
               }`}
               style={{ fontFamily: "var(--font-mono)" }}
             >
-              {typeof label === "string" && label.startsWith("№") ? label : `№${label}`}
+              {typeof label === "string" && (label.startsWith("№") || !/^\d/.test(label))
+                ? label
+                : `№${label}`}
             </span>
           )}
         </div>

@@ -295,18 +295,29 @@ const BIDS: Record<string, string> = {
   "4-й учебный корпус": "corp4",
   "Корпус агрохимии": "agrochem",
   "Корпус агрохимии (6-й)": "agrochem",
+  "8-й учебный корпус": "corp8",
   "9-й учебный корпус": "corp9",
   "12-й учебный корпус": "corp12",
   "Биологический корпус (16-й)": "bio16",
   "Биологический корпус": "bio16",
   "17-й корпус (Почвенно-агрономический)": "soil17",
   "18-й корпус (Метеорологический)": "meteo18",
+  "26-й учебный корпус": "corp26",
   "27-й корпус (Лингвистический центр)": "ling27",
   "Инженерный корпус (28-й)": "engineering",
   "Инженерный корпус": "engineering",
+  "28-й учебный корпус (Инженерный)": "engineering",
   "29-й корпус (Цифровой центр)": "digital29",
+  "29-й учебный корпус (Цифровой центр)": "digital29",
   "37-й корпус (Биотехнология)": "biotech37",
+  "Центральная научная библиотека": "lib",
+  "Центральная научная библиотека (ЦНБ)": "lib",
+  "ЦНБ": "lib",
+  "Студенческий городок (Общежития)": "dorms",
+  "Студенческий городок": "dorms",
+  "Общежития": "dorms",
   "Спортивный комплекс": "sport",
+  "Спортивный комплекс (СОК РГАУ)": "sport",
   "СК": "sport",
   "Учебно-опытная станция": "station",
 }
@@ -318,18 +329,28 @@ const BGEN: Record<string, string> = {
   "4-й учебный корпус": "4-го учебного корпуса",
   "Корпус агрохимии": "корпуса агрохимии",
   "Корпус агрохимии (6-й)": "корпуса агрохимии (6-го)",
+  "8-й учебный корпус": "8-го учебного корпуса",
   "9-й учебный корпус": "9-го учебного корпуса",
   "12-й учебный корпус": "12-го учебного корпуса",
   "Биологический корпус (16-й)": "биологического корпуса (16-го)",
   "Биологический корпус": "биологического корпуса",
   "17-й корпус (Почвенно-агрономический)": "17-го почвенного корпуса",
   "18-й корпус (Метеорологический)": "18-го метеорологического корпуса",
+  "26-й учебный корпус": "26-го учебного корпуса",
   "27-й корпус (Лингвистический центр)": "27-го лингвистического корпуса",
   "Инженерный корпус (28-й)": "инженерного корпуса (28-го)",
   "Инженерный корпус": "инженерного корпуса",
+  "28-й учебный корпус (Инженерный)": "инженерного корпуса (28-го)",
   "29-й корпус (Цифровой центр)": "29-го цифрового корпуса",
+  "29-й учебный корпус (Цифровой центр)": "29-го цифрового корпуса",
   "37-й корпус (Биотехнология)": "37-го корпуса биотехнологии",
+  "Центральная научная библиотека (ЦНБ)": "Центральной научной библиотеки (ЦНБ)",
+  "ЦНБ": "ЦНБ",
+  "Студенческий городок (Общежития)": "студгородка",
+  "Студенческий городок": "студгородка",
+  "Общежития": "студгородка",
   "Спортивный комплекс": "спортивного комплекса",
+  "Спортивный комплекс (СОК РГАУ)": "спортивного комплекса",
   "СК": "спортивного комплекса",
   "Учебно-опытная станция": "учебно-опытной станции",
 }
@@ -344,10 +365,14 @@ function getBldgGenitive(name: string): string {
   if (/16-й|биолог/i.test(name)) return "биологического корпуса (16-го)"
   if (/17-й|почв/i.test(name)) return "17-го почвенного корпуса"
   if (/18-й|метео/i.test(name)) return "18-го метеорологического корпуса"
+  if (/26-й/i.test(name)) return "26-го учебного корпуса"
   if (/27-й|лингв/i.test(name)) return "27-го лингвистического корпуса"
   if (/28-й|инженер/i.test(name)) return "инженерного корпуса (28-го)"
   if (/29-й|цифр/i.test(name)) return "29-го цифрового корпуса"
   if (/37-й|биотех/i.test(name)) return "37-го корпуса биотехнологии"
+  if (/8-й/i.test(name)) return "8-го учебного корпуса"
+  if (/цнб|библиотек/i.test(name)) return "Центральной научной библиотеки"
+  if (/общежит|студгород/i.test(name)) return "студгородка"
   if (/спорт|СК/i.test(name)) return "спортивного комплекса"
   if (/станци|опытн/i.test(name)) return "учебно-опытной станции"
   return name
@@ -363,10 +388,14 @@ function normalizeBldg(name: string): string {
   if (/16-й|биолог/i.test(name)) return "bio16"
   if (/17-й|почв/i.test(name)) return "soil17"
   if (/18-й|метео/i.test(name)) return "meteo18"
+  if (/26-й/i.test(name)) return "corp26"
   if (/27-й|лингв/i.test(name)) return "ling27"
   if (/28-й|инженер/i.test(name)) return "engineering"
   if (/29-й|цифр/i.test(name)) return "digital29"
   if (/37-й|биотех/i.test(name)) return "biotech37"
+  if (/8-й/i.test(name)) return "corp8"
+  if (/цнб|библиотек/i.test(name)) return "lib"
+  if (/общежит|студгород/i.test(name)) return "dorms"
   if (/спорт|СК/i.test(name)) return "sport"
   if (/станци|опытн/i.test(name)) return "station"
   if (/1-й/i.test(name)) return "corp1"
@@ -1268,6 +1297,7 @@ const BUILDING_GPS: Record<string, [number, number]> = {
   lib: [37.553, 55.83],
   sport: [37.557, 55.833],
   station: [37.567, 55.825],
+  dorms: [37.554, 55.834],
 }
 
 function getBuildingCoords(name: string): [number, number] | null {
@@ -4512,35 +4542,40 @@ function ClassCard({
             >
               {cfg.label}
             </span>
-            {cls.weekType && cls.weekType !== "all" ? (
-              (!isOddWeek && cls.weekType === "odd" && weekFilter !== "all") ||
-              (isOddWeek && cls.weekType === "even" && weekFilter !== "all") ? null : (
+            {cls.weekType && cls.weekType !== "all" ? (() => {
+              const isNotThisWeek =
+                (isOddWeek && cls.weekType === "even") ||
+                (!isOddWeek && cls.weekType === "odd")
+              if (isNotThisWeek && weekFilter !== "all") return null
+              const isOdd = cls.weekType === "odd"
+              const badgeText = isNotThisWeek
+                ? isOdd
+                  ? "Верхняя нед. (не на этой неделе)"
+                  : "Нижняя нед. (не на этой неделе)"
+                : isOdd
+                  ? "Верхняя"
+                  : "Нижняя"
+              return (
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold flex-shrink-0 ${
-                    cls.weekType === "odd"
+                    isOdd
                       ? "bg-blue-bg text-blue border border-blue/30"
                       : "bg-amber-bg text-amber border border-amber/30"
                   }`}
                   title={
-                    cls.weekType === "odd"
-                      ? (!isOddWeek
-                          ? "Верхняя пара · Не проводится на этой неделе (Числитель)"
-                          : "Верхняя пара · Нечётная неделя (Числитель)")
-                      : (isOddWeek
-                          ? "Нижняя пара · Не проводится на этой неделе (Знаменатель)"
-                          : "Нижняя пара · Чётная неделя (Знаменатель)")
+                    isOdd
+                      ? !isOddWeek
+                        ? "Верхняя пара · Не проводится на этой неделе (Числитель)"
+                        : "Верхняя пара · Нечётная неделя (Числитель)"
+                      : isOddWeek
+                        ? "Нижняя пара · Не проводится на этой неделе (Знаменатель)"
+                        : "Нижняя пара · Чётная неделя (Знаменатель)"
                   }
                 >
-                  {cls.weekType === "odd"
-                    ? (!isOddWeek && weekFilter === "all"
-                        ? "Верхняя нед. (не на этой неделе)"
-                        : "Верхняя")
-                    : (isOddWeek && weekFilter === "all"
-                        ? "Нижняя нед. (не на этой неделе)"
-                        : "Нижняя")}
+                  {badgeText}
                 </span>
               )
-            ) : (
+            })() : (
               <span className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold bg-muted text-muted-fg flex-shrink-0">
                 Все нед
               </span>
@@ -4843,7 +4878,7 @@ function DayView({
   entries.forEach((e) => {
     const num =
       e.type === "native"
-        ? (classEdits[e.cls.id]?.numOverride ?? e.cls.id)
+        ? (classEdits[e.cls.id]?.numOverride ?? e.cls.num)
         : e.cls.num
     if (
       e.type === "native" &&
@@ -4973,6 +5008,7 @@ function DayView({
             ? (classEdits[prevCls.id]?.building ?? prevCls.building)
             : null
           const curStart = curEdit?.startOverride ?? curCls.start
+          const curEnd = curEdit?.endOverride ?? curCls.end
           const prevEnd = prevCls
             ? (classEdits[prevCls.id]?.endOverride ?? prevCls.end)
             : null
@@ -4980,10 +5016,15 @@ function DayView({
           const gapMin = prevEnd ? toMin(curStart) - toMin(prevEnd) : 0
           const hw = homework.find((h) => h.classId === curCls.id)
           const pn = personal.find((n) => n.classId === curCls.id)
+          const isCurrentWeekClass =
+            !curCls.weekType ||
+            curCls.weekType === "all" ||
+            (isOddWeek ? curCls.weekType === "odd" : curCls.weekType === "even")
           const isNow =
             isToday &&
-            toMin(curCls.start) <= nowMin &&
-            nowMin < toMin(curCls.end)
+            isCurrentWeekClass &&
+            toMin(curStart) <= nowMin &&
+            nowMin < toMin(curEnd)
 
           const effNum =
             entry.type === "native"
@@ -5883,6 +5924,13 @@ function PageCampus({
   const [selFood, setSelFood] = useState<number | null>(null)
   const [mapExpanded, setMapExpanded] = useState(false)
   const [mapKey, setMapKey] = useState(0)
+
+  useEffect(() => {
+    if (initFood) {
+      setCampusMode("food")
+      setShowFood(true)
+    }
+  }, [initFood])
   const [expandedOverview, setExpandedOverview] = useState<number | null>(null)
   const [editMode, setEditMode] = useState(false)
   const [foodOverrides, setFoodOverrides] =
@@ -6186,7 +6234,7 @@ function PageCampus({
                   `https://yandex.ru/maps/?rtext=~${selectedQuickPlace.coords[1]},${selectedQuickPlace.coords[0]}&rtt=pd`
                 return (
                   <div className="pt-1 flex flex-col gap-1.5">
-                    {walk && walk.mins > 0 && (
+                    {walk && (
                       <p className="text-xs font-semibold text-primary">
                         {walk.text}
                       </p>
@@ -8409,6 +8457,7 @@ export default function App() {
     radius: number
     nextDark: boolean
   } | null>(null)
+  const waveTimeoutRef = useRef<any>(null)
 
   const handleDarkToggle = (e?: React.MouseEvent) => {
     const x = e ? e.clientX : window.innerWidth / 2
@@ -8436,8 +8485,12 @@ export default function App() {
       } catch {}
     }
 
-    setTimeout(() => {
+    if (waveTimeoutRef.current) {
+      clearTimeout(waveTimeoutRef.current)
+    }
+    waveTimeoutRef.current = setTimeout(() => {
       setRadialWave(null)
+      waveTimeoutRef.current = null
     }, 450)
   }
   const [role, setRole] = useState<UserRole>(() => {
