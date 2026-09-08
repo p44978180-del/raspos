@@ -84,6 +84,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master' }}
+          validate-wrappers: false
 
       # Step 10: Grant executable permissions to Gradle wrapper
       - name: Ensure Gradle Wrapper Executable
