@@ -13,13 +13,23 @@ import officialScheduleData from "./data/official-schedule.json"
 import BellScheduleSheet, { getCurrentBellStatus } from "./components/BellScheduleSheet"
 import PdfUploadModal from "./components/PdfUploadModal"
 import type { ParsedGroupResult } from "./utils/timacadPdfParser"
+import TimacadSyncModal from "./components/TimacadSyncModal"
+import {
+  initDailySyncWatcher,
+  runTimacadDailySync,
+  formatSyncDisplayTime,
+  getCachedTimacadFeed,
+  type SyncResult,
+} from "./utils/timacadAutoSync"
+import { OFFICIAL_TIMACAD_SOURCES } from "./data/officialSources"
+import { OFFICIAL_TIMACAD_FEED, type TimacadFeedItem } from "./data/timacadFeedData"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ClassType = "lecture" | "practice" | "lab"
 type UserRole = "student" | "headstudent"
 type FoodFilter = "all" | "canteen" | "cafe" | "supermarket" | "open"
-type EventCat = "all" | "faculty" | "science" | "sport"
+type EventCat = "all" | "news" | "announcement" | "faculty" | "science" | "sport" | "profcom" | "career"
 type SubgroupPref = "1" | "2" | "all"
 
 interface ClassItem {
@@ -72,7 +82,12 @@ interface AppEvent {
   title: string
   date: string
   place: string
-  category: "faculty" | "science" | "sport"
+  category: EventCat
+  summary?: string
+  sourceName?: string
+  sourceUrl?: string
+  isPinned?: boolean
+  badgeText?: string
 }
 interface FoodSpot {
   id: number
@@ -526,13 +541,30 @@ const FOOD_SPOTS: FoodSpot[] = [
   },
 ]
 
+const OFFICIAL_EVENTS: AppEvent[] = OFFICIAL_TIMACAD_FEED.map((item, idx) => ({
+  id: 100 + idx,
+  title: item.title,
+  date: item.date,
+  place: item.place || "Кампус РГАУ-МСХА",
+  category: item.category as EventCat,
+  summary: item.summary,
+  sourceName: item.sourceName,
+  sourceUrl: item.sourceUrl,
+  isPinned: item.isPinned,
+  badgeText: item.badgeText,
+}))
+
 const EVENTS: AppEvent[] = [
+  ...OFFICIAL_EVENTS,
   {
     id: 1,
     title: "День открытых дверей агрофака",
     date: "2026-09-07",
     place: "Актовый зал, УК-1",
     category: "faculty",
+    summary: "Презентация программ бакалавриата и магистратуры, встреча с деканом и заведующими кафедрами.",
+    sourceName: "Деканат агрофака",
+    sourceUrl: "https://www.timacad.ru",
   },
   {
     id: 2,
@@ -540,6 +572,9 @@ const EVENTS: AppEvent[] = [
     date: "2026-09-12",
     place: "Корпус агрохимии",
     category: "science",
+    summary: "Университетский этап всероссийской олимпиады по почвоведению и агрохимии.",
+    sourceName: "Кафедра агрохимии",
+    sourceUrl: "https://www.timacad.ru/science",
   },
   {
     id: 3,
@@ -547,6 +582,9 @@ const EVENTS: AppEvent[] = [
     date: "2026-09-19",
     place: "Спортивный комплекс",
     category: "sport",
+    summary: "Межфакультетские соревнования по волейболу, мини-футболу и настольному теннису.",
+    sourceName: "ССК «Тимирязевские Зубры»",
+    sourceUrl: "https://www.timacad.ru/life/sport",
   },
   {
     id: 4,
@@ -554,6 +592,9 @@ const EVENTS: AppEvent[] = [
     date: "2026-09-25",
     place: "УК-1, ауд. Б-201",
     category: "science",
+    summary: "Пленарное заседание секций молодых исследователей и инноваций в сельском хозяйстве.",
+    sourceName: "СНО РГАУ-МСХА",
+    sourceUrl: "https://www.timacad.ru/science",
   },
   {
     id: 5,
@@ -561,6 +602,9 @@ const EVENTS: AppEvent[] = [
     date: "2026-10-03",
     place: "Стадион МСХА",
     category: "sport",
+    summary: "Забеги на дистанции 1 000 м и 3 000 м в Тимирязевском лесопарке.",
+    sourceName: "Кафедра физкультуры",
+    sourceUrl: "https://www.timacad.ru/life/sport",
   },
   {
     id: 6,
@@ -568,6 +612,9 @@ const EVENTS: AppEvent[] = [
     date: "2026-09-13",
     place: "Корпус агрохимии, ауд. 118",
     category: "science",
+    summary: "Лекция ведущего научного сотрудника о генетическом редактировании и микроклональном размножении растений.",
+    sourceName: "Институт агробиотехнологии",
+    sourceUrl: "https://www.timacad.ru",
   },
 ]
 
@@ -2073,6 +2120,9 @@ function AppHeader({
   onGroupOpen,
   searchOpen,
   onSearchToggle,
+  onSyncOpen,
+  lastSyncDisplay,
+  onOpenIosPrompt,
 }: {
   tab: string
   dark: boolean
@@ -2081,6 +2131,9 @@ function AppHeader({
   onGroupOpen: () => void
   searchOpen: boolean
   onSearchToggle: () => void
+  onSyncOpen?: () => void
+  lastSyncDisplay?: string
+  onOpenIosPrompt?: () => void
 }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -2124,8 +2177,30 @@ function AppHeader({
                 </div>
               )
             })()}
+            {onSyncOpen && (
+              <button
+                onClick={onSyncOpen}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-card border border-border/80 text-xs font-semibold text-fg shadow-xs hover:border-primary/40 hover:bg-muted/40 transition-all cursor-pointer"
+                title="Синхронизация с timacad.ru (04:00 МСК)"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+                <span className="text-[10px] font-bold text-muted-fg hidden sm:inline">
+                  04:00
+                </span>
+              </button>
+            )}
           </div>
-          <div className="flex gap-1">
+          <div className="flex gap-1 items-center">
+            {!isStandaloneMode() && onOpenIosPrompt && (
+              <button
+                onClick={onOpenIosPrompt}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/25 text-xs font-bold text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                title="Установить на экран «Домой»"
+              >
+                <span>📱</span>
+                <span className="text-[10px] font-bold hidden sm:inline">В Домой</span>
+              </button>
+            )}
             <button
               onClick={onSearchToggle}
               className={`p-2 rounded-xl transition-colors ${
@@ -2147,14 +2222,38 @@ function AppHeader({
         </div>
       ) : (
         <div className="flex items-center justify-between px-4 pb-2.5">
-          <h1 className="text-2xl font-extrabold text-fg">
-            {({
-              campus: "Кампус",
-              events: "События",
-              profile: "Профиль",
-            } as Record<string, string>)[tab] ?? ""}
-          </h1>
-          <div className="flex gap-1">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-extrabold text-fg">
+              {({
+                campus: "Кампус",
+                events: "События",
+                profile: "Профиль",
+              } as Record<string, string>)[tab] ?? ""}
+            </h1>
+            {onSyncOpen && (
+              <button
+                onClick={onSyncOpen}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-card border border-border/80 text-xs font-semibold text-fg shadow-xs hover:border-primary/40 hover:bg-muted/40 transition-all cursor-pointer"
+                title="Официальные источники timacad.ru"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+                <span className="text-[10px] font-bold text-muted-fg hidden xs:inline">
+                  timacad.ru
+                </span>
+              </button>
+            )}
+          </div>
+          <div className="flex gap-1 items-center">
+            {!isStandaloneMode() && onOpenIosPrompt && (
+              <button
+                onClick={onOpenIosPrompt}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/25 text-xs font-bold text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                title="Установить на экран «Домой»"
+              >
+                <span>📱</span>
+                <span className="text-[10px] font-bold hidden sm:inline">В Домой</span>
+              </button>
+            )}
             <button
               onClick={onSearchToggle}
               className={`p-2 rounded-xl transition-colors ${
@@ -5938,6 +6037,8 @@ function PageEvents({
   pinnedNote,
   onPinnedNote,
   search,
+  onOpenSyncModal,
+  lastSyncDisplay,
 }: {
   role: UserRole
   customEvents: AppEvent[]
@@ -5947,6 +6048,8 @@ function PageEvents({
   pinnedNote: string
   onPinnedNote: (n: string) => void
   search: string
+  onOpenSyncModal?: () => void
+  lastSyncDisplay?: string
 }) {
   const [filter, setFilter] = useState<EventCat>("all")
   const [addOpen, setAddOpen] = useState(false)
@@ -5957,13 +6060,17 @@ function PageEvents({
     title: "",
     date: "",
     place: "",
-    category: "faculty" as AppEvent["category"],
+    category: "faculty" as EventCat,
   })
   const cats: [EventCat, string][] = [
     ["all", "Все"],
+    ["news", "Новости РГАУ"],
+    ["announcement", "Анонсы"],
+    ["profcom", "Профком"],
     ["faculty", "Факультет"],
     ["science", "Наука"],
     ["sport", "Спорт"],
+    ["career", "Карьера"],
   ]
   const allEvents = [...EVENTS, ...customEvents]
   const q = search.toLowerCase().trim()
@@ -5972,18 +6079,28 @@ function PageEvents({
     const matchSearch =
       !q ||
       e.title.toLowerCase().includes(q) ||
-      e.place.toLowerCase().includes(q)
+      e.place.toLowerCase().includes(q) ||
+      (e.summary && e.summary.toLowerCase().includes(q)) ||
+      (e.sourceName && e.sourceName.toLowerCase().includes(q))
     return matchCat && matchSearch
   })
   const catChip: Record<string, string> = {
-    faculty: "bg-muted text-primary",
-    science: "bg-blue-bg text-blue",
-    sport: "bg-amber-bg text-amber",
+    news: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25",
+    announcement: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/25",
+    profcom: "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25",
+    faculty: "bg-muted text-primary border border-border",
+    science: "bg-blue-bg text-blue border border-blue/20",
+    sport: "bg-amber-bg text-amber border border-amber/20",
+    career: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25",
   }
   const catLabel: Record<string, string> = {
+    news: "Новости",
+    announcement: "Анонс",
+    profcom: "Профком",
     faculty: "Факультет",
     science: "Наука",
     sport: "Спорт",
+    career: "Карьера",
   }
   const isHead = role === "headstudent"
 
@@ -6022,6 +6139,29 @@ function PageEvents({
 
   return (
     <div className="px-4 pt-1 pb-2 space-y-3">
+      {/* Official Timacad Sync Bar */}
+      <div className="flex items-center justify-between p-3 rounded-2xl bg-card border border-border/80 shadow-xs">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-fg truncate">
+              Сверка с порталом timacad.ru
+            </p>
+            <p className="text-[10px] text-muted-fg truncate">
+              {lastSyncDisplay || "Ежедневно в 04:00 МСК"} · 18 официальных источников
+            </p>
+          </div>
+        </div>
+        {onOpenSyncModal && (
+          <button
+            onClick={onOpenSyncModal}
+            className="px-2.5 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-bold hover:bg-primary/20 transition-colors flex-shrink-0 cursor-pointer"
+          >
+            Источники ↗
+          </button>
+        )}
+      </div>
+
       {(pinnedNote || isHead) && (
         <div className="bg-amber-bg border border-amber/20 rounded-2xl px-4 py-3">
           {editingNote ? (
@@ -6093,14 +6233,14 @@ function PageEvents({
           ) : null}
         </div>
       )}
-      <div className="flex gap-1.5 flex-wrap">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
         {cats.map(([id, label]) => (
           <button
             key={id}
             onClick={() => setFilter(id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap border transition-all ${
               filter === id
-                ? "bg-primary text-white border-primary"
+                ? "bg-primary text-white border-primary shadow-xs"
                 : "bg-card border-border text-muted-fg hover:border-accent/40 hover:text-fg"
             }`}
           >
@@ -6158,6 +6298,9 @@ function PageEvents({
                     <option value="faculty">Факультетские</option>
                     <option value="science">Наука</option>
                     <option value="sport">Спорт</option>
+                    <option value="news">Новости</option>
+                    <option value="announcement">Анонсы</option>
+                    <option value="profcom">Профком</option>
                   </select>
                   <div className="flex gap-2 pt-1">
                     <button
@@ -6181,15 +6324,15 @@ function PageEvents({
                 className="stagger-card bg-card border border-border rounded-2xl p-4 hover:border-accent/40 transition-all hover:shadow-sm active:scale-[0.99]"
                 style={{ animationDelay: `${idx * 40}ms` }}
               >
-                <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="flex items-start justify-between gap-2 mb-1.5">
                   <p className="text-sm font-bold text-fg leading-snug">
                     {ev.title}
                   </p>
                   <div className="flex items-center gap-1 flex-shrink-0">
                     <span
-                      className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${catChip[ev.category]}`}
+                      className={`text-[10px] px-2 py-0.5 rounded-md font-semibold ${catChip[ev.category] || "bg-muted text-fg"}`}
                     >
-                      {catLabel[ev.category]}
+                      {catLabel[ev.category] || ev.category}
                     </span>
                     {isHead && (
                       <button
@@ -6209,11 +6352,40 @@ function PageEvents({
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-muted-fg flex-wrap">
-                  {I.cal(12)}
-                  <span>{fmtDate(ev.date)}</span>
-                  {I.map(11)}
-                  <span>{ev.place}</span>
+
+                {ev.summary && (
+                  <p className="text-xs text-muted-fg leading-relaxed mb-2.5">
+                    {ev.summary}
+                  </p>
+                )}
+
+                <div className="flex items-center justify-between gap-2 text-xs text-muted-fg flex-wrap pt-2 border-t border-border/60">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="flex items-center gap-1">
+                      {I.cal(12)}
+                      <span>{fmtDate(ev.date)}</span>
+                    </span>
+                    <span className="flex items-center gap-1">
+                      {I.map(11)}
+                      <span>{ev.place}</span>
+                    </span>
+                    {ev.sourceName && (
+                      <span className="text-[10px] font-medium text-muted-fg/90 bg-muted px-2 py-0.5 rounded-md border border-border/50">
+                        {ev.sourceName}
+                      </span>
+                    )}
+                  </div>
+                  {ev.sourceUrl && (
+                    <a
+                      href={ev.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                    >
+                      <span>Источник</span>
+                      <span>↗</span>
+                    </a>
+                  )}
                 </div>
               </div>
             )
@@ -6311,6 +6483,8 @@ function PageProfile({
   hasCustomSchedule,
   onApplySchedule,
   onResetOfficial,
+  onOpenSyncModal,
+  lastSyncDisplay,
 }: {
   role: UserRole
   onRoleChange: (r: UserRole) => void
@@ -6328,6 +6502,8 @@ function PageProfile({
   hasCustomSchedule?: boolean
   onApplySchedule?: (result: ParsedGroupResult) => void
   onResetOfficial?: () => void
+  onOpenSyncModal?: () => void
+  lastSyncDisplay?: string
 }) {
   const weekNum = getStudyWeek(TODAY)
 
@@ -6835,23 +7011,103 @@ function PageProfile({
         onToast={onToast}
       />
 
+      {/* Official Timacad Sources & Sync status */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-sm font-bold text-fg">Сверка с timacad.ru</span>
+          <span className="ml-auto text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
+            04:00 МСК
+          </span>
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-fg">Статус актуальности данных</p>
+              <p className="text-[11px] text-muted-fg mt-0.5">
+                {lastSyncDisplay || "Сегодня в 04:00 МСК"} · 18 источников
+              </p>
+            </div>
+            {onOpenSyncModal && (
+              <button
+                onClick={onOpenSyncModal}
+                className="px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary-light transition-colors cursor-pointer flex-shrink-0"
+              >
+                Реестр источников
+              </button>
+            )}
+          </div>
+          <div className="flex items-center justify-between pt-2 border-t border-border">
+            <div className="flex-1 min-w-0 pr-2">
+              <p className="text-xs font-semibold text-fg">Авто-парсинг в 4:00 утра</p>
+              <p className="text-[10px] text-muted-fg">Автономная сверка расписания на устройстве</p>
+            </div>
+            <Toggle value={autoSync} onChange={handleAutoSyncToggle} />
+          </div>
+        </div>
+      </div>
+
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           {I.ext(13, "text-muted-fg")}
-          <span className="text-sm font-bold text-fg">Сервисы РГАУ-МСХА</span>
+          <span className="text-sm font-bold text-fg">Сервисы и ресурсы РГАУ-МСХА</span>
         </div>
         {[
           {
-            label: "Личный кабинет / ЭИОС",
-            sub: "edu.timacad.ru",
+            label: "Личный кабинет обучающегося (ЭИОС)",
+            sub: "edu.timacad.ru · Электронная зачётка и портфолио",
             href: "https://edu.timacad.ru",
           },
           {
-            label: "Moodle",
-            sub: "Электронные курсы",
+            label: "СДО Moodle РГАУ-МСХА",
+            sub: "moodle.timacad.ru · Учебные курсы, тесты и задания",
             href: "https://moodle.timacad.ru",
           },
-          { label: "Деканат агрофака", sub: "Пн–Пт 10:00–17:00", href: "" },
+          {
+            label: "Научная библиотека им. Н.И. Железнова",
+            sub: "elib.timacad.ru · ЭБС, фонд учебников и периодики",
+            href: "https://elib.timacad.ru",
+          },
+          {
+            label: "Профком студентов (ППОС РГАУ-МСХА)",
+            sub: "t.me/profcom_timacad · Социальные карты, матпомощь, льготы",
+            href: "https://t.me/profcom_timacad",
+          },
+          {
+            label: "Официальный Telegram Тимирязевки",
+            sub: "t.me/timacad_live · Главные новости и важные оповещения",
+            href: "https://t.me/timacad_live",
+          },
+          {
+            label: "Официальная группа ВКонтакте",
+            sub: "vk.com/timacad · Студенческая жизнь и анонсы",
+            href: "https://vk.com/timacad",
+          },
+          {
+            label: "Студенческий городок и общежития",
+            sub: "timacad.ru · Паспортный стол, коменданты, график",
+            href: "https://www.timacad.ru/life/studencheskii-gorodok",
+          },
+          {
+            label: "Спортивный клуб «Тимирязевские Зубры»",
+            sub: "timacad.ru/life/sport · Бассейн и 24 спортивные секции",
+            href: "https://www.timacad.ru/life/sport",
+          },
+          {
+            label: "Центр карьеры и практики в АПК",
+            sub: "timacad.ru/life/karera · Вакансии агрохолдингов и стажировки",
+            href: "https://www.timacad.ru/life/karera",
+          },
+          {
+            label: "Деканаты и дирекции институтов",
+            sub: "Пн–Пт 10:00–17:00 · Контакты дирекций и учебных отделов",
+            href: "https://www.timacad.ru/education/instituty-i-fakultety",
+          },
+          {
+            label: "Единая справочная и горячая линия",
+            sub: "+7 (499) 976-04-80 · Справочная университета",
+            href: "https://www.timacad.ru/contacts",
+          },
         ].map((item) => (
           <div
             key={item.label}
@@ -6867,8 +7123,7 @@ function PageProfile({
             {item.href && I.ext(12, "text-muted-fg flex-shrink-0")}
           </div>
         ))}
-
-</div>
+      </div>
     </div>
   )
 }
@@ -7268,6 +7523,27 @@ export default function App() {
   const [myGroup, setMyGroup] = useState<string | null>(null)
   const [myMode, setMyMode] = useState<"student" | "teacher">("student")
   const [tab, setTab] = useState<Tab>("schedule")
+  const [syncModalOpen, setSyncModalOpen] = useState(false)
+  const [lastSyncDisplay, setLastSyncDisplay] = useState(() => {
+    try {
+      return localStorage.getItem("rgau_last_sync_display") || "Сегодня в 04:00 МСК"
+    } catch {
+      return "Сегодня в 04:00 МСК"
+    }
+  })
+
+  // Start client-side daily sync watcher on boot (schedules next 04:00 AM MSK auto-sync)
+  useEffect(() => {
+    const cleanup = initDailySyncWatcher((res) => {
+      setLastSyncDisplay(res.displayTime)
+      addToast(
+        `Синхронизировано ${res.sourcesCount} источников timacad.ru: расписание и события актуальны`,
+        "success"
+      )
+    })
+    return cleanup
+  }, [])
+
   const [dark, setDark] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem("rgau_theme")
@@ -7552,6 +7828,9 @@ export default function App() {
           setSearchOpen((o) => !o)
           if (searchOpen) setSearch("")
         }}
+        onSyncOpen={() => setSyncModalOpen(true)}
+        lastSyncDisplay={lastSyncDisplay}
+        onOpenIosPrompt={() => setShowIosPrompt(true)}
       />
       <Toast toasts={toasts} onDismiss={dismissToast} />
       <main className="flex-1 overflow-y-auto relative min-h-0">
@@ -7626,6 +7905,8 @@ export default function App() {
               pinnedNote={pinnedNote}
               onPinnedNote={setPinnedNote}
               search={search}
+              onOpenSyncModal={() => setSyncModalOpen(true)}
+              lastSyncDisplay={lastSyncDisplay}
             />
           )}
           {tab === "profile" && (
@@ -7646,6 +7927,8 @@ export default function App() {
               hasCustomSchedule={customScheduleActive}
               onApplySchedule={handleApplyCustomSchedule}
               onResetOfficial={handleResetOfficialSchedule}
+              onOpenSyncModal={() => setSyncModalOpen(true)}
+              lastSyncDisplay={lastSyncDisplay}
             />
           )}
           <div className="h-4" />
@@ -7720,6 +8003,16 @@ export default function App() {
       <IosInstallPrompt
         isOpen={showIosPrompt ? true : undefined}
         onClose={() => setShowIosPrompt(false)}
+      />
+
+      <TimacadSyncModal
+        isOpen={syncModalOpen}
+        onClose={() => setSyncModalOpen(false)}
+        lastSyncDisplay={lastSyncDisplay}
+        onToast={addToast}
+        onSyncCompleted={(res) => {
+          setLastSyncDisplay(res.displayTime)
+        }}
       />
     </div>
   )

@@ -27,8 +27,8 @@ jobs:
 
       - name: Commit and push changes if updated
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "Студенческий совет РГАУ-МСХА"
+          git config --global user.email "studsovet@timacad.ru"
           git add src/data/official-schedule.json public/data/official-schedule.json
           if git diff --staged --quiet; then
             echo "No schedule changes detected."
