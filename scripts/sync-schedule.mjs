@@ -38,28 +38,32 @@ const pdfjsLib = require(cjsScriptPath);
 pdfjsLib.GlobalWorkerOptions.workerSrc = cjsWorkerPath;
 
 export const OFFICIAL_BELLS = {
-  1: { start: '09:00', end: '10:35' },
-  2: { start: '10:55', end: '12:30' },
-  3: { start: '13:00', end: '14:35' },
-  4: { start: '14:55', end: '16:30' },
-  5: { start: '16:50', end: '18:25' },
-  6: { start: '18:40', end: '20:15' },
+  1: { start: '08:30', end: '10:05' },
+  2: { start: '10:20', end: '11:55' },
+  3: { start: '12:25', end: '14:00' },
+  4: { start: '14:15', end: '15:50' },
+  5: { start: '16:05', end: '17:40' },
+  6: { start: '17:55', end: '19:30' },
+  7: { start: '19:45', end: '21:20' },
 };
 
 export const BELL_TIMES = [
-  { num: 1, start: '09:00', end: '10:35', label: '1-я пара' },
-  { num: 2, start: '10:55', end: '12:30', label: '2-я пара' },
-  { num: 3, start: '13:00', end: '14:35', label: '3-я пара' },
-  { num: 4, start: '14:55', end: '16:30', label: '4-я пара' },
-  { num: 5, start: '16:50', end: '18:25', label: '5-я пара' },
-  { num: 6, start: '18:40', end: '20:15', label: '6-я пара' },
+  { num: 1, start: '08:30', end: '10:05', label: '1-я пара' },
+  { num: 2, start: '10:20', end: '11:55', label: '2-я пара' },
+  { num: 3, start: '12:25', end: '14:00', label: '3-я пара' },
+  { num: 4, start: '14:15', end: '15:50', label: '4-я пара' },
+  { num: 5, start: '16:05', end: '17:40', label: '5-я пара' },
+  { num: 6, start: '17:55', end: '19:30', label: '6-я пара' },
+  { num: 7, start: '19:45', end: '21:20', label: '7-я пара' },
 ];
 
 export const BREAKS = [
-  { afterNum: 1, durationMin: 20, name: 'Перерыв между 1 и 2 парами' },
+  { afterNum: 1, durationMin: 15, name: 'Перерыв между 1 и 2 парами' },
   { afterNum: 2, durationMin: 30, name: 'Большой обеденный перерыв (30 мин)' },
-  { afterNum: 3, durationMin: 20, name: 'Перерыв между 3 и 4 парами' },
-  { afterNum: 4, durationMin: 20, name: 'Перерыв между 4 и 5 парами' },
+  { afterNum: 3, durationMin: 15, name: 'Перерыв между 3 и 4 парами' },
+  { afterNum: 4, durationMin: 15, name: 'Перерыв между 4 и 5 парами' },
+  { afterNum: 5, durationMin: 15, name: 'Перерыв между 5 и 6 парами' },
+  { afterNum: 6, durationMin: 15, name: 'Перерыв между 6 и 7 парами' },
 ];
 
 export const TIMACAD_INSTITUTES = [

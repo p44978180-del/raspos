@@ -17,7 +17,7 @@ export const OFFICIAL_TIMACAD_SOURCES: TimacadSource[] = [
     url: "https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuchaiushchikhsia",
     category: "schedule",
     description: "Официальные утверждённые расписания учебных занятий, звонков и экзаменационных сессий всех институтов",
-    updateFrequency: "Ежедневно в 04:00 МСК",
+    updateFrequency: "Ежедневно (в фоновом режиме)",
     isOfficial: true,
     status: "active",
   },

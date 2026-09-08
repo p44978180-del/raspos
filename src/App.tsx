@@ -2,17 +2,21 @@ import { useState, useRef, useEffect } from "react"
 import IosInstallPrompt, {
   isStandaloneMode,
   isRealMobileOrStandalone,
+  isIosDevice,
+  isIPadDevice,
+  getIosBrowserType,
 } from "./components/IosInstallPrompt"
 import CampusBadge, {
   CampusPlanViewer,
   CampusMapPinMarker,
   CAMPUS_PLAN_MARKERS,
+  ALL_CAMPUS_MARKERS,
   type PinCategory,
 } from "./components/CampusMapPins"
 import officialScheduleData from "./data/official-schedule.json"
 import BellScheduleSheet, { getCurrentBellStatus } from "./components/BellScheduleSheet"
 import PdfUploadModal from "./components/PdfUploadModal"
-import type { ParsedGroupResult } from "./utils/timacadPdfParser"
+import { OFFICIAL_BELLS, type ParsedGroupResult } from "./utils/timacadPdfParser"
 import TimacadSyncModal from "./components/TimacadSyncModal"
 import {
   initDailySyncWatcher,
@@ -394,47 +398,9 @@ const OFFICIAL_GROUP_KEYS = Object.keys((officialScheduleData as any).groups || 
 const RGAU_GROUPS = Array.from(
   new Set([
     ...OFFICIAL_GROUP_KEYS,
-    "ДА 01-26",
-    "ДА 02-26",
-    "ДА 03-26",
-  "ДА 04-26",
-  "ДА 05-26",
-  "ДА 06-26",
-  "ДА 07-26",
-  "ДА 08-26",
-  "ДЗ 01-26",
-  "ДЗ 02-26",
-  "ДА 01-25",
-  "ДЭ 01-26",
-  "ДИ 01-26",
-  "ДВ 01-26",
-  "АГ-204",
-  "АГ-101",
-  "АГ-102",
-  "АГ-103",
-  "АГ-201",
-  "АГ-202",
-  "АГ-203",
-  "АГ-205",
-  "АГ-301",
-  "АГ-302",
-  "ЭК-101",
-  "ЭК-102",
-  "ЭК-201",
-  "ЭК-202",
-  "ЭК-301",
-  "ЭК-302",
-  "ДЭ-11-26",
-  "ДЭ-12-26",
-  "ИЭ-11-26",
-  "ЗВ-11-26",
-  "ТТ-11-26",
-  "ПА-11-26",
-  "БА-11-26",
-  "ЛА-11-26",
-  "МА-11-26",
-])
-)
+    ...Object.keys((getCachedSchedule()?.groups || {})),
+  ])
+).sort((a, b) => a.localeCompare(b, "ru"))
 const RGAU_TEACHERS = [
   "Темчук Е.И.",
   "Ксенофонтов И.А.",
@@ -779,19 +745,22 @@ function buildSchedule(
       baseWeek.push({
         date: WEEK_DATES[day.weekday] || "2026-09-07",
         weekday: day.weekday,
-        classes: day.classes.map((c: any) => ({
-          id: c.id,
-          num: c.num,
-          start: c.start,
-          end: c.end,
-          subject: c.subject,
-          type: c.type,
-          teacher: c.teacher,
-          building: c.building,
-          room: c.room,
-          subgroup: c.subgroup,
-          weekType: c.weekType || "all",
-        })),
+        classes: day.classes.map((c: any) => {
+          const bell = OFFICIAL_BELLS[c.num] || { start: c.start, end: c.end }
+          return {
+            id: c.id,
+            num: c.num,
+            start: bell.start,
+            end: bell.end,
+            subject: c.subject,
+            type: c.type,
+            teacher: c.teacher,
+            building: c.building,
+            room: c.room,
+            subgroup: c.subgroup,
+            weekType: c.weekType || "all",
+          }
+        }),
       })
     })
     baseWeek.push({ date: "2026-09-13", weekday: "Воскресенье", classes: [] })
@@ -1151,13 +1120,28 @@ function buildSchedule(
     },
     { date: "2026-09-13", weekday: "Воскресенье", classes: [] },
   ]
-  const result = [...baseWeek]
+  const normalizedBaseWeek = baseWeek.map((day) => ({
+    ...day,
+    classes: day.classes.map((c) => {
+      const bell = OFFICIAL_BELLS[c.num] || { start: c.start, end: c.end }
+      return {
+        ...c,
+        start: bell.start,
+        end: bell.end,
+      }
+    }),
+  }))
+  const result = [...normalizedBaseWeek]
   for (let w = 1; w <= 24; w++) {
-    baseWeek.forEach((day) => {
+    normalizedBaseWeek.forEach((day) => {
       const b = new Date(day.date + "T00:00:00")
       b.setDate(b.getDate() + w * 7)
       result.push({
         ...day,
+        classes: day.classes.map((c) => ({
+          ...c,
+          id: c.id + w * 10000,
+        })),
         date: `${b.getFullYear()}-${String(b.getMonth() + 1).padStart(2, "0")}-${String(b.getDate()).padStart(2, "0")}`,
       })
     })
@@ -1180,19 +1164,22 @@ function convertParsedToDaySchedule(parsed: ParsedGroupResult): DaySchedule[] {
     baseWeek.push({
       date: WEEK_DATES[d.weekday] || "2026-09-07",
       weekday: d.weekday,
-      classes: d.classes.map((c) => ({
-        id: c.id,
-        num: c.num,
-        start: c.start,
-        end: c.end,
-        subject: c.subject,
-        type: c.type,
-        teacher: c.teacher,
-        building: c.building,
-        room: c.room,
-        subgroup: c.subgroup,
-        weekType: c.weekType,
-      })),
+      classes: d.classes.map((c) => {
+        const bell = OFFICIAL_BELLS[c.num] || { start: c.start, end: c.end }
+        return {
+          id: c.id,
+          num: c.num,
+          start: bell.start,
+          end: bell.end,
+          subject: c.subject,
+          type: c.type,
+          teacher: c.teacher,
+          building: c.building,
+          room: c.room,
+          subgroup: c.subgroup,
+          weekType: c.weekType,
+        }
+      }),
     })
   })
   if (!baseWeek.some((d) => d.weekday === "Воскресенье")) {
@@ -1249,15 +1236,102 @@ function getStudyWeek(ds: string) {
     Math.floor((d.getTime() - ws.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
   )
 }
+export interface WalkRouteResult {
+  mins: number
+  meters: number
+  text: string
+  routeUrl: string
+  fromName: string
+  toName: string
+}
+
+const BUILDING_GPS: Record<string, [number, number]> = {
+  corp1: [37.5565, 55.8298],
+  corp2: [37.555, 55.8315],
+  corp3: [37.5525, 55.8288],
+  corp4: [37.5505, 55.8295],
+  agrochem: [37.5603, 55.828],
+  corp6: [37.551, 55.832],
+  corp8: [37.556, 55.832],
+  corp9: [37.549, 55.829],
+  corp10: [37.5595, 55.834],
+  corp11: [37.561, 55.8345],
+  corp12: [37.545, 55.835],
+  bio16: [37.553, 55.831],
+  soil17: [37.542, 55.833],
+  meteo18: [37.543, 55.834],
+  corp26: [37.555, 55.831],
+  ling27: [37.554, 55.8305],
+  engineering: [37.5635, 55.8265],
+  digital29: [37.541, 55.842],
+  biotech37: [37.551, 55.832],
+  lib: [37.553, 55.83],
+  sport: [37.557, 55.833],
+  station: [37.567, 55.825],
+}
+
+function getBuildingCoords(name: string): [number, number] | null {
+  if (!name) return null
+  const bId = normalizeBldg(name)
+  if (BUILDING_GPS[bId]) return BUILDING_GPS[bId]
+  const found = ALL_CAMPUS_MARKERS.find(
+    (m) =>
+      m.title.toLowerCase().includes(name.toLowerCase()) ||
+      name.toLowerCase().includes(m.title.toLowerCase()) ||
+      m.subtitle.toLowerCase().includes(name.toLowerCase())
+  )
+  if (found) return found.coords
+  return [37.552, 55.834]
+}
+
+function calculateWalkBetween(from: string, to: string): WalkRouteResult | null {
+  if (!from || !to) return null
+  const normA = normalizeBldg(from)
+  const normB = normalizeBldg(to)
+  if (normA && normB && normA === normB) {
+    return {
+      mins: 0,
+      meters: 0,
+      text: "В этом же корпусе",
+      routeUrl: "",
+      fromName: from,
+      toName: to,
+    }
+  }
+
+  const coordsA = getBuildingCoords(from)
+  const coordsB = getBuildingCoords(to)
+  if (!coordsA || !coordsB) return null
+
+  const [lng1, lat1] = coordsA
+  const [lng2, lat2] = coordsB
+
+  const R = 6371000
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
+  const dLon = ((lng2 - lng1) * Math.PI) / 180
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+  const straightDist = Math.round(R * c)
+  const walkMeters = Math.max(70, Math.round(straightDist * 1.25))
+  // 4.5 km/h = 75 m/min + 2 min buffer
+  const mins = Math.max(1, Math.round(walkMeters / 75 + 1.5))
+
+  const cleanFrom = from.replace(/учебный корпус|корпус/gi, "корп.").trim()
+  const cleanTo = to.replace(/учебный корпус|корпус/gi, "корп.").trim()
+  const text = `🚶 ${mins} мин пешком (${walkMeters} м) от ${cleanFrom} до ${cleanTo}`
+  const routeUrl = `https://yandex.ru/maps/?rtext=${lat1},${lng1}~${lat2},${lng2}&rtt=pd`
+
+  return { mins, meters: walkMeters, text, routeUrl, fromName: from, toName: to }
+}
+
 function getWalk(a: string, b: string): number | null {
-  if (!a || !b) return null
-  const ia = normalizeBldg(a)
-  const ib = normalizeBldg(b)
-  if (!ia || !ib) return null
-  if (ia === ib) return 0
-  if (WALK_TIMES[ia]?.[ib] !== undefined) return WALK_TIMES[ia][ib]
-  if (WALK_TIMES[ib]?.[ia] !== undefined) return WALK_TIMES[ib][ia]
-  return 8
+  const res = calculateWalkBetween(a, b)
+  return res ? res.mins : null
 }
 function isOpen(f: FoodSpot) {
   const d = new Date()
@@ -2062,6 +2136,58 @@ function StatusBar() {
 
 // ─── Group Sheet ──────────────────────────────────────────────────────────────
 
+const INSTITUTES_LIST = [
+  { id: "agrobio", name: "Институт агробиотехнологии", short: "Агробио" },
+  { id: "mechanics", name: "Инженерный институт (им. В.П. Горячкина)", short: "Инженерия" },
+  { id: "zoobio", name: "Институт зоотехнии и биологии", short: "Зоовет" },
+  { id: "econ", name: "Институт экономики и управления", short: "Эконом" },
+  { id: "water", name: "Институт мелиорации, водного хозяйства и строительства", short: "Мелиорация" },
+  { id: "biotech", name: "Институт биотехнологии и ветеринарной медицины", short: "Биотех" },
+  { id: "horticulture", name: "Институт садоводства и ландшафтной архитектуры", short: "Садоводство" },
+  { id: "tech", name: "Технологический институт", short: "Технолог" },
+]
+
+function getGroupMeta(gId: string): { instId: string; course: number } {
+  const activeSched = getCachedSchedule()
+  const g =
+    ((activeSched?.groups || {}) as any)[gId] ||
+    ((officialScheduleData as any).groups || {})[gId]
+
+  if (g?.institute) {
+    const raw = (g.institute as string).toLowerCase()
+    let instId = "agrobio"
+    if (raw.includes("агробио") || raw.includes("агроном") || raw.includes("агрохим")) instId = "agrobio"
+    else if (raw.includes("инженер") || raw.includes("механ") || raw.includes("горячкин")) instId = "mechanics"
+    else if (raw.includes("зоо") || raw.includes("животн")) instId = "zoobio"
+    else if (raw.includes("эконом") || raw.includes("управл")) instId = "econ"
+    else if (raw.includes("мелиор") || raw.includes("водн") || raw.includes("строит") || raw.includes("костяков")) instId = "water"
+    else if (raw.includes("биотех") || raw.includes("ветеринар")) instId = "biotech"
+    else if (raw.includes("садовод") || raw.includes("ландшафт")) instId = "horticulture"
+    else if (raw.includes("технолог")) instId = "tech"
+
+    const courseNum = Number(g.course) || 1
+    return { instId, course: courseNum }
+  }
+
+  // Robust fallback heuristic based on group code prefix and digits
+  let instId = "agrobio"
+  if (/^Д-И|^ДИ|^ТТ|^Д-ЭМ|^Д-ТБ|^Д-ЭТ|^ИЭ/i.test(gId)) instId = "mechanics"
+  else if (/^Д-З|^ДЗ/i.test(gId)) instId = "zoobio"
+  else if (/^Д-Э|^ЭК|^ДЭ/i.test(gId)) instId = "econ"
+  else if (/^Д-С|^М-С|^Д-П|^ПА|^Д-ЗМ/i.test(gId)) instId = "water"
+  else if (/^Д-БТ|^М-БТ|^Д-ВС|^П-/i.test(gId)) instId = "biotech"
+  else if (/^Д-ЛА|^М-ЛА|^ЛА|^Д-ПО/i.test(gId)) instId = "horticulture"
+  else if (/^Д-ТП|^Т-|^Д-СТ/i.test(gId)) instId = "tech"
+
+  let course = 1
+  if (/20\d|2-\d| 02-|-25/i.test(gId)) course = 2
+  else if (/30\d|3-\d| 03-/i.test(gId)) course = 3
+  else if (/40\d|4-\d| 04-/i.test(gId)) course = 4
+  else if (/50\d|5-\d| 05-/i.test(gId)) course = 5
+
+  return { instId, course }
+}
+
 function GroupSheet({
   current,
   saved,
@@ -2075,82 +2201,181 @@ function GroupSheet({
   onDelete: (id: string) => void
   onClose: () => void
 }) {
-  const [adding, setAdding] = useState(false)
+  const [viewMode, setViewMode] = useState<"hierarchy" | "search">("hierarchy")
   const [query, setQuery] = useState("")
   const [searchMode, setSearchMode] = useState<"group" | "teacher">("group")
+  const [selectedInst, setSelectedInst] = useState<string>("agrobio")
+  const [selectedCourse, setSelectedCourse] = useState<number>(1)
+
   const allList = searchMode === "group" ? RGAU_GROUPS : RGAU_TEACHERS
   const suggestions =
     query.length >= 1
       ? allList
           .filter((g) => g.toLowerCase().includes(query.toLowerCase()))
-          .slice(0, 8)
+          .slice(0, 15)
       : []
+
+  const hierarchyGroups = RGAU_GROUPS.filter((gId) => {
+    const meta = getGroupMeta(gId)
+    return meta.instId === selectedInst && meta.course === selectedCourse
+  })
+
   function pick(id: string) {
     onSelect(id)
     onClose()
   }
+
+  const currentMeta = getGroupMeta(current)
+  const currentInst = INSTITUTES_LIST.find((i) => i.id === currentMeta.instId)
+
   return (
-    <Sheet onClose={onClose} title="Расписания">
-      <div className="px-4 pb-6 space-y-3">
-        {saved.length > 0 && (
-          <div className="space-y-1.5">
-            {saved.map((g) => {
-              const isCur = g === current
-              return (
-                <div
-                  key={g}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-2xl border transition-all ${
-                    isCur ? "border-accent bg-muted" : "border-border bg-card"
-                  }`}
-                >
-                  <button
-                    onClick={() => pick(g)}
-                    className="flex-1 flex items-center gap-3 min-w-0 text-left"
-                  >
-                    <div
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                        isCur ? "bg-primary" : "bg-muted"
+    <Sheet onClose={onClose} title="Выбор группы и расписания">
+      <div className="px-4 pb-6 space-y-4">
+        {/* Active Chosen Group Card */}
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-primary/10 border border-primary/30 shadow-xs">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center font-black text-sm flex-shrink-0 shadow-xs">
+              {current.slice(0, 2)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold text-primary uppercase tracking-wider">
+                Текущая выбранная группа
+              </p>
+              <p className="text-base font-bold text-fg truncate leading-tight mt-0.5">
+                {current}
+              </p>
+              <p className="text-[11px] text-muted-fg truncate mt-0.5">
+                {currentInst?.name || "РГАУ-МСХА им. К.А. Тимирязева"} · {currentMeta.course} курс
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-primary px-2.5 py-1 rounded-full bg-primary/15 border border-primary/20 flex-shrink-0">
+            Активна
+          </span>
+        </div>
+
+        {/* View Mode Switcher: Hierarchy vs Search */}
+        <div className="flex bg-muted rounded-xl p-0.5 gap-0.5 text-xs font-bold">
+          <button
+            onClick={() => setViewMode("hierarchy")}
+            className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${
+              viewMode === "hierarchy"
+                ? "bg-card text-fg shadow-xs"
+                : "text-muted-fg hover:text-fg"
+            }`}
+          >
+            🏛 Институт → Курс → Группа
+          </button>
+          <button
+            onClick={() => setViewMode("search")}
+            className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${
+              viewMode === "search"
+                ? "bg-card text-fg shadow-xs"
+                : "text-muted-fg hover:text-fg"
+            }`}
+          >
+            🔍 Поиск ({RGAU_GROUPS.length} групп)
+          </button>
+        </div>
+
+        {viewMode === "hierarchy" ? (
+          <div className="space-y-3.5">
+            {/* 1. Institute Selector */}
+            <div>
+              <p className="text-xs font-semibold text-muted-fg mb-1.5">
+                1. Выберите институт:
+              </p>
+              <div className="grid grid-cols-2 gap-1.5 max-h-44 overflow-y-auto pr-0.5">
+                {INSTITUTES_LIST.map((inst) => {
+                  const isSel = selectedInst === inst.id
+                  return (
+                    <button
+                      key={inst.id}
+                      onClick={() => setSelectedInst(inst.id)}
+                      className={`text-left p-2.5 rounded-xl text-xs border transition-all cursor-pointer ${
+                        isSel
+                          ? "bg-primary text-white border-primary shadow-xs font-bold"
+                          : "bg-card border-border hover:bg-muted text-fg"
+                      }`}
+                      title={inst.name}
+                    >
+                      <p className="font-bold truncate">{inst.short}</p>
+                      <p className={`text-[10px] truncate ${isSel ? "text-white/80" : "text-muted-fg"}`}>
+                        {inst.name}
+                      </p>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* 2. Course Selector */}
+            <div>
+              <p className="text-xs font-semibold text-muted-fg mb-1.5">
+                2. Выберите курс:
+              </p>
+              <div className="grid grid-cols-5 gap-1">
+                {[
+                  { c: 1, label: "1 курс" },
+                  { c: 2, label: "2 курс" },
+                  { c: 3, label: "3 курс" },
+                  { c: 4, label: "4 курс" },
+                  { c: 5, label: "5 курс / Маг." },
+                ].map(({ c, label }) => {
+                  const isSel = selectedCourse === c
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setSelectedCourse(c)}
+                      className={`py-2 px-1 rounded-xl text-xs font-bold border transition-all cursor-pointer text-center ${
+                        isSel
+                          ? "bg-primary text-white border-primary shadow-xs"
+                          : "bg-card border-border hover:bg-muted text-fg"
                       }`}
                     >
-                      <span
-                        className={`text-xs font-extrabold ${
-                          isCur ? "text-white" : "text-muted-fg"
-                        }`}
-                      >
-                        {g.slice(0, 2)}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-sm font-bold ${
-                          isCur ? "text-primary" : "text-fg"
-                        }`}
-                      >
-                        {g}
-                      </p>
-                      {isCur && (
-                        <p className="text-[11px] text-accent font-medium">
-                          Активное
-                        </p>
-                      )}
-                    </div>
-                    {isCur && I.check(14, "text-primary flex-shrink-0")}
-                  </button>
-                  {!isCur && (
-                    <button
-                      onClick={() => onDelete(g)}
-                      className="w-7 h-7 flex items-center justify-center rounded-xl hover:bg-red-bg text-muted-fg hover:text-red transition-colors flex-shrink-0"
-                    >
-                      {I.close(13)}
+                      {label}
                     </button>
-                  )}
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* 3. Group Buttons */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <p className="text-xs font-semibold text-muted-fg">
+                  3. Выберите группу ({hierarchyGroups.length}):
+                </p>
+              </div>
+              {hierarchyGroups.length > 0 ? (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5 max-h-56 overflow-y-auto pr-0.5">
+                  {hierarchyGroups.map((gId) => {
+                    const isCur = gId === current
+                    return (
+                      <button
+                        key={gId}
+                        onClick={() => pick(gId)}
+                        className={`p-2 rounded-xl text-xs font-bold border text-center transition-all cursor-pointer truncate ${
+                          isCur
+                            ? "bg-primary text-white border-primary shadow-xs ring-2 ring-primary/40"
+                            : "bg-card border-border hover:border-primary/40 hover:bg-muted text-fg"
+                        }`}
+                        title={gId}
+                      >
+                        {gId}
+                      </button>
+                    )
+                  })}
                 </div>
-              )
-            })}
+              ) : (
+                <div className="p-4 rounded-xl bg-muted/60 text-center text-xs text-muted-fg">
+                  В выбранном курсе нет групп для данного института. Попробуйте другой курс или воспользуйтесь поиском.
+                </div>
+              )}
+            </div>
           </div>
-        )}
-        {adding ? (
-          <div className="bg-muted rounded-2xl p-3 space-y-2.5">
+        ) : (
+          <div className="space-y-3">
             <div className="flex bg-card rounded-xl p-0.5 gap-0.5">
               {(["group", "teacher"] as const).map((m) => (
                 <button
@@ -2159,18 +2384,19 @@ function GroupSheet({
                     setSearchMode(m)
                     setQuery("")
                   }}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                     searchMode === m
                       ? "bg-primary text-white"
                       : "text-muted-fg hover:text-fg"
                   }`}
                 >
-                  {m === "group" ? "Группа" : "Преподаватель"}
+                  {m === "group" ? `Группы (${RGAU_GROUPS.length})` : "Преподаватели"}
                 </button>
               ))}
             </div>
+
             <div className="relative">
-              <div className="flex items-center gap-2 border border-border bg-card rounded-xl px-3 py-2.5 focus-within:border-accent transition-colors">
+              <div className="flex items-center gap-2 border border-border bg-card rounded-xl px-3 py-2.5 focus-within:border-primary transition-colors">
                 {I.search(14, "text-muted-fg flex-shrink-0")}
                 <input
                   key={searchMode}
@@ -2178,8 +2404,8 @@ function GroupSheet({
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder={
                     searchMode === "group"
-                      ? "Например ДЭ-17-26..."
-                      : "Введите ФИО..."
+                      ? "Введите номер группы (например, ДА 01-26, ДЭ 17-26)..."
+                      : "Введите фамилию преподавателя..."
                   }
                   className="flex-1 text-sm bg-transparent outline-none text-fg placeholder:text-muted-fg"
                   autoFocus
@@ -2187,51 +2413,35 @@ function GroupSheet({
                 {query && (
                   <button
                     onClick={() => setQuery("")}
-                    className="text-muted-fg"
+                    className="text-muted-fg hover:text-fg cursor-pointer"
                   >
                     {I.close(13)}
                   </button>
                 )}
               </div>
+
               {suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-card border border-border rounded-2xl shadow-lg overflow-hidden z-10 max-h-52 overflow-y-auto">
+                <div className="mt-2 bg-card border border-border rounded-2xl shadow-lg overflow-hidden max-h-56 overflow-y-auto">
                   {suggestions.map((g) => (
                     <button
                       key={g}
                       onClick={() => pick(g)}
-                      className="w-full text-left px-4 py-2.5 text-sm font-semibold text-fg hover:bg-muted transition-colors border-b border-border last:border-0"
+                      className="w-full text-left px-4 py-2.5 text-sm font-semibold text-fg hover:bg-muted transition-colors border-b border-border last:border-0 flex items-center justify-between cursor-pointer"
                     >
-                      {g}
+                      <span>{g}</span>
+                      <span className="text-xs text-primary font-bold">Выбрать →</span>
                     </button>
                   ))}
                 </div>
               )}
             </div>
-            {query.length > 1 && suggestions.length === 0 && (
-              <button
-                onClick={() => pick(query)}
-                className="w-full py-2.5 bg-primary text-white text-sm font-bold rounded-xl"
-              >
-                Добавить «{query}»
-              </button>
+
+            {query.length >= 2 && suggestions.length === 0 && (
+              <div className="text-center py-4 text-xs text-muted-fg">
+                Ничего не найдено по запросу «{query}»
+              </div>
             )}
-            <button
-              onClick={() => {
-                setAdding(false)
-                setQuery("")
-              }}
-              className="w-full text-xs text-muted-fg py-1.5 text-center"
-            >
-              Отмена
-            </button>
           </div>
-        ) : (
-          <button
-            onClick={() => setAdding(true)}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-dashed border-accent/40 text-sm font-semibold text-primary hover:bg-muted transition-colors"
-          >
-            {I.plus(14)} Добавить расписание
-          </button>
         )}
       </div>
     </Sheet>
@@ -2311,17 +2521,17 @@ function AppHeader({
               <button
                 onClick={onSyncOpen}
                 className="flex items-center gap-1.5 px-2 py-1 rounded-xl bg-card border border-border/80 text-xs font-semibold text-fg shadow-xs hover:border-primary/40 hover:bg-muted/40 transition-all cursor-pointer"
-                title="Синхронизация с timacad.ru (04:00 МСК)"
+                title="Синхронизация с timacad.ru"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
                 <span className="text-[10px] font-bold text-muted-fg hidden sm:inline">
-                  04:00
+                  timacad.ru
                 </span>
               </button>
             )}
           </div>
           <div className="flex gap-1 items-center">
-            {!isStandaloneMode() && onOpenIosPrompt && (
+            {((isIosDevice() || isIPadDevice()) && getIosBrowserType() === "safari" && !isStandaloneMode() && onOpenIosPrompt) && (
               <button
                 onClick={onOpenIosPrompt}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/25 text-xs font-bold text-primary hover:bg-primary/20 transition-colors cursor-pointer"
@@ -2353,16 +2563,6 @@ function AppHeader({
       ) : (
         <div className="flex items-center justify-between px-4 pb-2.5">
           <div className="flex items-center gap-2 min-w-0">
-            {onGoHome && (
-              <button
-                onClick={onGoHome}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-muted hover:bg-border text-fg text-xs font-bold transition-all active:scale-95 cursor-pointer flex-shrink-0"
-                title="Вернуться к расписанию (Домой)"
-              >
-                <span>🏠</span>
-                <span className="text-[11px] font-bold">Домой</span>
-              </button>
-            )}
             <h1 className="text-xl sm:text-2xl font-extrabold text-fg truncate">
               {({
                 campus: "Кампус",
@@ -2384,7 +2584,7 @@ function AppHeader({
             )}
           </div>
           <div className="flex gap-1 items-center">
-            {!isStandaloneMode() && onOpenIosPrompt && (
+            {((isIosDevice() || isIPadDevice()) && getIosBrowserType() === "safari" && !isStandaloneMode() && onOpenIosPrompt) && (
               <button
                 onClick={onOpenIosPrompt}
                 className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/25 text-xs font-bold text-primary hover:bg-primary/20 transition-colors cursor-pointer"
@@ -2457,30 +2657,41 @@ function TravelBanner({
   to: string
   breakMin: number
 }) {
-  const walk = getWalk(from, to)
-  if (walk === null) return null
-  if (walk === 0)
+  const walkInfo = calculateWalkBetween(from, to)
+  if (!walkInfo) return null
+  if (walkInfo.mins === 0)
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-muted text-muted-fg text-xs font-medium mx-4">
         {I.bldg(12, "flex-shrink-0")}
         <span>В этом же корпусе</span>
       </div>
     )
-  const tight = walk >= breakMin - 3
+  const tight = walkInfo.mins >= breakMin - 3
   return (
     <div
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium mx-4 ${
+      className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl text-xs font-medium mx-4 ${
         tight
           ? "bg-amber-bg text-amber border border-amber/20"
           : "bg-muted text-muted-fg"
       }`}
     >
-      {I.route(13, "flex-shrink-0")}
-      <span>
-        {tight
-          ? `⚠ Мало времени: ${walk} мин до ${getBldgGenitive(to)}`
-          : `Переход: ${walk} мин до ${getBldgGenitive(to)}`}
-      </span>
+      <div className="flex items-center gap-2 min-w-0">
+        {I.route(13, "flex-shrink-0")}
+        <span className="truncate">
+          {walkInfo.text}
+        </span>
+      </div>
+      {walkInfo.routeUrl && (
+        <a
+          href={walkInfo.routeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[11px] font-semibold text-primary underline flex-shrink-0 hover:opacity-80"
+          title="Открыть пешеходный маршрут на Яндекс.Картах"
+        >
+          Маршрут →
+        </a>
+      )}
     </div>
   )
 }
@@ -4527,12 +4738,20 @@ function DayView({
   onEat: () => void
 }) {
   const [restOpen, setRestOpen] = useState(false)
-  const [weekFilter, setWeekFilter] = useState<"current" | "all">("all")
+  const [weekFilter, setWeekFilter] = useState<"current" | "all">("current")
   const activeDays = allDays ?? ALL_DAYS
   const data = activeDays.find((d) => d.date === dateStr)
   const isToday = dateStr === TODAY
   const todayEvents = getAppEvents().filter(
-    (e) => e.date === dateStr && !dismissedEvents.includes(e.id),
+    (e) =>
+      e.date === dateStr &&
+      !dismissedEvents.includes(e.id) &&
+      e.category === "announcement" &&
+      (e.title.toLowerCase().includes("расписан") ||
+        e.title.toLowerCase().includes("пар") ||
+        e.title.toLowerCase().includes("занят") ||
+        e.title.toLowerCase().includes("сесси") ||
+        e.title.toLowerCase().includes("перенос")),
   )
   const weekNum = getStudyWeek(dateStr)
   const isOddWeek = weekNum % 2 !== 0
@@ -4670,52 +4889,19 @@ function DayView({
             </button>
           </div>
         ))}
-      {isToday && (
-        <div className="mx-4 bg-card border border-border rounded-xl px-3 py-2.5 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-accent animate-pulse flex-shrink-0" />
-          {nowClass ? (
-            <>
-              <span className="text-xs text-muted-fg">Сейчас:</span>
-              <span className="font-semibold text-fg text-xs flex-1 truncate">
-                {nowClass.subject}
-              </span>
-              <span className="text-xs text-muted-fg font-mono flex-shrink-0">
-                до {nowClass.end}
-              </span>
-            </>
-          ) : nextClass ? (
-            <>
-              <span className="text-xs text-muted-fg">До пары:</span>
-              <span className="font-semibold text-primary text-xs font-mono">
-                {(() => {
-                  const d = toMin(nextClass.start) - nowMin
-                  const h = Math.floor(d / 60)
-                  const m = d % 60
-                  return h > 0 ? `${h}ч ${m}мин` : `${m} мин`
-                })()}
-              </span>
-              <span className="text-xs text-muted-fg flex-1 truncate">
-                · {nextClass.subject}
-              </span>
-            </>
-          ) : (
-            <span className="text-xs text-muted-fg">Все пары завершены</span>
-          )}
-        </div>
-      )}
       <div className="mx-4 flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-primary text-white font-bold shadow-xs">
             {weekNum}-я нед
           </span>
           <span
-            className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+            className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
               isOddWeek
                 ? "bg-blue-bg text-blue border border-blue/30"
                 : "bg-amber-bg text-amber border border-amber/30"
             }`}
           >
-            {isOddWeek ? "Верхняя (неч)" : "Нижняя (чет)"}
+            {isOddWeek ? "Верхняя неделя (Нечётная)" : "Нижняя неделя (Чётная)"}
           </span>
           {activeTodayCount > 0 && (
             <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent/15 text-accent font-semibold">
@@ -4977,9 +5163,26 @@ function PageSchedule({
     return true
   })
 
+  const currentWeekNum = getStudyWeek(selDate)
+  const currentIsOdd = currentWeekNum % 2 !== 0
+  const currentActiveClasses = (currentData?.classes ?? []).filter(
+    (c) =>
+      !c.weekType ||
+      c.weekType === "all" ||
+      (currentIsOdd ? c.weekType === "odd" : c.weekType === "even"),
+  )
+
   const weekTotalClasses = weekDays.reduce((acc, d) => {
     const dayData = activeDays.find((x) => x.date === d)
-    return acc + (dayData?.classes.length ?? 0)
+    const dayWeekNum = getStudyWeek(d)
+    const dayIsOdd = dayWeekNum % 2 !== 0
+    const filtered = (dayData?.classes ?? []).filter(
+      (c) =>
+        !c.weekType ||
+        c.weekType === "all" ||
+        (dayIsOdd ? c.weekType === "odd" : c.weekType === "even"),
+    )
+    return acc + filtered.length
   }, 0)
 
   const bellStatus = getCurrentBellStatus(nowMin)
@@ -5000,7 +5203,7 @@ function PageSchedule({
             className="text-lg font-extrabold text-primary leading-none"
             style={{ fontFamily: "var(--font-mono)" }}
           >
-            {currentData?.classes.length ?? 0}{" "}
+            {currentActiveClasses.length}{" "}
             <span className="text-xs font-normal text-muted-fg">
               / {weekTotalClasses}
             </span>
@@ -5022,7 +5225,7 @@ function PageSchedule({
       <div className="px-4 mb-2.5">
         <button
           onClick={() => setBellOpen(true)}
-          className="w-full flex items-center justify-between p-2.5 rounded-2xl border border-border/80 bg-card/90 hover:border-primary/40 hover:bg-muted/50 transition-all text-left group shadow-xs active:scale-[0.99]"
+          className="w-full flex items-center justify-between p-2.5 rounded-2xl border border-border/80 bg-card/90 hover:border-primary/40 hover:bg-muted/50 transition-all text-left group shadow-xs active:scale-[0.99] cursor-pointer"
         >
           <div className="flex items-center gap-2.5 min-w-0">
             <div
@@ -5042,7 +5245,7 @@ function PageSchedule({
                   {bellStatus.text}
                 </p>
                 <span className="text-[10px] font-semibold text-accent px-1.5 py-0.5 rounded-md bg-accent/10">
-                  Звонки
+                  Режим пар
                 </span>
               </div>
               <p className="text-[11px] text-muted-fg truncate">
@@ -5067,7 +5270,7 @@ function PageSchedule({
       <div className="px-4 mb-2 flex items-center gap-2">
         <button
           onClick={() => setShowWeek((w) => !w)}
-          className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-xl border transition-all ${
+          className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-xl border transition-all cursor-pointer ${
             showWeek
               ? "bg-primary text-white border-primary"
               : "border-border text-muted-fg bg-card hover:border-accent/50"
@@ -5078,7 +5281,7 @@ function PageSchedule({
         {!isCurrentWeek && (
           <button
             onClick={() => setSelDate(TODAY)}
-            className="text-xs font-semibold text-primary hover:text-accent transition-colors"
+            className="text-xs font-semibold text-primary hover:text-accent transition-colors cursor-pointer"
           >
             {I.chev("left", 12)} Сегодня
           </button>
@@ -5090,14 +5293,22 @@ function PageSchedule({
       >
         <button
           onClick={() => shiftWeek(-1)}
-          className="flex-shrink-0 flex items-center justify-center w-9 h-12 rounded-xl border border-border bg-card text-muted-fg hover:text-fg hover:border-accent/40 transition-all"
+          className="flex-shrink-0 flex items-center justify-center w-9 h-12 rounded-xl border border-border bg-card text-muted-fg hover:text-fg hover:border-accent/40 transition-all cursor-pointer"
         >
           {I.chev("left", 16)}
         </button>
         {weekDays.map((d) => {
           const dd = new Date(d + "T00:00:00")
           const dayData = activeDays.find((x) => x.date === d)
-          const clsCount = dayData?.classes.length ?? 0
+          const dayWeekNum = getStudyWeek(d)
+          const dayIsOdd = dayWeekNum % 2 !== 0
+          const activeClasses = (dayData?.classes ?? []).filter(
+            (c) =>
+              !c.weekType ||
+              c.weekType === "all" ||
+              (dayIsOdd ? c.weekType === "odd" : c.weekType === "even"),
+          )
+          const clsCount = activeClasses.length
           const isSel = d === selDate
           const isTod = d === TODAY
           const dayIdx = dd.getDay() === 0 ? 6 : dd.getDay() - 1
@@ -5106,7 +5317,7 @@ function PageSchedule({
             <button
               key={d}
               onClick={() => setSelDate(d)}
-              className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-xl border transition-all duration-150 min-w-[2.8rem] active:scale-95 ${
+              className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-xl border transition-all duration-150 min-w-[2.8rem] active:scale-95 cursor-pointer ${
                 isSel
                   ? "bg-primary border-primary text-white shadow-md"
                   : isTod
@@ -5141,7 +5352,7 @@ function PageSchedule({
         })}
         <button
           onClick={() => shiftWeek(1)}
-          className="flex-shrink-0 flex items-center justify-center w-9 h-12 rounded-xl border border-border bg-card text-muted-fg hover:text-fg hover:border-accent/40 transition-all"
+          className="flex-shrink-0 flex items-center justify-center w-9 h-12 rounded-xl border border-border bg-card text-muted-fg hover:text-fg hover:border-accent/40 transition-all cursor-pointer"
         >
           {I.chev("right", 16)}
         </button>
@@ -5152,7 +5363,15 @@ function PageSchedule({
             const data = activeDays.find((x) => x.date === d)
             const dd = new Date(d + "T00:00:00")
             const isTod = d === TODAY
-            if (!data || !data.classes.length)
+            const dayWeekNum = getStudyWeek(d)
+            const dayIsOdd = dayWeekNum % 2 !== 0
+            const dayClasses = (data?.classes ?? []).filter(
+              (c) =>
+                !c.weekType ||
+                c.weekType === "all" ||
+                (dayIsOdd ? c.weekType === "odd" : c.weekType === "even"),
+            )
+            if (!data || !dayClasses.length)
               return (
                 <div
                   key={d}
@@ -5176,11 +5395,11 @@ function PageSchedule({
               <button
                 key={d}
                 onClick={() => setSelDate(d)}
-                className={`w-full bg-card border rounded-xl overflow-hidden ${
-                  isTod ? "border-accent" : "border-border"
+                className={`w-full bg-card border rounded-xl overflow-hidden text-left cursor-pointer transition-colors ${
+                  isTod ? "border-accent bg-accent/5" : "border-border hover:border-primary/40"
                 }`}
               >
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted">
+                <div className="flex items-center gap-2 px-3 py-2 bg-muted/60">
                   <div className="text-center w-10 flex-shrink-0">
                     <p className="text-[10px] text-muted-fg font-semibold">
                       {WDAY[dd.getDay() === 0 ? 6 : dd.getDay() - 1]}
@@ -5192,21 +5411,23 @@ function PageSchedule({
                       {dd.getDate()}
                     </p>
                   </div>
-                  {data.classes.slice(0, 4).map((c) => (
-                    <span
-                      key={c.id}
-                      className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${TYPE_CFG[c.type].chip}`}
-                    >
-                      {c.start}
-                    </span>
-                  ))}
-                  {data.classes.length > 4 && (
-                    <span className="text-[10px] text-muted-fg">
-                      +{data.classes.length - 4}
-                    </span>
-                  )}
+                  <div className="flex flex-wrap gap-1 items-center flex-1 min-w-0">
+                    {dayClasses.slice(0, 4).map((c) => (
+                      <span
+                        key={c.id}
+                        className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${TYPE_CFG[c.type].chip}`}
+                      >
+                        {c.start}–{c.end}
+                      </span>
+                    ))}
+                    {dayClasses.length > 4 && (
+                      <span className="text-[10px] text-muted-fg font-medium">
+                        +{dayClasses.length - 4}
+                      </span>
+                    )}
+                  </div>
                   {isTod && (
-                    <span className="ml-auto text-[10px] font-bold text-primary">
+                    <span className="ml-auto text-[10px] font-bold text-primary flex-shrink-0">
                       Сегодня
                     </span>
                   )}
@@ -6291,7 +6512,7 @@ function PageEvents({
               Сверка с порталом timacad.ru
             </p>
             <p className="text-[10px] text-muted-fg truncate">
-              {lastSyncDisplay || "Ежедневно в 04:00 МСК"} · 18 официальных источников
+              {lastSyncDisplay || "Синхронизировано"} · 18 официальных источников
             </p>
           </div>
         </div>
@@ -6719,7 +6940,7 @@ function PageProfile({
     } catch {}
     onToast?.(
       v
-        ? "Ежедневная сверка включена (ночной парсинг 04:00 МСК на timacad.ru)"
+        ? "Ежедневная сверка включена (фоновое обновление с timacad.ru)"
         : "Автоматическая сверка отключена старостой",
       "info",
     )
@@ -7003,7 +7224,7 @@ function PageProfile({
                 </p>
               </div>
             </div>
-          ) : (
+          ) : (isIosDevice() || isIPadDevice()) && getIosBrowserType() === "safari" ? (
             <button
               onClick={onOpenIosPrompt}
               className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-muted transition-colors text-left cursor-pointer"
@@ -7023,6 +7244,18 @@ function PageProfile({
               </div>
               {I.chev("right", 14, "text-muted-fg")}
             </button>
+          ) : (
+            <div className="flex items-center gap-3 p-3 bg-muted rounded-xl">
+              <span className="text-base">🌐</span>
+              <div>
+                <p className="text-xs font-bold text-fg">
+                  Веб-версия активна
+                </p>
+                <p className="text-[11px] text-muted-fg">
+                  Автономный режим и кэш данных работают в текущем браузере
+                </p>
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -7106,7 +7339,7 @@ function PageProfile({
                       Ежедневная сверка с сайтом
                     </p>
                     <p className="text-xs text-muted-fg">
-                      Авто-сверка расписания ночью в 04:00 МСК (timacad.ru)
+                      Автоматическая сверка расписания (timacad.ru)
                     </p>
                   </div>
                   <Toggle
@@ -7179,7 +7412,7 @@ function PageProfile({
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-sm font-bold text-fg">Сверка с timacad.ru</span>
           <span className="ml-auto text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-            04:00 МСК
+            Актуально
           </span>
         </div>
         <div className="p-4 space-y-3">
@@ -7187,7 +7420,7 @@ function PageProfile({
             <div className="min-w-0">
               <p className="text-xs font-bold text-fg">Статус актуальности данных</p>
               <p className="text-[11px] text-muted-fg mt-0.5">
-                {lastSyncDisplay || "Сегодня в 04:00 МСК"} · {OFFICIAL_TIMACAD_SOURCES.length} источников
+                {lastSyncDisplay || "Синхронизировано"} · {OFFICIAL_TIMACAD_SOURCES.length} источников
               </p>
             </div>
             {onOpenSyncModal && (
@@ -7201,7 +7434,7 @@ function PageProfile({
           </div>
           <div className="flex items-center justify-between pt-2 border-t border-border">
             <div className="flex-1 min-w-0 pr-2">
-              <p className="text-xs font-semibold text-fg">Авто-парсинг в 4:00 утра</p>
+              <p className="text-xs font-semibold text-fg">Фоновая авто-сверка данных</p>
               <p className="text-[10px] text-muted-fg">Автономная сверка расписания на устройстве</p>
             </div>
             <Toggle value={autoSync} onChange={handleAutoSyncToggle} />
@@ -7227,7 +7460,7 @@ function PageProfile({
               </p>
               <div className="flex items-center gap-1.5 mt-2 text-[10px] text-muted-fg">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <span>Авто-очистка: события старше 45 дней и буферы удаляются в 04:00 МСК</span>
+                <span>Авто-очистка: события старше 45 дней и временные буферы очищаются автоматически</span>
               </div>
             </div>
             <button
@@ -7616,10 +7849,10 @@ function OnboardingScreen({
               <div className="space-y-1.5">
                 {isStudent
                   ? [
-                      ["АГ", "АГ-204", "Агрономия"],
-                      ["ДЭ", "ДЭ-17-26", "Экономика"],
-                      ["ЭК", "ЭК-101", "Экономика"],
-                      ["ТТ", "ТТ-11-26", "Техника"],
+                      ["ДА", "ДА 01-26", "Агробиотехнология"],
+                      ["ДЭ", "ДЭ 17-26", "Экономика и финансы"],
+                      ["ТТ", "ТТ 11-26", "Механика и мобильные системы"],
+                      ["ЗУ", "ЗУ 11-26", "Землеустройство и кадастры"],
                     ].map(([abbr, g, hint]) => (
                       <button
                         key={g}
@@ -7754,9 +7987,9 @@ export default function App() {
   const [syncModalOpen, setSyncModalOpen] = useState(false)
   const [lastSyncDisplay, setLastSyncDisplay] = useState(() => {
     try {
-      return localStorage.getItem("rgau_last_sync_display") || "Сегодня в 04:00 МСК"
+      return localStorage.getItem("rgau_last_sync_display") || "Синхронизировано"
     } catch {
-      return "Сегодня в 04:00 МСК"
+      return "Синхронизировано"
     }
   })
 
@@ -7883,12 +8116,27 @@ export default function App() {
       localStorage.setItem("rgau_role", r)
     } catch {}
   }
-  const [groupId, setGroupId] = useState("АГ-204")
-  const [savedGroups, setSavedGroups] = useState<string[]>([
-    "АГ-204",
-    "АГ-205",
-    "ЭК-101",
-  ])
+  const [groupId, setGroupId] = useState<string>(() => {
+    try {
+      return localStorage.getItem("rgau_my_group") || "ДА 01-26"
+    } catch {
+      return "ДА 01-26"
+    }
+  })
+  const [savedGroups, setSavedGroups] = useState<string[]>(() => {
+    try {
+      const my = localStorage.getItem("rgau_my_group")
+      return my ? [my] : ["ДА 01-26"]
+    } catch {
+      return ["ДА 01-26"]
+    }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("rgau_saved_groups", JSON.stringify(savedGroups))
+    } catch {}
+  }, [savedGroups])
   const [allDays, setAllDays] = useState<DaySchedule[]>(() => {
     const initial = buildSchedule(groupId)
     ALL_DAYS = initial
@@ -8223,12 +8471,18 @@ export default function App() {
       {groupSheetOpen && (
         <GroupSheet
           current={groupId}
-          saved={savedGroups}
+          saved={[groupId]}
           onSelect={(id) => {
             setGroupId(id)
-            setSavedGroups((p) => (p.includes(id) ? p : [...p, id]))
+            setSavedGroups([id])
+            try {
+              localStorage.setItem("rgau_my_group", id)
+              localStorage.setItem("rgau_saved_groups", JSON.stringify([id]))
+            } catch {}
           }}
-          onDelete={(id) => setSavedGroups((p) => p.filter((x) => x !== id))}
+          onDelete={(id) => {
+            setSavedGroups([id])
+          }}
           onClose={() => setGroupSheetOpen(false)}
         />
       )}

@@ -172,7 +172,13 @@ export default function IosInstallPrompt({
   const [isIpad, setIsIpad] = useState(false)
 
   useEffect(() => {
-    // If controlled via props, respect parent state
+    // Strictly restrict to real iOS / iPad devices running Safari in non-standalone browser mode
+    if (!isIosDevice() || isStandaloneMode() || getIosBrowserType() !== "safari") {
+      setInternalVisible(false)
+      return
+    }
+
+    // If controlled via props, respect parent state on iOS Safari
     if (typeof isOpen === "boolean") {
       setInternalVisible(isOpen)
       setBrowserType(getIosBrowserType())
@@ -211,7 +217,14 @@ export default function IosInstallPrompt({
     onClose?.()
   }
 
-  if (!internalVisible) return null
+  if (
+    !internalVisible ||
+    !isIosDevice() ||
+    isStandaloneMode() ||
+    getIosBrowserType() !== "safari"
+  ) {
+    return null
+  }
 
   return (
     <div

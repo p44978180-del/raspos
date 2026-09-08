@@ -381,7 +381,7 @@ export async function runTimacadDailySync(force: boolean = false): Promise<SyncR
       ).length,
       isAutoSync: !force,
       message: hasRemoteSuccess
-        ? `Синхронизировано ${OFFICIAL_TIMACAD_SOURCES.length} источников РГАУ-МСХА в 04:00 МСК (${groupCount} групп, ${classCount} пар)`
+        ? `Синхронизировано ${OFFICIAL_TIMACAD_SOURCES.length} источников РГАУ-МСХА (${groupCount} групп, ${classCount} пар)`
         : `Использованы сохранённые данные РГАУ-МСХА (${OFFICIAL_TIMACAD_SOURCES.length} источников офлайн)`,
       freshFeed: freshFeedList,
       gcResult,

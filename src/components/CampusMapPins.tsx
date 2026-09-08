@@ -510,28 +510,29 @@ export const CAMPUS_PLAN_MARKERS: CampusPlanMarker[] = [
   },
   {
     id: "bldg-eng",
-    title: "Инженерный корпус (28)",
-    subtitle: "Институт механики и энергетики",
+    title: "28-й учебный корпус (Инженерный)",
+    subtitle: "Институт механики и энергетики им. В.П. Горячкина",
     category: "academic",
     badgeLabel: "28",
     x: 32.8,
     y: 23.5,
     address: "Лиственничная аллея, 2Д",
-    description: "Кафедры тракторов и автомобилей, сельскохозяйственных машин.",
+    description: "Кафедры тракторов и автомобилей, сельскохозяйственных машин, техносферной безопасности.",
     coords: [37.5635, 55.8265],
   },
   {
     id: "bldg-lib",
-    title: "Центральная научная библиотека",
+    title: "Центральная научная библиотека (ЦНБ)",
     subtitle: "ЦНБ им. Железнова",
     category: "academic",
-    badgeLabel: "📖",
+    badgeLabel: "ЦНБ",
     x: 43.0,
     y: 46.0,
     address: "Лиственничная аллея, 2к1",
     description: "Крупнейшая аграрная библиотека России с читальными залами и коворкингом.",
     coords: [37.553, 55.830],
   },
+
 
   // 🏠 Dormitories
   {
@@ -582,6 +583,7 @@ export const CAMPUS_PLAN_MARKERS: CampusPlanMarker[] = [
     description: "Коридорный тип, просторные кухни, настольный теннис.",
     coords: [37.5545, 55.833],
   },
+
   {
     id: "dorm-6",
     title: "Общежитие №6",
@@ -729,10 +731,11 @@ export const CAMPUS_PLAN_MARKERS: CampusPlanMarker[] = [
     coords: [37.5575, 55.835],
   },
 
+
   // ⚽ Sports
   {
     id: "sports-sok",
-    title: "Спортивно-оздоровительный комплекс (СОК)",
+    title: "Спортивный комплекс (СОК РГАУ-МСХА)",
     subtitle: "Главный спорткомплекс РГАУ",
     category: "sports",
     badgeLabel: "СОК",
@@ -794,7 +797,248 @@ export const CAMPUS_PLAN_MARKERS: CampusPlanMarker[] = [
   },
 ]
 
-// ─── Interactive Campus Plan Viewer ────────────────────────────────────────────
+export const ADDITIONAL_CAMPUS_MARKERS: CampusPlanMarker[] = [
+  {
+    id: "bldg-3",
+    title: "3-й учебный корпус",
+    subtitle: "Агрономия и агрометеорология",
+    category: "academic",
+    badgeLabel: "3",
+    x: 48.0,
+    y: 44.0,
+    address: "Тимирязевская ул., 45",
+    description: "Кафедры земледелия, растениеводства и агрометеорологии.",
+    coords: [37.5525, 55.8288],
+  },
+  {
+    id: "bldg-4",
+    title: "4-й учебный корпус",
+    subtitle: "Учебный корпус",
+    category: "academic",
+    badgeLabel: "4",
+    x: 45.0,
+    y: 43.0,
+    address: "Тимирязевская ул., 44",
+    description: "Лекционные аудитории, компьютерные классы, кафедры информатики.",
+    coords: [37.5505, 55.8295],
+  },
+  {
+    id: "bldg-8",
+    title: "8-й учебный корпус",
+    subtitle: "Лесоводство и экология",
+    category: "academic",
+    badgeLabel: "8",
+    x: 62.0,
+    y: 42.0,
+    address: "Лиственничная аллея, 3",
+    description: "Кафедры лесоводства, дендрологии и ландшафтного дизайна.",
+    coords: [37.556, 55.832],
+  },
+  {
+    id: "bldg-10",
+    title: "10-й учебный корпус",
+    subtitle: "Мелиорация и гидротехника",
+    category: "academic",
+    badgeLabel: "10",
+    x: 66.0,
+    y: 35.0,
+    address: "Лиственничная аллея, 9",
+    description: "Институт мелиорации и водного хозяйства, лаборатории гидромелиорации.",
+    coords: [37.5595, 55.834],
+  },
+  {
+    id: "bldg-11",
+    title: "11-й учебный корпус",
+    subtitle: "Производственные мастерские",
+    category: "academic",
+    badgeLabel: "11",
+    x: 69.0,
+    y: 32.0,
+    address: "Лиственничная аллея, 11",
+    description: "Учебно-производственные мастерские и испытательные стенды.",
+    coords: [37.561, 55.8345],
+  },
+  {
+    id: "bldg-26",
+    title: "26-й учебный корпус",
+    subtitle: "Учебно-лабораторный комплекс",
+    category: "academic",
+    badgeLabel: "26",
+    x: 55.0,
+    y: 45.0,
+    address: "Тимирязевская ул., 49",
+    description: "Большие поточные лекционные залы, буфет-столовая, деканаты факультетов.",
+    coords: [37.555, 55.831],
+  },
+  {
+    id: "bldg-27",
+    title: "27-й учебный корпус",
+    subtitle: "Лингвистический центр",
+    category: "academic",
+    badgeLabel: "27",
+    x: 53.0,
+    y: 47.0,
+    address: "Лиственничная аллея, 2",
+    description: "Кафедра иностранных и русского языков, лингафонные кабинеты.",
+    coords: [37.554, 55.8305],
+  },
+  {
+    id: "dorm-5",
+    title: "Общежитие №5",
+    subtitle: "Студенческий городок",
+    category: "dorm",
+    badgeLabel: "5",
+    x: 90.5,
+    y: 30.0,
+    address: "Лиственничная аллея, 6Б",
+    description: "Студенческое общежитие, спортивная комната, учебные холлы.",
+    coords: [37.5555, 55.8338],
+  },
+  {
+    id: "food-26",
+    title: "Буфет-столовая 26-го корпуса",
+    subtitle: "Студенческое кафе",
+    category: "dining",
+    badgeLabel: "🍽",
+    x: 56.0,
+    y: 45.5,
+    address: "26-й учебный корпус, 1 этаж",
+    description: "Горячие обеды, кофе, выпечка, свежие салаты. 08:30 - 17:30.",
+    coords: [37.555, 55.831],
+  },
+  {
+    id: "food-timacad",
+    title: "Столовая «Тимирязевская»",
+    subtitle: "Центральный комбинат питания",
+    category: "dining",
+    badgeLabel: "🍽",
+    x: 60.0,
+    y: 36.0,
+    address: "Лиственничная аллея, 5",
+    description: "Большая двухэтажная студенческая столовая, комплексное меню. 08:00 - 18:00.",
+    coords: [37.5575, 55.835],
+  },
+  {
+    id: "monument-tim",
+    title: "Памятник К.А. Тимирязеву",
+    subtitle: "Исторический памятник",
+    category: "academic",
+    badgeLabel: "🏛",
+    x: 53.0,
+    y: 49.0,
+    address: "Тимирязевская площадь",
+    description: "Памятник великому ученому-физиологу, основоположнику русской научной школы физиологии растений.",
+    coords: [37.5548, 55.83],
+  },
+  {
+    id: "monument-razumovsky",
+    title: "Памятник В.И. Разумовскому",
+    subtitle: "Исторический памятник",
+    category: "academic",
+    badgeLabel: "🏛",
+    x: 51.0,
+    y: 50.0,
+    address: "Исторический парк академии",
+    description: "Памятник выдающемуся ученому, профессору академии.",
+    coords: [37.5532, 55.8308],
+  },
+]
+
+export const ALL_CAMPUS_MARKERS: CampusPlanMarker[] = [
+  ...CAMPUS_PLAN_MARKERS,
+  ...ADDITIONAL_CAMPUS_MARKERS,
+]
+
+export function getBuildingExtras(id: string): { faculties?: string; dining?: string } {
+  switch (id) {
+    case "bldg-1":
+      return {
+        faculties: "Институт агробиотехнологии (агрономия, почвоведение, экология), ректорат",
+        dining: "Большая студенческая столовая 1-го корпуса (1 этаж)",
+      }
+    case "bldg-2":
+      return {
+        faculties: "Ботанические кафедры, селекция растений, физиология растений",
+      }
+    case "bldg-3":
+      return {
+        faculties: "Кафедры земледелия, растениеводства и агрометеорологии",
+      }
+    case "bldg-4":
+      return {
+        faculties: "Компьютерные классы, кафедры информационных технологий",
+      }
+    case "bldg-agrochem":
+      return {
+        faculties: "Кафедры агрохимии, биохимии, защиты растений",
+        dining: "Буфет корпуса агрохимии (холл)",
+      }
+    case "bldg-6":
+      return {
+        faculties: "Институт зоотехнии и биологии, ветеринарные лаборатории",
+        dining: "Студенческий буфет 6-го корпуса",
+      }
+    case "bldg-8":
+      return {
+        faculties: "Кафедры лесоводства, дендрологии и ландшафтного дизайна",
+      }
+    case "bldg-9":
+      return {
+        faculties: "Институт экономики и управления АПК, вычислительный центр",
+        dining: "Буфет 9-го корпуса",
+      }
+    case "bldg-10":
+      return {
+        faculties: "Институт мелиорации и водного хозяйства, лаборатории гидротехники",
+      }
+    case "bldg-11":
+      return {
+        faculties: "Учебно-производственные мастерские и испытательные полигоны",
+      }
+    case "bldg-12":
+      return {
+        faculties: "Институт мелиорации, водного хозяйства и строительства им. А.Н. Костякова",
+        dining: "Буфет 12-го корпуса",
+      }
+    case "bldg-17":
+      return {
+        faculties: "Гуманитарный факультет, лингвистический центр, почвоведение",
+        dining: "Комбинат питания 17-го корпуса (два зала, цокольный этаж)",
+      }
+    case "bldg-26":
+      return {
+        faculties: "Поточные аудитории, деканаты факультетов, лекционные залы",
+        dining: "Буфет-столовая 26-го корпуса (1 этаж)",
+      }
+    case "bldg-27":
+      return {
+        faculties: "Кафедра иностранных языков, лингафонные кабинеты",
+      }
+    case "bldg-eng":
+      return {
+        faculties: "Инженерный институт им. В.П. Горячкина (тракторы, автомобили, с/х машины, техносферная безопасность)",
+        dining: "Буфет инженерного корпуса",
+      }
+    case "bldg-29":
+      return {
+        faculties: "Цифровой центр, инновационные лаборатории генетики и биотехнологий",
+        dining: "Кофейня 29-го корпуса",
+      }
+    case "bldg-lib":
+      return {
+        faculties: "Центральная научная библиотека им. Железнова, коворкинг",
+        dining: "Кофе-пойнт в холле ЦНБ",
+      }
+    case "food-timacad":
+      return {
+        dining: "Большая двухэтажная столовая «Тимирязевская» (комплексные обеды)",
+      }
+    default:
+      return {}
+  }
+}
+
+// ─── Interactive Campus Plan & 3D Yandex Map Viewer ────────────────────────────
 
 export function CampusPlanViewer({
   onSelectMarker,
@@ -803,6 +1047,7 @@ export function CampusPlanViewer({
   onSelectMarker?: (marker: CampusPlanMarker) => void
   selectedMarkerId?: string | null
 }) {
+  const [viewMode, setViewMode] = useState<"yandex" | "schematic">("yandex")
   const [scale, setScale] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [filter, setFilter] = useState<"all" | PinCategory>("all")
@@ -813,7 +1058,7 @@ export function CampusPlanViewer({
 
   useEffect(() => {
     if (selectedMarkerId) {
-      const found = CAMPUS_PLAN_MARKERS.find((m) => m.id === selectedMarkerId)
+      const found = ALL_CAMPUS_MARKERS.find((m) => m.id === selectedMarkerId)
       if (found) {
         setActiveMarker(found)
       }
@@ -871,12 +1116,46 @@ export function CampusPlanViewer({
     isDragging.current = false
   }
 
-  const visibleMarkers = CAMPUS_PLAN_MARKERS.filter(
+  const visibleMarkers = ALL_CAMPUS_MARKERS.filter(
     (m) => filter === "all" || m.category === filter
   )
 
+  const mapCenterLng = activeMarker ? activeMarker.coords[0] : 37.5520
+  const mapCenterLat = activeMarker ? activeMarker.coords[1] : 55.8340
+  const yandexMapUrl = `https://yandex.ru/map-widget/v1/?ll=${mapCenterLng}%2C${mapCenterLat}&z=16&lang=ru_RU&l=map,skl`
+
   return (
     <div className="flex flex-col gap-2.5">
+      {/* View mode switcher: 3D Yandex Map vs Schematic Plan */}
+      <div className="px-4 flex items-center justify-between gap-2">
+        <div className="flex bg-muted/80 rounded-xl p-0.5 gap-0.5 border border-border/60 shadow-xs">
+          <button
+            onClick={() => setViewMode("yandex")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              viewMode === "yandex"
+                ? "bg-primary text-white shadow-xs"
+                : "text-muted-fg hover:text-fg"
+            }`}
+          >
+            📍 3D Яндекс.Карта
+          </button>
+          <button
+            onClick={() => setViewMode("schematic")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              viewMode === "schematic"
+                ? "bg-primary text-white shadow-xs"
+                : "text-muted-fg hover:text-fg"
+            }`}
+          >
+            🗺 Схема кампуса
+          </button>
+        </div>
+
+        <span className="text-[11px] font-semibold text-muted-fg">
+          {visibleMarkers.length} объектов
+        </span>
+      </div>
+
       {/* Category filter chips */}
       <div className="flex items-center gap-1.5 overflow-x-auto px-4 py-1 no-scrollbar">
         {(
@@ -885,9 +1164,9 @@ export function CampusPlanViewer({
             ["academic", "🏛 Корпуса"],
             ["dorm", "🏠 Общежития"],
             ["dining", "🍽 Питание"],
-            ["sports", "⚽ Спорт"],
+            ["sports", "⚽ Спорт и памятники"],
             ["department", "🔬 Кафедры"],
-          ] as [ "all" | PinCategory, string][]
+          ] as ["all" | PinCategory, string][]
         ).map(([cat, label]) => (
           <button
             key={cat}
@@ -903,137 +1182,241 @@ export function CampusPlanViewer({
         ))}
       </div>
 
-      {/* Pannable & Zoomable Map Container */}
-      <div
-        ref={containerRef}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className="relative mx-4 h-72 sm:h-96 rounded-2xl overflow-hidden border border-border bg-[#F4F1EB] dark:bg-[#121612] cursor-grab active:cursor-grabbing select-none"
-      >
-        {/* Transform viewport */}
-        <div
-          className="absolute inset-0 w-full h-full transition-transform duration-75 ease-out"
-          style={{
-            transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
-            transformOrigin: "center center",
-          }}
-        >
-          {/* Authentic Schematic Plan Image */}
-          <img
-            src={campusPlanImg}
-            alt="Схема кампуса РГАУ-МСХА им. К.А. Тимирязева"
-            className="w-full h-full object-contain pointer-events-none drop-shadow"
-            draggable={false}
+      {/* Main Viewport Container */}
+      {viewMode === "yandex" ? (
+        <div className="relative mx-4 h-72 sm:h-96 rounded-2xl overflow-hidden border border-border bg-[#F4F1EB] dark:bg-[#121612] shadow-sm">
+          <iframe
+            src={yandexMapUrl}
+            width="100%"
+            height="100%"
+            frameBorder="0"
+            allowFullScreen
+            title="Интерактивная 3D Яндекс.Карта кампуса РГАУ-МСХА"
+            className="w-full h-full block"
           />
 
-          {/* Coordinate Map Pins */}
+          {/* Quick External Action Controls */}
+          <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-30">
+            <a
+              href={`https://yandex.ru/maps/?ll=${mapCenterLng}%2C${mapCenterLat}&z=16&l=map,skl`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1.5 rounded-xl bg-card/90 backdrop-blur-md border border-border shadow-sm text-xs font-bold text-primary hover:bg-card flex items-center gap-1 transition-all"
+            >
+              Яндекс Карты ↗
+            </a>
+          </div>
+
+          <div className="absolute bottom-2.5 left-2.5 z-30 bg-card/85 backdrop-blur-sm border border-border rounded-xl px-2.5 py-1 text-[11px] font-semibold text-muted-fg pointer-events-none flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Векторный 3D-режим · Центр 55.8340, 37.5520
+          </div>
+        </div>
+      ) : (
+        <div
+          ref={containerRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="relative mx-4 h-72 sm:h-96 rounded-2xl overflow-hidden border border-border bg-[#F4F1EB] dark:bg-[#121612] cursor-grab active:cursor-grabbing select-none"
+        >
+          {/* Transform viewport */}
+          <div
+            className="absolute inset-0 w-full h-full transition-transform duration-75 ease-out"
+            style={{
+              transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+              transformOrigin: "center center",
+            }}
+          >
+            {/* Authentic Schematic Plan Image */}
+            <img
+              src={campusPlanImg}
+              alt="Схема кампуса РГАУ-МСХА им. К.А. Тимирязева"
+              className="w-full h-full object-contain pointer-events-none drop-shadow"
+              draggable={false}
+            />
+
+            {/* Coordinate Map Pins */}
+            {visibleMarkers.map((m) => {
+              const isSel = activeMarker?.id === m.id
+              return (
+                <div
+                  key={m.id}
+                  className="absolute"
+                  style={{
+                    left: `${m.x}%`,
+                    top: `${m.y}%`,
+                    transform: "translate(-50%, -100%)",
+                  }}
+                >
+                  <CampusMapPinMarker
+                    category={m.category}
+                    label={m.badgeLabel}
+                    size={scale > 1.3 ? 34 : 28}
+                    active={isSel}
+                    pulse={isSel}
+                    onClick={() => {
+                      setActiveMarker(m)
+                      if (onSelectMarker) onSelectMarker(m)
+                    }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Map overlay controls */}
+          <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 z-40">
+            <button
+              onClick={() => handleZoom(0.25)}
+              title="Приблизить"
+              className="w-8 h-8 rounded-xl bg-card/90 backdrop-blur border border-border shadow-sm flex items-center justify-center text-fg font-black hover:bg-card hover:text-primary transition-colors text-base cursor-pointer"
+            >
+              +
+            </button>
+            <button
+              onClick={() => handleZoom(-0.25)}
+              title="Отдалить"
+              className="w-8 h-8 rounded-xl bg-card/90 backdrop-blur border border-border shadow-sm flex items-center justify-center text-fg font-black hover:bg-card hover:text-primary transition-colors text-base cursor-pointer"
+            >
+              -
+            </button>
+            <button
+              onClick={handleReset}
+              title="Сбросить масштаб"
+              className="w-8 h-8 rounded-xl bg-card/90 backdrop-blur border border-border shadow-sm flex items-center justify-center text-muted-fg font-medium hover:bg-card hover:text-primary transition-colors text-xs cursor-pointer"
+            >
+              ⟲
+            </button>
+          </div>
+
+          {/* Hint banner */}
+          <div className="absolute bottom-2.5 left-2.5 z-40 bg-card/85 backdrop-blur-sm border border-border rounded-xl px-2.5 py-1 text-[11px] font-semibold text-muted-fg pointer-events-none flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+            Официальная схема кампуса · {visibleMarkers.length} меток
+          </div>
+        </div>
+      )}
+
+      {/* Horizontal Interactive SVG Pins Carousel */}
+      <div className="px-4">
+        <p className="text-[11px] text-muted-fg font-semibold mb-1.5 uppercase tracking-wider">
+          Быстрый выбор объекта (кастомные метки Тимирязевки):
+        </p>
+        <div className="flex gap-2 overflow-x-auto pb-1.5 no-scrollbar">
           {visibleMarkers.map((m) => {
             const isSel = activeMarker?.id === m.id
             return (
-              <div
+              <button
                 key={m.id}
-                className="absolute"
-                style={{
-                  left: `${m.x}%`,
-                  top: `${m.y}%`,
-                  transform: "translate(-50%, -100%)",
+                onClick={() => {
+                  setActiveMarker(m)
+                  if (onSelectMarker) onSelectMarker(m)
                 }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-2xl border transition-all flex-shrink-0 cursor-pointer text-left ${
+                  isSel
+                    ? "bg-primary/10 border-primary shadow-xs"
+                    : "bg-card border-border hover:border-primary/40"
+                }`}
               >
-                <CampusMapPinMarker
+                <CampusBadge
                   category={m.category}
                   label={m.badgeLabel}
-                  size={scale > 1.3 ? 34 : 28}
+                  size="sm"
                   active={isSel}
-                  pulse={isSel}
-                  onClick={() => {
-                    setActiveMarker(m)
-                    if (onSelectMarker) onSelectMarker(m)
-                  }}
                 />
-              </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-fg truncate max-w-[120px]">
+                    {m.title}
+                  </p>
+                  <p className="text-[10px] text-muted-fg truncate max-w-[120px]">
+                    {m.address}
+                  </p>
+                </div>
+              </button>
             )
           })}
-        </div>
-
-        {/* Map overlay controls */}
-        <div className="absolute top-2.5 right-2.5 flex flex-col gap-1.5 z-40">
-          <button
-            onClick={() => handleZoom(0.25)}
-            title="Приблизить"
-            className="w-8 h-8 rounded-xl bg-card/90 backdrop-blur border border-border shadow-sm flex items-center justify-center text-fg font-black hover:bg-card hover:text-primary transition-colors text-base"
-          >
-            +
-          </button>
-          <button
-            onClick={() => handleZoom(-0.25)}
-            title="Отдалить"
-            className="w-8 h-8 rounded-xl bg-card/90 backdrop-blur border border-border shadow-sm flex items-center justify-center text-fg font-black hover:bg-card hover:text-primary transition-colors text-base"
-          >
-            -
-          </button>
-          <button
-            onClick={handleReset}
-            title="Сбросить масштаб"
-            className="w-8 h-8 rounded-xl bg-card/90 backdrop-blur border border-border shadow-sm flex items-center justify-center text-muted-fg font-medium hover:bg-card hover:text-primary transition-colors text-xs"
-          >
-            ⟲
-          </button>
-        </div>
-
-        {/* Hint banner */}
-        <div className="absolute bottom-2.5 left-2.5 z-40 bg-card/85 backdrop-blur-sm border border-border rounded-xl px-2.5 py-1 text-[11px] font-semibold text-muted-fg pointer-events-none flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          Официальная схема кампуса · {visibleMarkers.length} меток
         </div>
       </div>
 
       {/* Selected Marker Detail Card */}
       {activeMarker && (
-        <div className="mx-4 p-3.5 bg-card border border-primary/40 rounded-2xl shadow-sm flex items-start gap-3 animate-slide-up">
-          <CampusBadge
-            category={activeMarker.category}
-            label={activeMarker.badgeLabel}
-            size="lg"
-            pulse
-            className="flex-shrink-0"
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-1">
-              <h4 className="text-sm font-bold text-fg leading-tight">
-                {activeMarker.title}
-              </h4>
-              <button
-                onClick={() => setActiveMarker(null)}
-                className="text-muted-fg hover:text-fg p-0.5"
-              >
-                ✕
-              </button>
+        <div className="mx-4 p-4 bg-card border border-primary/40 rounded-2xl shadow-md space-y-3 animate-slide-up">
+          <div className="flex items-start gap-3">
+            <CampusBadge
+              category={activeMarker.category}
+              label={activeMarker.badgeLabel}
+              size="lg"
+              pulse
+              className="flex-shrink-0"
+            />
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-1">
+                <h4 className="text-sm font-bold text-fg leading-tight">
+                  {activeMarker.title}
+                </h4>
+                <button
+                  onClick={() => setActiveMarker(null)}
+                  className="text-muted-fg hover:text-fg p-0.5 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+              <p className="text-xs font-semibold text-primary mt-0.5">
+                {activeMarker.subtitle}
+              </p>
+              <p className="text-xs text-muted-fg mt-1">
+                {activeMarker.description}
+              </p>
             </div>
-            <p className="text-xs font-semibold text-primary mt-0.5">
-              {activeMarker.subtitle}
-            </p>
-            <p className="text-xs text-muted-fg mt-1">
-              {activeMarker.description}
-            </p>
-            <div className="mt-2.5 flex items-center gap-2">
+          </div>
+
+          {/* Extras: Faculties / Departments & Dining */}
+          {(() => {
+            const extras = getBuildingExtras(activeMarker.id)
+            if (!extras.faculties && !extras.dining) return null
+            return (
+              <div className="space-y-1.5 pt-1">
+                {extras.faculties && (
+                  <div className="p-2.5 rounded-xl bg-muted/60 border border-border/60 text-xs">
+                    <p className="font-bold text-fg flex items-center gap-1.5 mb-0.5">
+                      <span>🏛</span> Факультеты и кафедры:
+                    </p>
+                    <p className="text-muted-fg leading-relaxed">{extras.faculties}</p>
+                  </div>
+                )}
+                {extras.dining && (
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-xs">
+                    <p className="font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1.5 mb-0.5">
+                      <span>🍽</span> Питание в корпусе:
+                    </p>
+                    <p className="text-amber-800 dark:text-amber-200">{extras.dining}</p>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          <div className="pt-2 border-t border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <div className="flex items-center gap-1.5 text-xs text-muted-fg">
+              <span>📍</span>
+              <span className="font-medium text-fg">{activeMarker.address}</span>
+            </div>
+
+            <div className="flex items-center gap-2">
               <a
-                href={`https://yandex.ru/maps/?ll=${activeMarker.coords[0]}%2C${activeMarker.coords[1]}&z=17&text=${encodeURIComponent(
-                  activeMarker.title
-                )}`}
+                href={`https://yandex.ru/maps/?rtext=~${activeMarker.coords[1]}%2C${activeMarker.coords[0]}&rtt=pd`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors text-xs font-bold"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary text-white hover:bg-primary-light transition-colors text-xs font-bold shadow-xs cursor-pointer"
               >
-                На Яндекс Картах ↗
+                <span>🚶</span>
+                Маршрут в Яндекс.Картах ↗
               </a>
-              <span className="text-[11px] text-muted-fg">
-                {activeMarker.address}
-              </span>
             </div>
           </div>
         </div>

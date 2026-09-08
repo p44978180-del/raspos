@@ -13,7 +13,7 @@ interface TimacadSyncModalProps {
 export default function TimacadSyncModal({
   isOpen,
   onClose,
-  lastSyncDisplay = "Сегодня в 04:00 МСК",
+  lastSyncDisplay = "Синхронизировано",
   onToast,
   onSyncCompleted,
 }: TimacadSyncModalProps) {
@@ -75,7 +75,7 @@ export default function TimacadSyncModal({
     } catch {}
     onToast?.(
       v
-        ? "Ежедневная авто-сверка включена (04:00 МСК)"
+        ? "Ежедневная авто-сверка включена"
         : "Авто-сверка отключена",
       "info"
     )
@@ -109,7 +109,7 @@ export default function TimacadSyncModal({
                 Официальные источники РГАУ-МСХА
               </h2>
               <p className="text-xs text-muted-fg mt-0.5">
-                Автономный парсинг данных каждый день в 04:00 МСК
+                Автономная фоновая синхронизация с timacad.ru
               </p>
             </div>
           </div>
@@ -168,7 +168,7 @@ export default function TimacadSyncModal({
         <div className="flex items-center justify-between p-3 rounded-2xl bg-card border border-border gap-3">
           <div className="flex-1 min-w-0">
             <p className="text-xs font-bold text-fg">
-              Авто-парсинг в 04:00 утра на устройстве
+              Автоматическое фоновое обновление
             </p>
             <p className="text-[11px] text-muted-fg mt-0.5">
               Приложение само проверяет сайт университета каждое утро и держит расписание, события и новости актуальными офлайн
