@@ -164,7 +164,7 @@ html, body, #root { transition: background-color 0.35s ease, color 0.2s ease; }
   inset: 0;
   pointer-events: none;
   z-index: 99999;
-  animation: radial-wave-expand 0.48s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  animation: radial-wave-expand 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
 /* ── Spring Physics for Bottom Sheets & Search Bar (cubic-bezier(0.32, 0.72, 0, 1)) ── */

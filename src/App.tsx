@@ -791,8 +791,8 @@ function buildSchedule(
         {
           id: 1,
           num: 1,
-          start: "09:00",
-          end: "10:35",
+          start: "08:30",
+          end: "10:05",
           subject: "ФТД: Информатика",
           type: "practice",
           teacher: "Мякшин Н.А.",
@@ -804,8 +804,8 @@ function buildSchedule(
         {
           id: 102,
           num: 1,
-          start: "09:00",
-          end: "10:35",
+          start: "08:30",
+          end: "10:05",
           subject: "Основы российской государственности",
           type: "practice",
           teacher: "Темчук Е.И.",
@@ -817,8 +817,8 @@ function buildSchedule(
         {
           id: 2,
           num: 2,
-          start: "10:55",
-          end: "12:30",
+          start: "10:20",
+          end: "11:55",
           subject: "Неорганическая химия",
           type: "lecture",
           teacher: "Елисеева О.В.",
@@ -829,8 +829,8 @@ function buildSchedule(
         {
           id: 3,
           num: 3,
-          start: "13:00",
-          end: "14:35",
+          start: "12:25",
+          end: "14:00",
           subject: "Основы российской государственности",
           type: "lecture",
           teacher: "Темчук Е.И.",
@@ -841,8 +841,8 @@ function buildSchedule(
         {
           id: 4,
           num: 4,
-          start: "14:55",
-          end: "16:30",
+          start: "14:15",
+          end: "15:50",
           subject: "История России",
           type: "practice",
           teacher: "Грачев А.Б.",
@@ -859,8 +859,8 @@ function buildSchedule(
         {
           id: 5,
           num: 1,
-          start: "09:00",
-          end: "10:35",
+          start: "08:30",
+          end: "10:05",
           subject: "Биология с основами экологии",
           type: "lecture",
           teacher: "Пронина Г.И.",
@@ -871,8 +871,8 @@ function buildSchedule(
         {
           id: 6,
           num: 2,
-          start: "10:55",
-          end: "12:30",
+          start: "10:20",
+          end: "11:55",
           subject: "Высшая математика",
           type: "lecture",
           teacher: "Шайтура Н.С.",
@@ -883,8 +883,8 @@ function buildSchedule(
         {
           id: 7,
           num: 3,
-          start: "13:00",
-          end: "14:35",
+          start: "12:25",
+          end: "14:00",
           subject: "Агрометеорология",
           type: "lab",
           teacher: "Ильин П.С.",
@@ -896,8 +896,8 @@ function buildSchedule(
         {
           id: 702,
           num: 3,
-          start: "13:00",
-          end: "14:35",
+          start: "12:25",
+          end: "14:00",
           subject: "Почвоведение с основами геологии",
           type: "lab",
           teacher: "Лосева К.А.",
@@ -909,8 +909,8 @@ function buildSchedule(
         {
           id: 8,
           num: 4,
-          start: "14:55",
-          end: "16:30",
+          start: "14:15",
+          end: "15:50",
           subject: "КпоВ: Базовые виды спорта / Базовая физкультура",
           type: "practice",
           teacher: "Преп. Волков С.Г.",
@@ -927,8 +927,8 @@ function buildSchedule(
         {
           id: 9,
           num: 1,
-          start: "09:00",
-          end: "10:35",
+          start: "08:30",
+          end: "10:05",
           subject: "Почвоведение с основами геологии",
           type: "lecture",
           teacher: "Каменных Н.Л.",
@@ -939,8 +939,8 @@ function buildSchedule(
         {
           id: 10,
           num: 2,
-          start: "10:55",
-          end: "12:30",
+          start: "10:20",
+          end: "11:55",
           subject: "Неорганическая химия",
           type: "lab",
           teacher: "Елисеева О.В.",
@@ -952,8 +952,8 @@ function buildSchedule(
         {
           id: 1002,
           num: 2,
-          start: "10:55",
-          end: "12:30",
+          start: "10:20",
+          end: "11:55",
           subject: "Введение в биотехнологию",
           type: "practice",
           teacher: "Упадышев М.Т.",
@@ -965,8 +965,8 @@ function buildSchedule(
         {
           id: 11,
           num: 3,
-          start: "13:00",
-          end: "14:35",
+          start: "12:25",
+          end: "14:00",
           subject: "Высшая математика",
           type: "practice",
           teacher: "Шайтура Н.С.",
@@ -983,8 +983,8 @@ function buildSchedule(
         {
           id: 12,
           num: 1,
-          start: "09:00",
-          end: "10:35",
+          start: "08:30",
+          end: "10:05",
           subject: "Иностранный язык",
           type: "practice",
           teacher: "Миронова Е.Е. / Синицына И.А.",
@@ -996,8 +996,8 @@ function buildSchedule(
         {
           id: 13,
           num: 2,
-          start: "10:55",
-          end: "12:30",
+          start: "10:20",
+          end: "11:55",
           subject: "Геология с основами геоморфологии",
           type: "lecture",
           teacher: "Арешин А.В.",
@@ -1008,8 +1008,8 @@ function buildSchedule(
         {
           id: 14,
           num: 3,
-          start: "13:00",
-          end: "14:35",
+          start: "12:25",
+          end: "14:00",
           subject: "Биохимия растений",
           type: "lecture",
           teacher: "Глазунова О.А.",
@@ -1020,8 +1020,8 @@ function buildSchedule(
         {
           id: 1402,
           num: 3,
-          start: "13:00",
-          end: "14:35",
+          start: "12:25",
+          end: "14:00",
           subject: "Почвоведение с основами геологии",
           type: "lab",
           teacher: "Борисов Б.А.",
@@ -1033,8 +1033,8 @@ function buildSchedule(
         {
           id: 15,
           num: 4,
-          start: "14:55",
-          end: "16:30",
+          start: "14:15",
+          end: "15:50",
           subject: "КпоВ: Базовые виды спорта / Базовая физкультура",
           type: "practice",
           teacher: "Преп. Волков С.Г.",
@@ -1051,8 +1051,8 @@ function buildSchedule(
         {
           id: 16,
           num: 1,
-          start: "09:00",
-          end: "10:35",
+          start: "08:30",
+          end: "10:05",
           subject: "ФТД: Информатика",
           type: "lecture",
           teacher: "Стрыгин С.П.",
@@ -1063,8 +1063,8 @@ function buildSchedule(
         {
           id: 17,
           num: 2,
-          start: "10:55",
-          end: "12:30",
+          start: "10:20",
+          end: "11:55",
           subject: "История России",
           type: "lecture",
           teacher: "Грачев А.Б.",
@@ -1075,8 +1075,8 @@ function buildSchedule(
         {
           id: 18,
           num: 3,
-          start: "13:00",
-          end: "14:35",
+          start: "12:25",
+          end: "14:00",
           subject: "Биохимия растений",
           type: "lab",
           teacher: "Терешенков П.В. / Глазунова О.А.",
@@ -1088,8 +1088,8 @@ function buildSchedule(
         {
           id: 1802,
           num: 3,
-          start: "13:00",
-          end: "14:35",
+          start: "12:25",
+          end: "14:00",
           subject: "Биология с основами экологии",
           type: "practice",
           teacher: "Сусова Е.Е.",
@@ -1107,8 +1107,8 @@ function buildSchedule(
         {
           id: 19,
           num: 1,
-          start: "09:00",
-          end: "10:35",
+          start: "08:30",
+          end: "10:05",
           subject: "КпоВ: Базовые виды спорта / Базовая физкультура",
           type: "practice",
           teacher: "Преп. Волков С.Г.",
@@ -4364,6 +4364,8 @@ function ClassCard({
   onBuildingClick,
   onManage,
   onSubjectClick,
+  isOddWeek = true,
+  weekFilter = "current",
 }: {
   cls: ClassItem
   isNow: boolean
@@ -4380,6 +4382,8 @@ function ClassCard({
   onBuildingClick?: (b: string) => void
   onManage?: () => void
   onSubjectClick?: () => void
+  isOddWeek?: boolean
+  weekFilter?: "current" | "all"
 }) {
   const cfg = TYPE_CFG[cls.type]
   const cancelled = edit?.cancelled ?? false
@@ -4509,20 +4513,33 @@ function ClassCard({
               {cfg.label}
             </span>
             {cls.weekType && cls.weekType !== "all" ? (
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold flex-shrink-0 ${
-                  cls.weekType === "odd"
-                    ? "bg-blue-bg text-blue border border-blue/30"
-                    : "bg-amber-bg text-amber border border-amber/30"
-                }`}
-                title={
-                  cls.weekType === "odd"
-                    ? "Верхняя пара · Нечётная неделя (Числитель)"
-                    : "Нижняя пара · Чётная неделя (Знаменатель)"
-                }
-              >
-                {cls.weekType === "odd" ? "Верхняя" : "Нижняя"}
-              </span>
+              (!isOddWeek && cls.weekType === "odd" && weekFilter !== "all") ||
+              (isOddWeek && cls.weekType === "even" && weekFilter !== "all") ? null : (
+                <span
+                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold flex-shrink-0 ${
+                    cls.weekType === "odd"
+                      ? "bg-blue-bg text-blue border border-blue/30"
+                      : "bg-amber-bg text-amber border border-amber/30"
+                  }`}
+                  title={
+                    cls.weekType === "odd"
+                      ? (!isOddWeek
+                          ? "Верхняя пара · Не проводится на этой неделе (Числитель)"
+                          : "Верхняя пара · Нечётная неделя (Числитель)")
+                      : (isOddWeek
+                          ? "Нижняя пара · Не проводится на этой неделе (Знаменатель)"
+                          : "Нижняя пара · Чётная неделя (Знаменатель)")
+                  }
+                >
+                  {cls.weekType === "odd"
+                    ? (!isOddWeek && weekFilter === "all"
+                        ? "Верхняя нед. (не на этой неделе)"
+                        : "Верхняя")
+                    : (isOddWeek && weekFilter === "all"
+                        ? "Нижняя нед. (не на этой неделе)"
+                        : "Нижняя")}
+                </span>
+              )
             ) : (
               <span className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold bg-muted text-muted-fg flex-shrink-0">
                 Все нед
@@ -4796,6 +4813,10 @@ function DayView({
   })
 
   movedInEntries.forEach(({ cls, fromWeekday }) => {
+    if (weekFilter === "current" && cls.weekType && cls.weekType !== "all") {
+      if (isOddWeek && cls.weekType === "even") return
+      if (!isOddWeek && cls.weekType === "odd") return
+    }
     if (
       !search ||
       cls.subject.toLowerCase().includes(search.toLowerCase()) ||
@@ -5051,6 +5072,8 @@ function DayView({
                       : undefined
                   }
                   onSubjectClick={() => onSubjectClick(curCls)}
+                  isOddWeek={isOddWeek}
+                  weekFilter={weekFilter}
                 />
               </div>
             </div>
@@ -5563,11 +5586,20 @@ const DEPT_DATA: { name: string; building: string; coords: [number, number] }[] 
   ]
 
 type CampusPinLayer = "none" | "buildings" | "dorms" | "departments"
-const MAP_CENTER = "37.5580%2C55.8292"
+const MAP_CENTER = "37.5565%2C55.8298"
 
-function buildMapSrc(layer: CampusPinLayer, foodLayer = false): string {
-  const base = `https://yandex.ru/map-widget/v1/?ll=${MAP_CENTER}&z=15&lang=ru_RU&l=map`
+function buildMapSrc(
+  layer: CampusPinLayer = "none",
+  foodLayer = false,
+  center?: [number, number] | null,
+  activePin?: [number, number] | null,
+): string {
+  const ll = center ? `${center[0]}%2C${center[1]}` : MAP_CENTER
+  const base = `https://yandex.ru/map-widget/v1/?ll=${ll}&z=17&lang=ru_RU&l=map`
   const pts: string[] = []
+  if (activePin) {
+    pts.push(`${activePin[0]},${activePin[1]},pm2rdm`)
+  }
   if (layer === "buildings")
     Object.values(BUILDING_DETAILS).forEach((b) =>
       pts.push(`${b.coords[0]},${b.coords[1]},pm2gnl`),
@@ -5584,6 +5616,179 @@ function buildMapSrc(layer: CampusPinLayer, foodLayer = false): string {
     )
   return `${base}${pts.length ? `&pt=${pts.join("~")}` : ""}`
 }
+
+export interface CampusQuickPlace {
+  id: string
+  title: string
+  short: string
+  badgeLabel: string
+  category: PinCategory
+  coords: [number, number]
+  address: string
+  floors?: string
+  faculties?: string
+  buffet?: string
+  description?: string
+}
+
+export const CAMPUS_QUICK_BADGES: CampusQuickPlace[] = [
+  {
+    id: "bldg-1",
+    title: "1-й учебный корпус",
+    short: "Корпус 1",
+    badgeLabel: "1",
+    category: "academic",
+    coords: [37.5565, 55.8298],
+    address: "Тимирязевская ул., 49",
+    floors: "4 этажа",
+    faculties: "Институт агробиотехнологии (агрономия, почвоведение, экология), ректорат, почвенный музей им. Вильямса",
+    buffet: "Большая студенческая столовая 1-го корпуса (1 этаж)",
+    description: "Главный учебный корпус академии",
+  },
+  {
+    id: "bldg-2",
+    title: "2-й учебный корпус",
+    short: "Корпус 2",
+    badgeLabel: "2",
+    category: "academic",
+    coords: [37.555, 55.8315],
+    address: "Тимирязевская ул., 47",
+    floors: "3 этажа",
+    faculties: "Ботанические кафедры, селекция растений, физиология растений",
+    buffet: "Студенческий буфет (1 этаж)",
+    description: "Лекционные аудитории и лаборатории физиологии растений",
+  },
+  {
+    id: "bldg-4",
+    title: "4-й учебный корпус",
+    short: "Корпус 4",
+    badgeLabel: "4",
+    category: "academic",
+    coords: [37.5505, 55.8295],
+    address: "Тимирязевская ул., 44",
+    floors: "3 этажа",
+    faculties: "Кафедры информационных технологий, высшая математика, компьютерные классы",
+    buffet: "Буфет 4-го корпуса",
+    description: "Компьютерные классы и лекционные залы",
+  },
+  {
+    id: "bldg-6",
+    title: "6-й учебный корпус (Зоотехния)",
+    short: "Корпус 6",
+    badgeLabel: "6",
+    category: "academic",
+    coords: [37.551, 55.832],
+    address: "Тимирязевская ул., 44",
+    floors: "4 этажа",
+    faculties: "Институт зоотехнии и биологии, ветеринарные лаборатории",
+    buffet: "Студенческий буфет 6-го корпуса (1 этаж)",
+    description: "Институт зоотехнии и биологии",
+  },
+  {
+    id: "bldg-8",
+    title: "8-й учебный корпус",
+    short: "Корпус 8",
+    badgeLabel: "8",
+    category: "academic",
+    coords: [37.556, 55.832],
+    address: "Лиственничная аллея, 3",
+    floors: "3 этажа",
+    faculties: "Кафедры лесоводства, дендрологии и ландшафтного дизайна",
+    buffet: "Буфет (холл)",
+    description: "Лесоводство, экология и садово-парковое хозяйство",
+  },
+  {
+    id: "bldg-17",
+    title: "17-й корпус (Почвенно-агрономический)",
+    short: "Корпус 17",
+    badgeLabel: "17",
+    category: "academic",
+    coords: [37.542, 55.833],
+    address: "Тимирязевская ул., 54",
+    floors: "4 этажа",
+    faculties: "Почвоведение, агрохимия, геология, гуманитарно-педагогический факультет",
+    buffet: "Комбинат питания 17-го корпуса (цокольный этаж, два обеденных зала)",
+    description: "Почвенно-агрономический комплекс и столовая",
+  },
+  {
+    id: "bldg-26",
+    title: "26-й учебный корпус",
+    short: "Корпус 26",
+    badgeLabel: "26",
+    category: "academic",
+    coords: [37.555, 55.831],
+    address: "Тимирязевская ул., 49",
+    floors: "4 этажа",
+    faculties: "Большие поточные лекционные залы, деканаты факультетов",
+    buffet: "Буфет-столовая 26-го корпуса (1 этаж)",
+    description: "Поточные аудитории и учебно-лабораторный комплекс",
+  },
+  {
+    id: "bldg-eng",
+    title: "28-й учебный корпус (Инженерный)",
+    short: "Корпус 28",
+    badgeLabel: "28",
+    category: "academic",
+    coords: [37.5635, 55.8265],
+    address: "Лиственничная аллея, 2Д",
+    floors: "4 этажа",
+    faculties: "Инженерный институт им. В.П. Горячкина (тракторы, с/х машины, техносферная безопасность)",
+    buffet: "Буфет инженерного корпуса (1 этаж)",
+    description: "Инженерный институт им. Горячкина",
+  },
+  {
+    id: "bldg-29",
+    title: "29-й учебный корпус (Цифровой центр)",
+    short: "Корпус 29",
+    badgeLabel: "29",
+    category: "academic",
+    coords: [37.541, 55.842],
+    address: "Лиственничная аллея, 16",
+    floors: "3 этажа",
+    faculties: "Цифровой центр, компьютерные классы ИЦ, селекция и биотехнологии",
+    buffet: "Кофе-пойнт и снек-автоматы",
+    description: "Инновационный цифровой учебный комплекс",
+  },
+  {
+    id: "bldg-lib",
+    title: "Центральная научная библиотека (ЦНБ)",
+    short: "ЦНБ",
+    badgeLabel: "ЦНБ",
+    category: "academic",
+    coords: [37.553, 55.830],
+    address: "Лиственничная аллея, 2к1",
+    floors: "3 этажа",
+    faculties: "Читальные залы, электронная библиотека, коворкинг, редкий фонд",
+    buffet: "Кофейня в фойе ЦНБ",
+    description: "ЦНБ им. Железнова — крупнейшая аграрная библиотека",
+  },
+  {
+    id: "dorms-campus",
+    title: "Студенческий городок (Общежития)",
+    short: "Общежития",
+    badgeLabel: "🏠",
+    category: "dorm",
+    coords: [37.554, 55.834],
+    address: "Лиственничная аллея / Тимирязевская ул.",
+    floors: "5–16 этажей",
+    faculties: "Общежития №1–16, студенческий совет, медпункт, прачечные",
+    buffet: "Столовая студгородка (Лиственничная аллея, 5)",
+    description: "Комплекс общежитий студгородка РГАУ-МСХА",
+  },
+  {
+    id: "sports-sok",
+    title: "Спортивный комплекс (СОК РГАУ)",
+    short: "Спорткомплекс",
+    badgeLabel: "СОК",
+    category: "sports",
+    coords: [37.557, 55.833],
+    address: "Лиственничная аллея, 12Б",
+    floors: "2 этажа",
+    faculties: "Бассейн 25м, тренажерные залы, секции, стадион «Тимирязевец»",
+    buffet: "Фитнес-бар и буфет",
+    description: "Главный физкультурно-оздоровительный комплекс академии",
+  },
+]
 
 const CAMPUS_OVERVIEW_ITEMS: {
   category: PinCategory
@@ -5667,10 +5872,12 @@ function PageCampus({
   role?: UserRole
 }) {
   const [campusMode, setCampusMode] = useState<"plan" | "territory" | "food">(
-    initFood ? "food" : "plan",
+    initFood ? "food" : "territory",
   )
   const [showFood, setShowFood] = useState(initFood ?? false)
   const [pinLayer, setPinLayer] = useState<CampusPinLayer>("none")
+  const [selectedQuickPlace, setSelectedQuickPlace] = useState<CampusQuickPlace | null>(null)
+  const [mapCenterCoords, setMapCenterCoords] = useState<[number, number] | null>(null)
   const [foodFilter, setFoodFilter] = useState<FoodFilter>("all")
   const [selBldg, setSelBldg] = useState<string | null>(null)
   const [selFood, setSelFood] = useState<number | null>(null)
@@ -5719,7 +5926,22 @@ function PageCampus({
     supermarket: "Магазин",
   }
 
-  const mapSrc = showFood ? buildMapSrc("none", true) : buildMapSrc(pinLayer)
+  const mapSrc = showFood
+    ? buildMapSrc("none", true, mapCenterCoords, selectedQuickPlace ? selectedQuickPlace.coords : null)
+    : buildMapSrc(pinLayer, false, mapCenterCoords, selectedQuickPlace ? selectedQuickPlace.coords : null)
+
+  function handleSelectQuickPlace(place: CampusQuickPlace) {
+    if (selectedQuickPlace?.id === place.id) {
+      setSelectedQuickPlace(null)
+      setMapCenterCoords(null)
+      setMapKey((k) => k + 1)
+    } else {
+      setSelectedQuickPlace(place)
+      setMapCenterCoords(place.coords)
+      setMapKey((k) => k + 1)
+    }
+  }
+
   const q = search.toLowerCase().trim()
   const filteredFood = FOOD_SPOTS.filter((f) => {
     const ms =
@@ -5762,6 +5984,8 @@ function PageCampus({
                   setPinLayer("none")
                   setSelBldg(null)
                   setSelFood(null)
+                  setSelectedQuickPlace(null)
+                  setMapCenterCoords(null)
                 }}
                 className={`flex-1 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
                   campusMode === v
@@ -5821,7 +6045,7 @@ function PageCampus({
           />
           <div className="absolute bottom-2 right-2 flex gap-1.5">
             <a
-              href="https://yandex.ru/maps/213/moscow/?ll=37.5580%2C55.8292&z=16"
+              href={`https://yandex.ru/maps/213/moscow/?ll=${mapCenterCoords ? `${mapCenterCoords[0]}%2C${mapCenterCoords[1]}` : "37.5565%2C55.8298"}&z=17`}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-card/90 border border-border rounded-xl px-2.5 py-1.5 text-xs font-semibold text-primary shadow hover:bg-card transition-colors backdrop-blur-sm flex items-center gap-1"
@@ -5829,20 +6053,158 @@ function PageCampus({
               {I.map(12)} Яндекс Карты {I.ext(10)}
             </a>
             <button
-              onClick={() => setMapKey((k) => k + 1)}
+              onClick={() => {
+                setSelectedQuickPlace(null)
+                setMapCenterCoords(null)
+                setMapKey((k) => k + 1)
+              }}
               title="Сбросить вид"
-              className="bg-card/90 border border-border rounded-xl p-1.5 text-muted-fg shadow hover:bg-card hover:text-primary transition-colors backdrop-blur-sm"
+              className="bg-card/90 border border-border rounded-xl p-1.5 text-muted-fg shadow hover:bg-card hover:text-primary transition-colors backdrop-blur-sm cursor-pointer"
             >
               {I.refresh(14)}
             </button>
             <button
               onClick={() => setMapExpanded((e) => !e)}
-              className="bg-card/90 border border-border rounded-xl px-2.5 py-1.5 text-xs font-semibold text-fg shadow hover:bg-card transition-colors backdrop-blur-sm"
+              className="bg-card/90 border border-border rounded-xl px-2.5 py-1.5 text-xs font-semibold text-fg shadow hover:bg-card transition-colors backdrop-blur-sm cursor-pointer"
             >
               {mapExpanded ? "Свернуть" : "Развернуть"}
             </button>
           </div>
         </div>
+      )}
+
+      {/* 3. Horizontal scroll/chips of custom badges & Building card */}
+      {campusMode === "territory" && (
+        <>
+          <div className="px-4 space-y-1.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-muted-fg uppercase tracking-wider">
+                Метки корпусов (3D-навигация)
+              </span>
+              {selectedQuickPlace && (
+                <button
+                  onClick={() => {
+                    setSelectedQuickPlace(null)
+                    setMapCenterCoords(null)
+                    setMapKey((k) => k + 1)
+                  }}
+                  className="text-xs font-semibold text-primary hover:underline cursor-pointer"
+                >
+                  Сбросить выбор
+                </button>
+              )}
+            </div>
+            <div
+              className="flex gap-2 overflow-x-auto pb-1.5 pt-0.5"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {CAMPUS_QUICK_BADGES.map((place) => {
+                const isSel = selectedQuickPlace?.id === place.id
+                return (
+                  <button
+                    key={place.id}
+                    onClick={() => handleSelectQuickPlace(place)}
+                    className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-2xl border transition-all duration-150 cursor-pointer ${
+                      isSel
+                        ? "bg-primary text-white border-primary shadow-md scale-[1.02]"
+                        : "bg-card border-border hover:border-primary/40 hover:bg-muted/40 text-fg"
+                    }`}
+                  >
+                    <CampusBadge
+                      category={place.category}
+                      label={place.badgeLabel}
+                      size={28}
+                      active={isSel}
+                    />
+                    <div className="text-left">
+                      <p className="text-xs font-bold leading-tight whitespace-nowrap">
+                        {place.short}
+                      </p>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {selectedQuickPlace && (
+            <div className="mx-4 p-4 bg-card border border-primary/40 rounded-2xl shadow-sm space-y-3 animate-slide-up">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <CampusBadge
+                    category={selectedQuickPlace.category}
+                    label={selectedQuickPlace.badgeLabel}
+                    size={38}
+                  />
+                  <div>
+                    <h3 className="text-base font-bold text-fg leading-tight">
+                      {selectedQuickPlace.title}
+                    </h3>
+                    <p className="text-xs text-muted-fg flex items-center gap-1 mt-0.5">
+                      {I.map(12)} {selectedQuickPlace.address}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedQuickPlace(null)
+                    setMapCenterCoords(null)
+                    setMapKey((k) => k + 1)
+                  }}
+                  className="p-1 text-muted-fg hover:text-fg rounded-lg hover:bg-muted cursor-pointer transition-colors"
+                  title="Закрыть"
+                >
+                  {I.close(16)}
+                </button>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                {selectedQuickPlace.floors && (
+                  <div className="flex items-start gap-2 bg-muted/50 rounded-xl p-2.5">
+                    <span className="font-bold text-fg flex-shrink-0">🏢 Этажи:</span>
+                    <span className="text-muted-fg">{selectedQuickPlace.floors}</span>
+                  </div>
+                )}
+                {selectedQuickPlace.faculties && (
+                  <div className="flex items-start gap-2 bg-muted/50 rounded-xl p-2.5">
+                    <span className="font-bold text-fg flex-shrink-0">🎓 Факультеты:</span>
+                    <span className="text-muted-fg">{selectedQuickPlace.faculties}</span>
+                  </div>
+                )}
+                {selectedQuickPlace.buffet && (
+                  <div className="flex items-start gap-2 bg-amber-bg/50 border border-amber/20 rounded-xl p-2.5">
+                    <span className="font-bold text-amber flex-shrink-0">🍽 Питание:</span>
+                    <span className="text-fg">{selectedQuickPlace.buffet}</span>
+                  </div>
+                )}
+              </div>
+
+              {(() => {
+                const walk = calculateWalkBetween("1-й учебный корпус", selectedQuickPlace.title)
+                const walkUrl =
+                  walk?.routeUrl ||
+                  `https://yandex.ru/maps/?rtext=~${selectedQuickPlace.coords[1]},${selectedQuickPlace.coords[0]}&rtt=pd`
+                return (
+                  <div className="pt-1 flex flex-col gap-1.5">
+                    {walk && walk.mins > 0 && (
+                      <p className="text-xs font-semibold text-primary">
+                        {walk.text}
+                      </p>
+                    )}
+                    <a
+                      href={walkUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 shadow-sm transition-all"
+                    >
+                      {I.map(14)} Пешеходный маршрут в Яндекс.Картах {I.ext(12)}
+                    </a>
+                  </div>
+                )
+              })()}
+            </div>
+          )}
+        </>
       )}
 
       {!showFood && (
@@ -8057,51 +8419,26 @@ export default function App() {
     )
     const next = !dark
 
-    // Check View Transitions API support
+    // Always trigger React radial wave overlay for guaranteed 100% circular reveal across Chrome, Safari, iOS & Android
+    setRadialWave({ x, y, radius: maxRadius, nextDark: next })
+    setDark(next)
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.toggle("dark", next)
+    }
+    try {
+      localStorage.setItem("rgau_theme", next ? "dark" : "light")
+    } catch {}
+
     const doc = typeof document !== "undefined" ? (document as any) : null
     if (doc && typeof doc.startViewTransition === "function") {
-      const transition = doc.startViewTransition(() => {
-        setDark(next)
-        document.documentElement.classList.toggle("dark", next)
-        try {
-          localStorage.setItem("rgau_theme", next ? "dark" : "light")
-        } catch {}
-      })
-
-      transition.ready
-        .then(() => {
-          const clipPath = [
-            `circle(0px at ${x}px ${y}px)`,
-            `circle(${maxRadius}px at ${x}px ${y}px)`,
-          ]
-          document.documentElement.animate(
-            {
-              clipPath: next ? clipPath : [...clipPath].reverse(),
-            },
-            {
-              duration: 480,
-              easing: "cubic-bezier(0.32, 0.72, 0, 1)",
-              pseudoElement: next
-                ? "::view-transition-new(root)"
-                : "::view-transition-old(root)",
-            },
-          )
-        })
-        .catch(() => {})
-    } else {
-      // Fluid CSS clip-path overlay fallback
-      setRadialWave({ x, y, radius: maxRadius, nextDark: next })
-      setDark(next)
-      if (typeof document !== "undefined") {
-        document.documentElement.classList.toggle("dark", next)
-      }
       try {
-        localStorage.setItem("rgau_theme", next ? "dark" : "light")
+        doc.startViewTransition(() => {})
       } catch {}
-      setTimeout(() => {
-        setRadialWave(null)
-      }, 500)
     }
+
+    setTimeout(() => {
+      setRadialWave(null)
+    }, 450)
   }
   const [role, setRole] = useState<UserRole>(() => {
     try {
