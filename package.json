@@ -1,0 +1,35 @@
+{
+  "name": "figma-make-app",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "format": "oxfmt",
+    "typecheck": "tsc --noEmit",
+    "build:android": "vite build && cap sync android",
+    "sync:android": "cap sync android",
+    "sync:schedule": "node scripts/sync-schedule.mjs",
+    "test": "node tests/manifest-stress.test.mjs && node tests/m2-capacitor-stress.test.mjs && node tests/m3-cartography-spring-stress.test.mjs && node tests/m3-theme-wave-stress.test.mjs && node tests/m4-deploy-stress.test.mjs && node tests/m4-build-verification-stress.test.mjs && node tests/test-ios-prompt.mjs"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.5.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^8.5.1",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^6.0.0",
+    "tailwindcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
+    "oxfmt": "^0.2.0",
+    "typescript": "^5.7.0",
+    "vite": "^8.0.5"
+  }
+}
