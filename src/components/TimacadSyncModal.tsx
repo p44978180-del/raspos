@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 import { OFFICIAL_TIMACAD_SOURCES, type TimacadSource } from "../data/officialSources"
-import { runTimacadDailySync, type SyncResult } from "../utils/timacadAutoSync"
+import { runTimacadDailySync, getCachedSchedule, type SyncResult } from "../utils/timacadAutoSync"
 
 interface TimacadSyncModalProps {
   isOpen: boolean
@@ -30,15 +30,20 @@ export default function TimacadSyncModal({
 
   if (!isOpen) return null
 
+  const activeSchedule = getCachedSchedule()
+  const groupsCount = Object.keys(activeSchedule?.groups || {}).length || 42
+  const classesCount = activeSchedule?.meta?.totalClasses || 1051
+
   const categories = [
-    { id: "all", label: "Все источники (18)" },
+    { id: "all", label: `Все источники (${OFFICIAL_TIMACAD_SOURCES.length})` },
     { id: "schedule", label: "Расписание" },
     { id: "news", label: "Новости" },
     { id: "announcements", label: "Анонсы" },
-    { id: "trade_union", label: "Профком" },
-    { id: "services", label: "Сервисы ЭИОС" },
-    { id: "campus", label: "Кампус" },
-    { id: "sport", label: "Спорт" },
+    { id: "institutes", label: "Институты" },
+    { id: "trade_union", label: "Профком и Студсовет" },
+    { id: "services", label: "ЭИОС и Библиотека" },
+    { id: "campus", label: "Кампус и Музеи" },
+    { id: "sport", label: "Спорт и КСК" },
   ]
 
   const filteredSources = OFFICIAL_TIMACAD_SOURCES.filter(
@@ -51,13 +56,15 @@ export default function TimacadSyncModal({
       const result = await runTimacadDailySync(true)
       onSyncCompleted?.(result)
       onToast?.(
-        `Синхронизировано ${result.sourcesCount} источников timacad.ru: 42 группы, 1051 пара, актуальные новости и звонки!`,
-        "success"
+        result.status === "success"
+          ? `Синхронизировано ${result.sourcesCount} источников timacad.ru: ${result.groupsCount} группы, ${result.classesCount} пар, свежие новости!`
+          : `Использованы сохранённые данные РГАУ-МСХА (${result.sourcesCount} источников)`,
+        result.status === "success" ? "success" : "info"
       )
     } catch {
       onToast?.("Использованы кэшированные данные РГАУ-МСХА", "info")
     } finally {
-      setTimeout(() => setSyncing(false), 500)
+      setTimeout(() => setSyncing(false), 400)
     }
   }
 
@@ -108,7 +115,7 @@ export default function TimacadSyncModal({
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-xl bg-muted hover:bg-border text-muted-fg hover:text-fg flex items-center justify-center transition-colors flex-shrink-0"
+            className="w-8 h-8 rounded-xl bg-muted hover:bg-border text-muted-fg hover:text-fg flex items-center justify-center transition-colors flex-shrink-0 cursor-pointer"
           >
             ✕
           </button>
@@ -130,16 +137,16 @@ export default function TimacadSyncModal({
 
           <div className="grid grid-cols-3 gap-2 text-center">
             <div className="bg-card/80 border border-border/60 rounded-xl p-2">
-              <p className="text-sm font-extrabold text-primary">18</p>
+              <p className="text-sm font-extrabold text-primary">{OFFICIAL_TIMACAD_SOURCES.length}</p>
               <p className="text-[10px] text-muted-fg">источников</p>
             </div>
             <div className="bg-card/80 border border-border/60 rounded-xl p-2">
-              <p className="text-sm font-extrabold text-primary">42</p>
+              <p className="text-sm font-extrabold text-primary">{groupsCount}</p>
               <p className="text-[10px] text-muted-fg">группы</p>
             </div>
             <div className="bg-card/80 border border-border/60 rounded-xl p-2">
-              <p className="text-sm font-extrabold text-primary">1 051</p>
-              <p className="text-[10px] text-muted-fg">пара</p>
+              <p className="text-sm font-extrabold text-primary">{classesCount.toLocaleString("ru-RU")}</p>
+              <p className="text-[10px] text-muted-fg">пар</p>
             </div>
           </div>
 
@@ -169,7 +176,7 @@ export default function TimacadSyncModal({
           </div>
           <button
             onClick={() => handleToggleAutoSync(!autoSync)}
-            className={`relative w-11 h-6 rounded-full transition-all flex-shrink-0 ${
+            className={`relative w-11 h-6 rounded-full transition-all flex-shrink-0 cursor-pointer ${
               autoSync ? "bg-primary" : "bg-border"
             }`}
           >
@@ -187,7 +194,7 @@ export default function TimacadSyncModal({
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all border cursor-pointer ${
                 selectedCategory === cat.id
                   ? "bg-primary text-white border-primary shadow-xs"
                   : "bg-muted border-border text-muted-fg hover:border-accent/40"

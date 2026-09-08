@@ -326,6 +326,14 @@ export default function IosInstallPrompt({
           </div>
         </div>
 
+        {/* Home Button & Gesture Integration Note */}
+        <div className="flex items-start gap-2 p-2.5 rounded-xl bg-card border border-border text-[11px] text-muted-fg leading-relaxed">
+          <span className="text-sm">🔘</span>
+          <span>
+            <strong className="text-fg font-semibold">Для iPhone с кнопкой «Домой» и жестами:</strong> приложение мгновенно сворачивается и моментально восстанавливает открытое расписание без сброса фильтров.
+          </span>
+        </div>
+
         {/* Action Button */}
         <div className="space-y-2 pt-1">
           <button

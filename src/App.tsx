@@ -19,6 +19,8 @@ import {
   runTimacadDailySync,
   formatSyncDisplayTime,
   getCachedTimacadFeed,
+  getCachedSchedule,
+  SYNC_EVENT_NAME,
   type SyncResult,
 } from "./utils/timacadAutoSync"
 import { OFFICIAL_TIMACAD_SOURCES } from "./data/officialSources"
@@ -276,17 +278,92 @@ const WALK_TIMES: Record<string, Record<string, number>> = {
 }
 const BIDS: Record<string, string> = {
   "1-й учебный корпус": "corp1",
+  "2-й учебный корпус": "corp2",
+  "3-й учебный корпус": "corp3",
+  "4-й учебный корпус": "corp4",
   "Корпус агрохимии": "agrochem",
+  "Корпус агрохимии (6-й)": "agrochem",
+  "9-й учебный корпус": "corp9",
+  "12-й учебный корпус": "corp12",
+  "Биологический корпус (16-й)": "bio16",
+  "Биологический корпус": "bio16",
+  "17-й корпус (Почвенно-агрономический)": "soil17",
+  "18-й корпус (Метеорологический)": "meteo18",
+  "27-й корпус (Лингвистический центр)": "ling27",
+  "Инженерный корпус (28-й)": "engineering",
   "Инженерный корпус": "engineering",
+  "29-й корпус (Цифровой центр)": "digital29",
+  "37-й корпус (Биотехнология)": "biotech37",
   "Спортивный комплекс": "sport",
+  "СК": "sport",
   "Учебно-опытная станция": "station",
 }
+
 const BGEN: Record<string, string> = {
   "1-й учебный корпус": "1-го учебного корпуса",
+  "2-й учебный корпус": "2-го учебного корпуса",
+  "3-й учебный корпус": "3-го учебного корпуса",
+  "4-й учебный корпус": "4-го учебного корпуса",
   "Корпус агрохимии": "корпуса агрохимии",
+  "Корпус агрохимии (6-й)": "корпуса агрохимии (6-го)",
+  "9-й учебный корпус": "9-го учебного корпуса",
+  "12-й учебный корпус": "12-го учебного корпуса",
+  "Биологический корпус (16-й)": "биологического корпуса (16-го)",
+  "Биологический корпус": "биологического корпуса",
+  "17-й корпус (Почвенно-агрономический)": "17-го почвенного корпуса",
+  "18-й корпус (Метеорологический)": "18-го метеорологического корпуса",
+  "27-й корпус (Лингвистический центр)": "27-го лингвистического корпуса",
+  "Инженерный корпус (28-й)": "инженерного корпуса (28-го)",
   "Инженерный корпус": "инженерного корпуса",
+  "29-й корпус (Цифровой центр)": "29-го цифрового корпуса",
+  "37-й корпус (Биотехнология)": "37-го корпуса биотехнологии",
   "Спортивный комплекс": "спортивного комплекса",
+  "СК": "спортивного комплекса",
   "Учебно-опытная станция": "учебно-опытной станции",
+}
+
+function getBldgGenitive(name: string): string {
+  if (!name) return ""
+  if (BGEN[name]) return BGEN[name]
+  for (const [k, v] of Object.entries(BGEN)) {
+    if (name.includes(k) || k.includes(name)) return v
+  }
+  if (/агрохим|6-й/i.test(name)) return "корпуса агрохимии (6-го)"
+  if (/16-й|биолог/i.test(name)) return "биологического корпуса (16-го)"
+  if (/17-й|почв/i.test(name)) return "17-го почвенного корпуса"
+  if (/18-й|метео/i.test(name)) return "18-го метеорологического корпуса"
+  if (/27-й|лингв/i.test(name)) return "27-го лингвистического корпуса"
+  if (/28-й|инженер/i.test(name)) return "инженерного корпуса (28-го)"
+  if (/29-й|цифр/i.test(name)) return "29-го цифрового корпуса"
+  if (/37-й|биотех/i.test(name)) return "37-го корпуса биотехнологии"
+  if (/спорт|СК/i.test(name)) return "спортивного комплекса"
+  if (/станци|опытн/i.test(name)) return "учебно-опытной станции"
+  return name
+}
+
+function normalizeBldg(name: string): string {
+  if (!name) return ""
+  if (BIDS[name]) return BIDS[name]
+  for (const [k, v] of Object.entries(BIDS)) {
+    if (name.includes(k) || k.includes(name)) return v
+  }
+  if (/агрохим|6-й/i.test(name)) return "agrochem"
+  if (/16-й|биолог/i.test(name)) return "bio16"
+  if (/17-й|почв/i.test(name)) return "soil17"
+  if (/18-й|метео/i.test(name)) return "meteo18"
+  if (/27-й|лингв/i.test(name)) return "ling27"
+  if (/28-й|инженер/i.test(name)) return "engineering"
+  if (/29-й|цифр/i.test(name)) return "digital29"
+  if (/37-й|биотех/i.test(name)) return "biotech37"
+  if (/спорт|СК/i.test(name)) return "sport"
+  if (/станци|опытн/i.test(name)) return "station"
+  if (/1-й/i.test(name)) return "corp1"
+  if (/2-й/i.test(name)) return "corp2"
+  if (/3-й/i.test(name)) return "corp3"
+  if (/4-й/i.test(name)) return "corp4"
+  if (/9-й/i.test(name)) return "corp9"
+  if (/12-й/i.test(name)) return "corp12"
+  return name.trim().toLowerCase()
 }
 
 const DORMS = [
@@ -541,21 +618,7 @@ const FOOD_SPOTS: FoodSpot[] = [
   },
 ]
 
-const OFFICIAL_EVENTS: AppEvent[] = OFFICIAL_TIMACAD_FEED.map((item, idx) => ({
-  id: 100 + idx,
-  title: item.title,
-  date: item.date,
-  place: item.place || "Кампус РГАУ-МСХА",
-  category: item.category as EventCat,
-  summary: item.summary,
-  sourceName: item.sourceName,
-  sourceUrl: item.sourceUrl,
-  isPinned: item.isPinned,
-  badgeText: item.badgeText,
-}))
-
-const EVENTS: AppEvent[] = [
-  ...OFFICIAL_EVENTS,
+const BASE_EXTRA_EVENTS: AppEvent[] = [
   {
     id: 1,
     title: "День открытых дверей агрофака",
@@ -618,6 +681,24 @@ const EVENTS: AppEvent[] = [
   },
 ]
 
+function getAppEvents(feed: TimacadFeedItem[] = getCachedTimacadFeed()): AppEvent[] {
+  const official: AppEvent[] = feed.map((item, idx) => ({
+    id: 100 + idx,
+    title: item.title,
+    date: item.date,
+    place: item.place || "Кампус РГАУ-МСХА",
+    category: item.category as EventCat,
+    summary: item.summary,
+    sourceName: item.sourceName,
+    sourceUrl: item.sourceUrl,
+    isPinned: item.isPinned,
+    badgeText: item.badgeText,
+  }))
+  return [...official, ...BASE_EXTRA_EVENTS]
+}
+
+const EVENTS: AppEvent[] = getAppEvents()
+
 const INIT_HOMEWORK: Homework[] = [
   {
     classId: 1,
@@ -625,7 +706,7 @@ const INIT_HOMEWORK: Homework[] = [
     deadline: "14 сентября, 08:30",
     link: "https://disk.yandex.ru/",
     linkLabel: "Методичка на Яндекс.Диске",
-    author: "Анна К. (Старостa)",
+    author: "Анна К. (Староста)",
     updatedAt: "06.09 в 18:30",
   },
   {
@@ -680,7 +761,10 @@ function buildSchedule(
   }
 
   // Check if official synced schedule from timacad.ru has this group
-  const officialGroup = (officialScheduleData.groups as Record<string, any>)[groupId]
+  const activeSchedule = getCachedSchedule()
+  const officialGroup =
+    ((activeSchedule?.groups || {}) as Record<string, any>)[groupId] ||
+    ((officialScheduleData.groups || {}) as Record<string, any>)[groupId]
   if (officialGroup && Array.isArray(officialGroup.schedule)) {
     const baseWeek: DaySchedule[] = []
     officialGroup.schedule.forEach((day: any) => {
@@ -1157,12 +1241,15 @@ function getStudyWeek(ds: string) {
     Math.floor((d.getTime() - ws.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
   )
 }
-function getWalk(a: string, b: string) {
-  const ia = BIDS[a],
-    ib = BIDS[b]
+function getWalk(a: string, b: string): number | null {
+  if (!a || !b) return null
+  const ia = normalizeBldg(a)
+  const ib = normalizeBldg(b)
   if (!ia || !ib) return null
   if (ia === ib) return 0
-  return WALK_TIMES[ia]?.[ib] ?? null
+  if (WALK_TIMES[ia]?.[ib] !== undefined) return WALK_TIMES[ia][ib]
+  if (WALK_TIMES[ib]?.[ia] !== undefined) return WALK_TIMES[ib][ia]
+  return 8
 }
 function isOpen(f: FoodSpot) {
   const d = new Date()
@@ -2123,6 +2210,7 @@ function AppHeader({
   onSyncOpen,
   lastSyncDisplay,
   onOpenIosPrompt,
+  onGoHome,
 }: {
   tab: string
   dark: boolean
@@ -2134,6 +2222,7 @@ function AppHeader({
   onSyncOpen?: () => void
   lastSyncDisplay?: string
   onOpenIosPrompt?: () => void
+  onGoHome?: () => void
 }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -2152,7 +2241,7 @@ function AppHeader({
           <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={onGroupOpen}
-              className="flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-xl hover:bg-border transition-colors min-w-0"
+              className="flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-xl hover:bg-border transition-colors min-w-0 cursor-pointer"
             >
               <span className="text-sm font-bold text-fg truncate">
                 {groupId || "Группа"}
@@ -2198,12 +2287,12 @@ function AppHeader({
                 title="Установить на экран «Домой»"
               >
                 <span>📱</span>
-                <span className="text-[10px] font-bold hidden sm:inline">В Домой</span>
+                <span className="text-[10px] font-bold">На «Домой»</span>
               </button>
             )}
             <button
               onClick={onSearchToggle}
-              className={`p-2 rounded-xl transition-colors ${
+              className={`p-2 rounded-xl transition-colors cursor-pointer ${
                 searchOpen
                   ? "bg-primary text-white"
                   : "hover:bg-muted text-muted-fg"
@@ -2213,7 +2302,7 @@ function AppHeader({
             </button>
             <button
               onClick={onDarkToggle}
-              className="p-2 rounded-xl hover:bg-muted text-muted-fg transition-colors"
+              className="p-2 rounded-xl hover:bg-muted text-muted-fg transition-colors cursor-pointer"
               title="Переключить тему"
             >
               {dark ? I.sun(17) : I.moon(17)}
@@ -2222,8 +2311,18 @@ function AppHeader({
         </div>
       ) : (
         <div className="flex items-center justify-between px-4 pb-2.5">
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-extrabold text-fg">
+          <div className="flex items-center gap-2 min-w-0">
+            {onGoHome && (
+              <button
+                onClick={onGoHome}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-muted hover:bg-border text-fg text-xs font-bold transition-all active:scale-95 cursor-pointer flex-shrink-0"
+                title="Вернуться к расписанию (Домой)"
+              >
+                <span>🏠</span>
+                <span className="text-[11px] font-bold">Домой</span>
+              </button>
+            )}
+            <h1 className="text-xl sm:text-2xl font-extrabold text-fg truncate">
               {({
                 campus: "Кампус",
                 events: "События",
@@ -2233,7 +2332,7 @@ function AppHeader({
             {onSyncOpen && (
               <button
                 onClick={onSyncOpen}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-card border border-border/80 text-xs font-semibold text-fg shadow-xs hover:border-primary/40 hover:bg-muted/40 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-card border border-border/80 text-xs font-semibold text-fg shadow-xs hover:border-primary/40 hover:bg-muted/40 transition-all cursor-pointer flex-shrink-0"
                 title="Официальные источники timacad.ru"
               >
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
@@ -2251,12 +2350,12 @@ function AppHeader({
                 title="Установить на экран «Домой»"
               >
                 <span>📱</span>
-                <span className="text-[10px] font-bold hidden sm:inline">В Домой</span>
+                <span className="text-[10px] font-bold">На «Домой»</span>
               </button>
             )}
             <button
               onClick={onSearchToggle}
-              className={`p-2 rounded-xl transition-colors ${
+              className={`p-2 rounded-xl transition-colors cursor-pointer ${
                 searchOpen
                   ? "bg-primary text-white"
                   : "hover:bg-muted text-muted-fg"
@@ -2338,8 +2437,8 @@ function TravelBanner({
       {I.route(13, "flex-shrink-0")}
       <span>
         {tight
-          ? `⚠ Мало времени: ${walk} мин до ${BGEN[to] ?? to}`
-          : `Переход: ${walk} мин до ${BGEN[to] ?? to}`}
+          ? `⚠ Мало времени: ${walk} мин до ${getBldgGenitive(to)}`
+          : `Переход: ${walk} мин до ${getBldgGenitive(to)}`}
       </span>
     </div>
   )
@@ -2435,7 +2534,7 @@ function RestSheet({ onClose }: { onClose: () => void }) {
 function DormCard({ dorm, onDismiss }: { dorm: string; onDismiss: () => void }) {
   const info = DORM_WALK[dorm]
   if (!info) return null
-  const displayBldg = BGEN[info.building] ?? info.building
+  const displayBldg = getBldgGenitive(info.building)
   return (
     <div className="mx-4 flex items-center gap-3 bg-muted border border-border rounded-2xl px-4 py-3">
       <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -4391,7 +4490,7 @@ function DayView({
   const activeDays = allDays ?? ALL_DAYS
   const data = activeDays.find((d) => d.date === dateStr)
   const isToday = dateStr === TODAY
-  const todayEvents = EVENTS.filter(
+  const todayEvents = getAppEvents().filter(
     (e) => e.date === dateStr && !dismissedEvents.includes(e.id),
   )
   const weekNum = getStudyWeek(dateStr)
@@ -6039,6 +6138,7 @@ function PageEvents({
   search,
   onOpenSyncModal,
   lastSyncDisplay,
+  feedItems,
 }: {
   role: UserRole
   customEvents: AppEvent[]
@@ -6050,6 +6150,7 @@ function PageEvents({
   search: string
   onOpenSyncModal?: () => void
   lastSyncDisplay?: string
+  feedItems?: TimacadFeedItem[]
 }) {
   const [filter, setFilter] = useState<EventCat>("all")
   const [addOpen, setAddOpen] = useState(false)
@@ -6072,7 +6173,8 @@ function PageEvents({
     ["sport", "Спорт"],
     ["career", "Карьера"],
   ]
-  const allEvents = [...EVENTS, ...customEvents]
+  const baseList = getAppEvents(feedItems)
+  const allEvents = [...baseList, ...customEvents]
   const q = search.toLowerCase().trim()
   const filtered = allEvents.filter((e) => {
     const matchCat = filter === "all" || e.category === filter
@@ -7025,7 +7127,7 @@ function PageProfile({
             <div className="min-w-0">
               <p className="text-xs font-bold text-fg">Статус актуальности данных</p>
               <p className="text-[11px] text-muted-fg mt-0.5">
-                {lastSyncDisplay || "Сегодня в 04:00 МСК"} · 18 источников
+                {lastSyncDisplay || "Сегодня в 04:00 МСК"} · {OFFICIAL_TIMACAD_SOURCES.length} источников
               </p>
             </div>
             {onOpenSyncModal && (
@@ -7158,7 +7260,7 @@ function GlobalSearch({
     ([, b]) =>
       b.name.toLowerCase().includes(q) || b.address.toLowerCase().includes(q),
   )
-  const eventResults = EVENTS.filter(
+  const eventResults = getAppEvents().filter(
     (e) =>
       e.title.toLowerCase().includes(q) || e.place.toLowerCase().includes(q),
   )
@@ -7532,16 +7634,31 @@ export default function App() {
     }
   })
 
+  const [timacadFeed, setTimacadFeed] = useState<TimacadFeedItem[]>(() => getCachedTimacadFeed())
+
   // Start client-side daily sync watcher on boot (schedules next 04:00 AM MSK auto-sync)
   useEffect(() => {
+    const handleSync = (e: any) => {
+      const res = e.detail as SyncResult
+      if (res) {
+        setLastSyncDisplay(res.displayTime)
+        if (res.freshFeed) setTimacadFeed(res.freshFeed)
+      }
+    }
+    window.addEventListener(SYNC_EVENT_NAME, handleSync)
+
     const cleanup = initDailySyncWatcher((res) => {
       setLastSyncDisplay(res.displayTime)
+      if (res.freshFeed) setTimacadFeed(res.freshFeed)
       addToast(
         `Синхронизировано ${res.sourcesCount} источников timacad.ru: расписание и события актуальны`,
         "success"
       )
     })
-    return cleanup
+    return () => {
+      cleanup()
+      window.removeEventListener(SYNC_EVENT_NAME, handleSync)
+    }
   }, [])
 
   const [dark, setDark] = useState<boolean>(() => {
@@ -7831,6 +7948,7 @@ export default function App() {
         onSyncOpen={() => setSyncModalOpen(true)}
         lastSyncDisplay={lastSyncDisplay}
         onOpenIosPrompt={() => setShowIosPrompt(true)}
+        onGoHome={() => setTab("schedule")}
       />
       <Toast toasts={toasts} onDismiss={dismissToast} />
       <main className="flex-1 overflow-y-auto relative min-h-0">
@@ -7907,6 +8025,7 @@ export default function App() {
               search={search}
               onOpenSyncModal={() => setSyncModalOpen(true)}
               lastSyncDisplay={lastSyncDisplay}
+              feedItems={timacadFeed}
             />
           )}
           {tab === "profile" && (
@@ -8012,6 +8131,11 @@ export default function App() {
         onToast={addToast}
         onSyncCompleted={(res) => {
           setLastSyncDisplay(res.displayTime)
+          if (res.freshFeed) {
+            setTimacadFeed(res.freshFeed)
+          } else {
+            setTimacadFeed(getCachedTimacadFeed())
+          }
         }}
       />
     </div>
