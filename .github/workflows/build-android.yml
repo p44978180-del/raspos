@@ -30,12 +30,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Step 2: Set up Java Development Kit (JDK 17 Eclipse Temurin)
-      - name: Set up JDK 17
+      # Step 2: Set up Java Development Kit (JDK 21 required by Capacitor 8; java-version: '17' compatibility reference)
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       # Step 3: Set up pnpm package manager matching .mise.toml (10.34.3)
       - name: Set up pnpm
