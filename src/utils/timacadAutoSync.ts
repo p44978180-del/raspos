@@ -1,6 +1,25 @@
 import { OFFICIAL_TIMACAD_SOURCES, type TimacadSource } from "../data/officialSources"
 import { OFFICIAL_TIMACAD_FEED, type TimacadFeedItem } from "../data/timacadFeedData"
 import officialScheduleData from "../data/official-schedule.json"
+import {
+  performCacheGarbageCollection,
+  getStorageUsageBytes,
+  clearUserCache,
+  formatBytes,
+  STORAGE_LAST_CACHE_CLEANUP,
+  type GarbageCollectionResult,
+  type StorageUsageInfo,
+} from "./cacheManager"
+
+export {
+  performCacheGarbageCollection,
+  getStorageUsageBytes,
+  clearUserCache,
+  formatBytes,
+  STORAGE_LAST_CACHE_CLEANUP,
+  type GarbageCollectionResult,
+  type StorageUsageInfo,
+}
 
 export interface SyncResult {
   status: "success" | "cached" | "failed"
@@ -14,6 +33,7 @@ export interface SyncResult {
   isAutoSync: boolean
   message: string
   freshFeed?: TimacadFeedItem[]
+  gcResult?: GarbageCollectionResult
 }
 
 export interface SyncStatusState {
@@ -334,6 +354,12 @@ export async function runTimacadDailySync(force: boolean = false): Promise<SyncR
       } catch {}
     }
 
+    // 4. Automated Garbage Collection (TTL pruning of news > 45d, past schedule weeks > 4w, and temp PDF buffers)
+    let gcResult: GarbageCollectionResult | undefined
+    try {
+      gcResult = performCacheGarbageCollection({ refDate: now })
+    } catch {}
+
     const currentSchedule = getCachedSchedule()
     const groupCount = Object.keys(currentSchedule.groups || {}).length
     const classCount = currentSchedule.meta?.totalClasses || 1051
@@ -354,6 +380,7 @@ export async function runTimacadDailySync(force: boolean = false): Promise<SyncR
         ? `Синхронизировано ${OFFICIAL_TIMACAD_SOURCES.length} источников РГАУ-МСХА в 04:00 МСК (${groupCount} групп, ${classCount} пар)`
         : `Использованы сохранённые данные РГАУ-МСХА (${OFFICIAL_TIMACAD_SOURCES.length} источников офлайн)`,
       freshFeed: freshFeedList,
+      gcResult,
     }
 
     // Notify listeners via custom event in browser
@@ -363,6 +390,11 @@ export async function runTimacadDailySync(force: boolean = false): Promise<SyncR
 
     return result
   } catch {
+    let gcResult: GarbageCollectionResult | undefined
+    try {
+      gcResult = performCacheGarbageCollection({ refDate: now })
+    } catch {}
+
     const fallbackFeed = getCachedTimacadFeed()
     const currentSchedule = getCachedSchedule()
     const groupCount = Object.keys(currentSchedule.groups || {}).length
@@ -382,6 +414,7 @@ export async function runTimacadDailySync(force: boolean = false): Promise<SyncR
       isAutoSync: !force,
       message: "Использованы локально сохранённые данные РГАУ-МСХА (офлайн-режим)",
       freshFeed: fallbackFeed,
+      gcResult,
     }
 
     if (typeof window !== "undefined") {

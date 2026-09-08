@@ -25,6 +25,13 @@ import {
 } from "./utils/timacadAutoSync"
 import { OFFICIAL_TIMACAD_SOURCES } from "./data/officialSources"
 import { OFFICIAL_TIMACAD_FEED, type TimacadFeedItem } from "./data/timacadFeedData"
+import {
+  getStorageUsageBytes,
+  clearUserCache,
+  formatBytes,
+  performCacheGarbageCollection,
+  type StorageUsageInfo,
+} from "./utils/cacheManager"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1784,6 +1791,39 @@ const I = {
     >
       <line x1="5" y1="12" x2="19" y2="12" />
       <polyline points="12 5 19 12 12 19" />
+    </svg>
+  ),
+  trash: (s = 16, c = "") => (
+    <svg
+      width={s}
+      height={s}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={c}
+    >
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+    </svg>
+  ),
+  database: (s = 16, c = "") => (
+    <svg
+      width={s}
+      height={s}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={c}
+    >
+      <ellipse cx="12" cy="5" rx="9" ry="3" />
+      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
     </svg>
   ),
 }
@@ -6631,6 +6671,27 @@ function PageProfile({
     }
   })
 
+  // Cache & Storage Retention state
+  const [cacheUsage, setCacheUsage] = useState<StorageUsageInfo>(() => getStorageUsageBytes())
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false)
+
+  useEffect(() => {
+    setCacheUsage(getStorageUsageBytes())
+  }, [lastSyncDisplay, hasCustomSchedule])
+
+  function handleClearCacheConfirm() {
+    const res = clearUserCache(true)
+    setCacheUsage(getStorageUsageBytes())
+    setClearConfirmOpen(false)
+    if (hasCustomSchedule) {
+      onResetOfficial?.()
+    }
+    onToast?.(
+      `Кэш очищен. Освобождено: ${res.formattedFreed || "0 КБ"}. Настройки (группа, роль, тема) сохранены.`,
+      "success",
+    )
+  }
+
   const SECRET = "TIMA-2025"
   function tryCode() {
     const trimmed = codeVal.trim()
@@ -7149,6 +7210,66 @@ function PageProfile({
         </div>
       </div>
 
+      {/* Cache Retention & Storage section */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+          {I.database(16, "text-muted-fg")}
+          <span className="text-sm font-bold text-fg">Память и кэш данных</span>
+          <span className="ml-auto text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
+            Кэш данных: {cacheUsage.formatted}
+          </span>
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-bold text-fg">Размер локального кэша</p>
+              <p className="text-[11px] text-muted-fg mt-0.5 leading-relaxed">
+                Занято на устройстве: <span className="font-semibold text-fg">{cacheUsage.formatted}</span> ({cacheUsage.itemCount} записей). Включает новости, анонсы и оффлайн-сетку расписания.
+              </p>
+              <div className="flex items-center gap-1.5 mt-2 text-[10px] text-muted-fg">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Авто-очистка: события старше 45 дней и буферы удаляются в 04:00 МСК</span>
+              </div>
+            </div>
+            <button
+              onClick={() => setClearConfirmOpen(true)}
+              className="px-3 py-1.5 rounded-xl border border-red/40 bg-red/10 text-red text-xs font-bold hover:bg-red/15 active:scale-95 transition-all cursor-pointer flex-shrink-0 flex items-center gap-1.5"
+            >
+              {I.trash(13)}
+              <span>Очистить кэш</span>
+            </button>
+          </div>
+
+          {clearConfirmOpen && (
+            <div className="p-3 rounded-xl bg-muted/60 border border-border space-y-2.5 animate-fade-in">
+              <div className="flex items-start gap-2">
+                <span className="text-base">⚠️</span>
+                <div>
+                  <p className="text-xs font-bold text-fg">Очистить кэш данных приложения?</p>
+                  <p className="text-[11px] text-muted-fg mt-0.5">
+                    Будут удалены временные буферы PDF, кэш новостей и расписания. Ваши настройки группы, роли и темы оформления сохранятся.
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end pt-1">
+                <button
+                  onClick={() => setClearConfirmOpen(false)}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-border bg-card text-muted-fg hover:text-fg cursor-pointer"
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={handleClearCacheConfirm}
+                  className="px-3 py-1.5 text-xs font-bold rounded-lg bg-red text-white hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs"
+                >
+                  Подтвердить очистку
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           {I.ext(13, "text-muted-fg")}
@@ -7622,7 +7743,13 @@ function BottomNav({
 // ─── App Root ─────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const [myGroup, setMyGroup] = useState<string | null>(null)
+  const [myGroup, setMyGroup] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem("rgau_my_group")
+    } catch {
+      return null
+    }
+  })
   const [myMode, setMyMode] = useState<"student" | "teacher">("student")
   const [tab, setTab] = useState<Tab>("schedule")
   const [syncModalOpen, setSyncModalOpen] = useState(false)
@@ -7744,7 +7871,19 @@ export default function App() {
       }, 500)
     }
   }
-  const [role, setRole] = useState<UserRole>("student")
+  const [role, setRole] = useState<UserRole>(() => {
+    try {
+      const saved = localStorage.getItem("rgau_role")
+      if (saved === "student" || saved === "headstudent") return saved
+    } catch {}
+    return "student"
+  })
+  const handleRoleChange = (r: UserRole) => {
+    setRole(r)
+    try {
+      localStorage.setItem("rgau_role", r)
+    } catch {}
+  }
   const [groupId, setGroupId] = useState("АГ-204")
   const [savedGroups, setSavedGroups] = useState<string[]>([
     "АГ-204",
@@ -7904,6 +8043,9 @@ export default function App() {
             setMyMode(m)
             setGroupId(v)
             setSavedGroups((p) => (p.includes(v) ? p : [v, ...p]))
+            try {
+              localStorage.setItem("rgau_my_group", v)
+            } catch {}
           }}
         />
       </div>
@@ -8031,7 +8173,7 @@ export default function App() {
           {tab === "profile" && (
             <PageProfile
               role={role}
-              onRoleChange={setRole}
+              onRoleChange={handleRoleChange}
               dorm={dorm}
               onDormChange={setDorm}
               myGroup={myGroup!}

@@ -12,7 +12,7 @@
     "build:android": "vite build && cap sync android",
     "sync:android": "cap sync android",
     "sync:schedule": "node scripts/sync-schedule.mjs",
-    "test": "node tests/manifest-stress.test.mjs && node tests/m2-capacitor-stress.test.mjs && node tests/m3-cartography-spring-stress.test.mjs && node tests/m3-theme-wave-stress.test.mjs && node tests/m4-deploy-stress.test.mjs && node tests/m4-build-verification-stress.test.mjs && node tests/test-ios-prompt.mjs && node tests/test-timacad-autosync.mjs"
+    "test": "node tests/manifest-stress.test.mjs && node tests/m2-capacitor-stress.test.mjs && node tests/m3-cartography-spring-stress.test.mjs && node tests/m3-theme-wave-stress.test.mjs && node tests/m4-deploy-stress.test.mjs && node tests/m4-build-verification-stress.test.mjs && node tests/test-ios-prompt.mjs && node tests/test-timacad-autosync.mjs && node tests/test-cache-retention.test.mjs"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.1",
