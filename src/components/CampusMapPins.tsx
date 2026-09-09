@@ -1212,7 +1212,7 @@ export function CampusPlanViewer({
 
           <div className="absolute bottom-2.5 left-2.5 z-30 bg-card/85 backdrop-blur-sm border border-border rounded-xl px-2.5 py-1 text-[11px] font-semibold text-muted-fg pointer-events-none flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            Векторный 3D-режим · Центр 55.8340, 37.5520
+            Векторный 3D-режим · Весь кампус (55.8320, 37.5550)
           </div>
         </div>
       ) : (
