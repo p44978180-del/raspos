@@ -274,22 +274,43 @@ export function getCachedTimacadFeed(): TimacadFeedItem[] {
   return OFFICIAL_TIMACAD_FEED
 }
 
+let inMemorySchedule: any = null
+
+export const SCHEDULE_UPDATED_EVENT = "rgau-schedule-updated"
+
 /**
  * Retrieves the active schedule data (cached or bundled fallback)
  */
 export function getCachedSchedule(): any {
+  if (inMemorySchedule?.groups && Object.keys(inMemorySchedule.groups).length > 0) {
+    return inMemorySchedule
+  }
   try {
     if (typeof localStorage !== "undefined") {
       const saved = localStorage.getItem(STORAGE_CACHED_SCHEDULE)
       if (saved) {
         const parsed = JSON.parse(saved)
         if (parsed?.groups && Object.keys(parsed.groups).length > 0) {
+          inMemorySchedule = parsed
           return parsed
         }
       }
     }
   } catch {}
   return officialScheduleData
+}
+
+// Background eager loader for full 359 groups schedule
+if (typeof window !== "undefined" && typeof fetch === "function") {
+  fetch("./data/official-schedule.json")
+    .then((r) => (r.ok ? r.json() : null))
+    .then((schedJson) => {
+      if (schedJson?.groups && Object.keys(schedJson.groups).length > 0) {
+        inMemorySchedule = schedJson
+        window.dispatchEvent(new CustomEvent(SCHEDULE_UPDATED_EVENT, { detail: schedJson }))
+      }
+    })
+    .catch(() => {})
 }
 
 /**
@@ -342,8 +363,14 @@ export async function runTimacadDailySync(force: boolean = false): Promise<SyncR
       if (schedRes.ok) {
         const schedJson = await schedRes.json()
         if (schedJson?.groups && Object.keys(schedJson.groups).length > 0) {
+          inMemorySchedule = schedJson
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(new CustomEvent(SCHEDULE_UPDATED_EVENT, { detail: schedJson }))
+          }
           if (typeof localStorage !== "undefined") {
-            localStorage.setItem(STORAGE_CACHED_SCHEDULE, JSON.stringify(schedJson))
+            try {
+              localStorage.setItem(STORAGE_CACHED_SCHEDULE, JSON.stringify(schedJson))
+            } catch {}
           }
         }
       }

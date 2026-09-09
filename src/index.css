@@ -44,6 +44,7 @@
 
 html, body, #root {
   height: 100%;
+  min-height: 100dvh;
   font-family: var(--font-body);
   background-color: var(--color-bg);
   color: var(--color-fg);
@@ -97,18 +98,14 @@ html, body, #root {
 
 .tab-page { animation: fade-in .18s ease-out both; }
 
-/* ── Directional tab transitions ── */
+/* ── Directional tab transitions (translateX 100% -> 0, duration 250ms) ── */
 @keyframes slide-in-from-right {
-  from { transform: translateX(28px); opacity: 0; }
+  from { transform: translateX(100%); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
 @keyframes slide-in-from-left {
-  from { transform: translateX(-28px); opacity: 0; }
+  from { transform: translateX(-100%); opacity: 0; }
   to   { transform: translateX(0);     opacity: 1; }
-}
-@keyframes dark-wave-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
 }
 @keyframes tab-indicator {
   from { transform: scaleX(0); }
@@ -122,8 +119,8 @@ html, body, #root {
   80%     { transform: translateX(4px); }
 }
 
-.animate-slide-from-right { animation: slide-in-from-right .25s cubic-bezier(.22,1,.36,1) both; }
-.animate-slide-from-left  { animation: slide-in-from-left  .25s cubic-bezier(.22,1,.36,1) both; }
+.animate-slide-from-right { animation: slide-in-from-right 250ms cubic-bezier(.22,1,.36,1) both; }
+.animate-slide-from-left  { animation: slide-in-from-left  250ms cubic-bezier(.22,1,.36,1) both; }
 .animate-shake            { animation: shake .35s cubic-bezier(.22,1,.36,1) both; }
 
 /* ── Smooth background & color transitions ── */
@@ -164,7 +161,14 @@ html, body, #root { transition: background-color 0.35s ease, color 0.2s ease; }
   inset: 0;
   pointer-events: none;
   z-index: 99999;
-  animation: radial-wave-expand 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  animation: radial-wave-expand 0.48s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+/* ── Default hover transitions across all interactive elements ── */
+button, a, [role="button"] {
+  transition-property: all;
+  transition-duration: 200ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ── Spring Physics for Bottom Sheets & Search Bar (cubic-bezier(0.32, 0.72, 0, 1)) ── */

@@ -1049,7 +1049,7 @@ export function CampusPlanViewer({
   onSelectMarker?: (marker: CampusPlanMarker) => void
   selectedMarkerId?: string | null
 }) {
-  const [viewMode, setViewMode] = useState<"yandex" | "schematic">("yandex")
+  const [viewMode, setViewMode] = useState<"yandex" | "schematic">("schematic")
   const [scale, setScale] = useState(1)
   const [pan, setPan] = useState({ x: 0, y: 0 })
   const [filter, setFilter] = useState<"all" | PinCategory>("all")
@@ -1122,9 +1122,10 @@ export function CampusPlanViewer({
     (m) => filter === "all" || m.category === filter
   )
 
-  const mapCenterLng = activeMarker ? activeMarker.coords[0] : 37.5520
-  const mapCenterLat = activeMarker ? activeMarker.coords[1] : 55.8340
-  const yandexMapUrl = `https://yandex.ru/map-widget/v1/?ll=${mapCenterLng}%2C${mapCenterLat}&z=16&lang=ru_RU&l=map,skl`
+  const mapCenterLng = activeMarker ? activeMarker.coords[0] : 37.5550
+  const mapCenterLat = activeMarker ? activeMarker.coords[1] : 55.8320
+  const mapZoom = activeMarker ? 16 : 15
+  const yandexMapUrl = `https://yandex.ru/map-widget/v1/?ll=${mapCenterLng}%2C${mapCenterLat}&z=${mapZoom}&l=map`
 
   return (
     <div className="flex flex-col gap-2.5">

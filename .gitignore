@@ -18,3 +18,10 @@ logs/
 cache_pdfs/
 sample_schedule.pdf
 *.zip
+
+scripts/pdfs/
+scripts/pdfs_all/
+scripts/*.pdf
+scripts/*.txt
+scripts/*.json
+

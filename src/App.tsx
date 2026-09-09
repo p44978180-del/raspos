@@ -25,6 +25,7 @@ import {
   getCachedTimacadFeed,
   getCachedSchedule,
   SYNC_EVENT_NAME,
+  SCHEDULE_UPDATED_EVENT,
   type SyncResult,
 } from "./utils/timacadAutoSync"
 import { OFFICIAL_TIMACAD_SOURCES } from "./data/officialSources"
@@ -1351,9 +1352,7 @@ function calculateWalkBetween(from: string, to: string): WalkRouteResult | null 
   // 4.5 km/h = 75 m/min + 2 min buffer
   const mins = Math.max(1, Math.round(walkMeters / 75 + 1.5))
 
-  const cleanFrom = from.replace(/учебный корпус|корпус/gi, "корп.").trim()
-  const cleanTo = to.replace(/учебный корпус|корпус/gi, "корп.").trim()
-  const text = `🚶 ${mins} мин пешком (${walkMeters} м) от ${cleanFrom} до ${cleanTo}`
+  const text = `~${mins} мин`
   const routeUrl = `https://yandex.ru/maps/?rtext=${lat1},${lng1}~${lat2},${lng2}&rtt=pd`
 
   return { mins, meters: walkMeters, text, routeUrl, fromName: from, toName: to }
@@ -4542,11 +4541,10 @@ function ClassCard({
             >
               {cfg.label}
             </span>
-            {cls.weekType && cls.weekType !== "all" ? (() => {
+            {weekFilter === "all" && cls.weekType && cls.weekType !== "all" && (() => {
               const isNotThisWeek =
                 (isOddWeek && cls.weekType === "even") ||
                 (!isOddWeek && cls.weekType === "odd")
-              if (isNotThisWeek && weekFilter !== "all") return null
               const isOdd = cls.weekType === "odd"
               const badgeText = isNotThisWeek
                 ? isOdd
@@ -4575,11 +4573,7 @@ function ClassCard({
                   {badgeText}
                 </span>
               )
-            })() : (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold bg-muted text-muted-fg flex-shrink-0">
-                Все нед
-              </span>
-            )}
+            })()}
             {cls.subgroup && (
               <button
                 onClick={(e) => {
@@ -4927,7 +4921,7 @@ function DayView({
           <DormCard dorm={dorm} onDismiss={onDismissDorm} />
         )}
       {showEventBanners &&
-        todayEvents.map((ev) => (
+        todayEvents.slice(0, 2).map((ev) => (
           <div
             key={ev.id}
             className="mx-4 flex items-center gap-2.5 bg-amber-bg border border-amber/20 rounded-xl px-3 py-2.5"
@@ -4945,49 +4939,7 @@ function DayView({
             </button>
           </div>
         ))}
-      <div className="mx-4 flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-primary text-white font-bold shadow-xs">
-            {weekNum}-я нед
-          </span>
-          <span
-            className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold ${
-              isOddWeek
-                ? "bg-blue-bg text-blue border border-blue/30"
-                : "bg-amber-bg text-amber border border-amber/30"
-            }`}
-          >
-            {isOddWeek ? "Верхняя неделя (Нечётная)" : "Нижняя неделя (Чётная)"}
-          </span>
-          {activeTodayCount > 0 && (
-            <span className="text-[11px] px-2 py-0.5 rounded-full bg-accent/15 text-accent font-semibold">
-              {activeTodayCount} {activeTodayCount === 1 ? "пара" : "пар"}
-            </span>
-          )}
-        </div>
-        <div className="flex bg-muted rounded-xl p-0.5 gap-0.5 text-xs font-semibold">
-          <button
-            onClick={() => setWeekFilter("all")}
-            className={`px-2.5 py-0.5 rounded-lg transition-all ${
-              weekFilter === "all"
-                ? "bg-card text-fg shadow-xs font-bold"
-                : "text-muted-fg hover:text-fg"
-            }`}
-          >
-            Сетка
-          </button>
-          <button
-            onClick={() => setWeekFilter("current")}
-            className={`px-2.5 py-0.5 rounded-lg transition-all ${
-              weekFilter === "current"
-                ? "bg-primary text-white shadow-xs font-bold"
-                : "text-muted-fg hover:text-fg"
-            }`}
-          >
-            Эта неделя
-          </button>
-        </div>
-      </div>
+
       {entries.length === 0 ? (
         <p className="text-center py-8 text-muted-fg text-sm">
           Ничего не найдено
@@ -5285,44 +5237,18 @@ function PageSchedule({
         />
       )}
 
-      {/* Interactive Bell Schedule Live Tracker */}
-      <div className="px-4 mb-2.5">
-        <button
-          onClick={() => setBellOpen(true)}
-          className="w-full flex items-center justify-between p-2.5 rounded-2xl border border-border/80 bg-card/90 hover:border-primary/40 hover:bg-muted/50 transition-all text-left group shadow-xs active:scale-[0.99] cursor-pointer"
-        >
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div
-              className={`w-8 h-8 rounded-xl flex items-center justify-center text-base flex-shrink-0 transition-transform group-hover:scale-110 ${
-                bellStatus.status === "class"
-                  ? "bg-primary/15 text-primary"
-                  : bellStatus.status === "break"
-                    ? "bg-amber-500/15 text-amber-500"
-                    : "bg-muted text-muted-fg"
-              }`}
-            >
-              🔔
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-xs font-bold text-fg truncate">
-                  {bellStatus.text}
-                </p>
-                <span className="text-[10px] font-semibold text-accent px-1.5 py-0.5 rounded-md bg-accent/10">
-                  Режим пар
-                </span>
-              </div>
-              <p className="text-[11px] text-muted-fg truncate">
-                {bellStatus.detail}
-              </p>
-            </div>
-          </div>
-          <span className="text-xs text-muted-fg group-hover:text-fg font-semibold flex items-center gap-1 flex-shrink-0">
-            График
-            {I.chev("right", 12)}
-          </span>
-        </button>
-      </div>
+      {/* Live class indicator only when active */}
+      {(bellStatus.status === "class" || bellStatus.status === "break") && (
+        <div className="px-4 mb-2">
+          <button
+            onClick={() => setBellOpen(true)}
+            className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl bg-primary/10 border border-primary/20 text-xs font-semibold text-primary hover:bg-primary/15 transition-all text-left cursor-pointer"
+          >
+            <span className="truncate">⏱ {bellStatus.text} · {bellStatus.detail}</span>
+            <span className="text-[11px] opacity-75 flex-shrink-0 ml-1">График →</span>
+          </button>
+        </div>
+      )}
 
       {bellOpen && (
         <BellScheduleSheet
@@ -5331,25 +5257,34 @@ function PageSchedule({
           onEat={onEat}
         />
       )}
-      <div className="px-4 mb-2 flex items-center gap-2">
-        <button
-          onClick={() => setShowWeek((w) => !w)}
-          className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-xl border transition-all cursor-pointer ${
-            showWeek
-              ? "bg-primary text-white border-primary"
-              : "border-border text-muted-fg bg-card hover:border-accent/50"
-          }`}
-        >
-          Неделя {I.chev(showWeek ? "up" : "down", 11)}
-        </button>
-        {!isCurrentWeek && (
+      <div className="px-4 mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setSelDate(TODAY)}
-            className="text-xs font-semibold text-primary hover:text-accent transition-colors cursor-pointer"
+            onClick={() => setShowWeek((w) => !w)}
+            className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-xl border transition-all cursor-pointer ${
+              showWeek
+                ? "bg-primary text-white border-primary"
+                : "border-border text-muted-fg bg-card hover:border-accent/50"
+            }`}
           >
-            {I.chev("left", 12)} Сегодня
+            Неделя {I.chev(showWeek ? "up" : "down", 11)}
           </button>
-        )}
+          {!isCurrentWeek && (
+            <button
+              onClick={() => setSelDate(TODAY)}
+              className="text-xs font-semibold text-primary hover:text-accent transition-colors cursor-pointer"
+            >
+              {I.chev("left", 12)} Сегодня
+            </button>
+          )}
+        </div>
+        <button
+          onClick={() => setBellOpen(true)}
+          className="text-xs font-semibold text-muted-fg hover:text-fg flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border/60 bg-card hover:border-primary/40 transition-all cursor-pointer"
+          title="Официальный график звонков РГАУ-МСХА"
+        >
+          <span>🔔</span> Звонки
+        </button>
       </div>
       <div
         className="flex gap-1.5 overflow-x-auto px-4 pb-2"
@@ -5627,7 +5562,7 @@ const DEPT_DATA: { name: string; building: string; coords: [number, number] }[] 
   ]
 
 type CampusPinLayer = "none" | "buildings" | "dorms" | "departments"
-const MAP_CENTER = "37.5565%2C55.8298"
+const MAP_CENTER = "37.5535%2C55.8330"
 
 function buildMapSrc(
   layer: CampusPinLayer = "none",
@@ -5636,7 +5571,8 @@ function buildMapSrc(
   activePin?: [number, number] | null,
 ): string {
   const ll = center ? `${center[0]}%2C${center[1]}` : MAP_CENTER
-  const base = `https://yandex.ru/map-widget/v1/?ll=${ll}&z=17&lang=ru_RU&l=map`
+  const zoom = center ? 16 : 15
+  const base = `https://yandex.ru/map-widget/v1/?ll=${ll}&z=${zoom}&l=map`
   const pts: string[] = []
   if (activePin) {
     pts.push(`${activePin[0]},${activePin[1]},pm2rdm`)
@@ -6093,7 +6029,7 @@ function PageCampus({
           />
           <div className="absolute bottom-2 right-2 flex gap-1.5">
             <a
-              href={`https://yandex.ru/maps/213/moscow/?ll=${mapCenterCoords ? `${mapCenterCoords[0]}%2C${mapCenterCoords[1]}` : "37.5565%2C55.8298"}&z=17`}
+              href={`https://yandex.ru/maps/213/moscow/?ll=${mapCenterCoords ? `${mapCenterCoords[0]}%2C${mapCenterCoords[1]}` : "37.5565%2C55.8298"}&z=16`}
               target="_blank"
               rel="noopener noreferrer"
               className="bg-card/90 border border-border rounded-xl px-2.5 py-1.5 text-xs font-semibold text-primary shadow hover:bg-card transition-colors backdrop-blur-sm flex items-center gap-1"
@@ -6236,14 +6172,14 @@ function PageCampus({
                   <div className="pt-1 flex flex-col gap-1.5">
                     {walk && (
                       <p className="text-xs font-semibold text-primary">
-                        {walk.text}
+                        ~{walk.mins} мин пешком
                       </p>
                     )}
                     <a
                       href={walkUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 shadow-sm transition-all"
+                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 shadow-sm transition-all duration-200"
                     >
                       {I.map(14)} Пешеходный маршрут в Яндекс.Картах {I.ext(12)}
                     </a>
@@ -6825,6 +6761,7 @@ function PageEvents({
   feedItems?: TimacadFeedItem[]
 }) {
   const [filter, setFilter] = useState<EventCat>("all")
+  const [showAllEvents, setShowAllEvents] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
   const [editId, setEditId] = useState<number | null>(null)
   const [editingNote, setEditingNote] = useState(false)
@@ -6858,6 +6795,8 @@ function PageEvents({
       (e.sourceName && e.sourceName.toLowerCase().includes(q))
     return matchCat && matchSearch
   })
+  const isLimited = !showAllEvents && filter === "all" && !q
+  const displayList = isLimited ? filtered.slice(0, 3) : filtered
   const catChip: Record<string, string> = {
     news: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25",
     announcement: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/25",
@@ -7026,7 +6965,7 @@ function PageEvents({
         <p className="text-sm text-muted-fg text-center py-12">Событий нет</p>
       ) : (
         <div className="space-y-2.5">
-          {filtered.map((ev, idx) => {
+          {displayList.map((ev, idx) => {
             const isCustom = customEvents.some((c) => c.id === ev.id)
             const isEditing = editId === ev.id
             if (isEditing)
@@ -7121,39 +7060,33 @@ function PageEvents({
                         onClick={() => onDeleteEvent(ev.id)}
                         className="p-1 rounded-lg hover:bg-red-bg text-muted-fg hover:text-red"
                       >
-                        {I.close(11)}
+                        {I.trash(11)}
                       </button>
                     )}
                   </div>
                 </div>
 
                 {ev.summary && (
-                  <p className="text-xs text-muted-fg leading-relaxed mb-2.5">
+                  <p className="text-xs text-muted-fg mb-2 line-clamp-2">
                     {ev.summary}
                   </p>
                 )}
-
-                <div className="flex items-center justify-between gap-2 text-xs text-muted-fg flex-wrap pt-2 border-t border-border/60">
-                  <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center justify-between text-xs text-muted-fg mt-2 pt-2 border-t border-border/60">
+                  <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1">
-                      {I.cal(12)}
-                      <span>{fmtDate(ev.date)}</span>
+                      {I.clock(11)}
+                      <span className="font-mono">{fmtDate(ev.date)}</span>
                     </span>
                     <span className="flex items-center gap-1">
                       {I.map(11)}
-                      <span>{ev.place}</span>
+                      <span className="truncate max-w-[120px]">{ev.place}</span>
                     </span>
-                    {ev.sourceName && (
-                      <span className="text-[10px] font-medium text-muted-fg/90 bg-muted px-2 py-0.5 rounded-md border border-border/50">
-                        {ev.sourceName}
-                      </span>
-                    )}
                   </div>
                   {ev.sourceUrl && (
                     <a
                       href={ev.sourceUrl}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
                     >
                       <span>Источник</span>
@@ -7164,6 +7097,14 @@ function PageEvents({
               </div>
             )
           })}
+          {isLimited && filtered.length > 3 && (
+            <button
+              onClick={() => setShowAllEvents(true)}
+              className="w-full py-2.5 rounded-xl border border-border bg-card hover:bg-muted text-xs font-semibold text-primary transition-all duration-200 text-center cursor-pointer shadow-xs"
+            >
+              Показать все события ({filtered.length})
+            </button>
+          )}
         </div>
       )}
       {isHead &&
@@ -8171,7 +8112,7 @@ function OnboardingScreen({
   }
   return (
     <div
-      className="size-full flex flex-col items-center justify-center px-6 gap-6 animate-fade-in"
+      className="min-h-[100dvh] w-full flex flex-col items-center justify-center px-4 py-8 gap-5 animate-fade-in overflow-y-auto"
       style={{ background: "var(--color-bg)" }}
     >
       <div className="text-center space-y-1">
@@ -8457,7 +8398,6 @@ export default function App() {
     radius: number
     nextDark: boolean
   } | null>(null)
-  const waveTimeoutRef = useRef<any>(null)
 
   const handleDarkToggle = (e?: React.MouseEvent) => {
     const x = e ? e.clientX : window.innerWidth / 2
@@ -8468,30 +8408,51 @@ export default function App() {
     )
     const next = !dark
 
-    // Always trigger React radial wave overlay for guaranteed 100% circular reveal across Chrome, Safari, iOS & Android
-    setRadialWave({ x, y, radius: maxRadius, nextDark: next })
-    setDark(next)
-    if (typeof document !== "undefined") {
-      document.documentElement.classList.toggle("dark", next)
-    }
-    try {
-      localStorage.setItem("rgau_theme", next ? "dark" : "light")
-    } catch {}
-
+    // Check View Transitions API support
     const doc = typeof document !== "undefined" ? (document as any) : null
     if (doc && typeof doc.startViewTransition === "function") {
-      try {
-        doc.startViewTransition(() => {})
-      } catch {}
-    }
+      const transition = doc.startViewTransition(() => {
+        setDark(next)
+        document.documentElement.classList.toggle("dark", next)
+        try {
+          localStorage.setItem("rgau_theme", next ? "dark" : "light")
+        } catch {}
+      })
 
-    if (waveTimeoutRef.current) {
-      clearTimeout(waveTimeoutRef.current)
+      transition.ready
+        .then(() => {
+          const clipPath = [
+            `circle(0px at ${x}px ${y}px)`,
+            `circle(${maxRadius}px at ${x}px ${y}px)`,
+          ]
+          document.documentElement.animate(
+            {
+              clipPath: next ? clipPath : [...clipPath].reverse(),
+            },
+            {
+              duration: 480,
+              easing: "cubic-bezier(0.32, 0.72, 0, 1)",
+              pseudoElement: next
+                ? "::view-transition-new(root)"
+                : "::view-transition-old(root)",
+            },
+          )
+        })
+        .catch(() => {})
+    } else {
+      // Fluid CSS clip-path overlay fallback
+      setRadialWave({ x, y, radius: maxRadius, nextDark: next })
+      setDark(next)
+      if (typeof document !== "undefined") {
+        document.documentElement.classList.toggle("dark", next)
+      }
+      try {
+        localStorage.setItem("rgau_theme", next ? "dark" : "light")
+      } catch {}
+      setTimeout(() => {
+        setRadialWave(null)
+      }, 500)
     }
-    waveTimeoutRef.current = setTimeout(() => {
-      setRadialWave(null)
-      waveTimeoutRef.current = null
-    }, 450)
   }
   const [role, setRole] = useState<UserRole>(() => {
     try {
@@ -8600,6 +8561,19 @@ export default function App() {
     }
   }, [groupId])
 
+  // React when full official schedule is retrieved via background fetch or sync
+  useEffect(() => {
+    const handleScheduleUpdated = () => {
+      const updated = buildSchedule(groupId)
+      setAllDays(updated)
+      ALL_DAYS = updated
+    }
+    if (typeof window !== "undefined") {
+      window.addEventListener(SCHEDULE_UPDATED_EVENT, handleScheduleUpdated)
+      return () => window.removeEventListener(SCHEDULE_UPDATED_EVENT, handleScheduleUpdated)
+    }
+  }, [groupId])
+
   const [groupSheetOpen, setGroupSheetOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [search, setSearch] = useState("")
@@ -8681,7 +8655,7 @@ export default function App() {
       const prevIdx = TAB_ORDER.indexOf(prevTab.current)
       const curIdx = TAB_ORDER.indexOf(tab)
       setTabDir(curIdx > prevIdx ? "right" : "left")
-      setTimeout(() => setTabDir(null), 300)
+      setTimeout(() => setTabDir(null), 250)
     }
     prevTab.current = tab
   }, [tab])
@@ -8689,7 +8663,7 @@ export default function App() {
   if (!myGroup)
     return (
       <div
-        className={`size-full ${dark ? "dark" : ""}`}
+        className={`min-h-[100dvh] w-full flex flex-col overflow-y-auto ${dark ? "dark" : ""}`}
         style={{ background: "var(--color-bg)", color: "var(--color-fg)" }}
       >
         <OnboardingScreen
@@ -8715,7 +8689,7 @@ export default function App() {
 
   return (
     <div
-      className={`h-full w-full flex flex-col ${dark ? "dark" : ""}`}
+      className={`h-[100dvh] min-h-[100dvh] w-full flex flex-col overflow-hidden ${dark ? "dark" : ""}`}
       style={{ background: "var(--color-bg)", color: "var(--color-fg)" }}
     >
       {radialWave && (
@@ -8748,7 +8722,7 @@ export default function App() {
         onGoHome={() => setTab("schedule")}
       />
       <Toast toasts={toasts} onDismiss={dismissToast} />
-      <main className="flex-1 overflow-y-auto relative min-h-0">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden relative min-h-0">
         {searchOpen && search.length > 0 && (
           <GlobalSearch
             query={search}
