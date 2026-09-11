@@ -1496,6 +1496,23 @@ const I = {
       </svg>
     )
   },
+  download: (s = 16, c = "") => (
+    <svg
+      width={s}
+      height={s}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={c}
+    >
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  ),
   walk: (s = 14, c = "") => (
     <svg
       width={s}
@@ -2167,13 +2184,13 @@ function StatusBar() {
 
 const INSTITUTES_LIST = [
   { id: "agrobio", name: "Институт агробиотехнологии", short: "Агробио" },
-  { id: "mechanics", name: "Инженерный институт (им. В.П. Горячкина)", short: "Инженерия" },
+  { id: "mechanics", name: "Институт механики и энергетики (им. В.П. Горячкина)", short: "Инженерия" },
   { id: "zoobio", name: "Институт зоотехнии и биологии", short: "Зоовет" },
-  { id: "econ", name: "Институт экономики и управления", short: "Эконом" },
+  { id: "econ", name: "Институт экономики и управления АПК", short: "Эконом" },
   { id: "water", name: "Институт мелиорации, водного хозяйства и строительства", short: "Мелиорация" },
-  { id: "biotech", name: "Институт биотехнологии и ветеринарной медицины", short: "Биотех" },
   { id: "horticulture", name: "Институт садоводства и ландшафтной архитектуры", short: "Садоводство" },
   { id: "tech", name: "Технологический институт", short: "Технолог" },
+  { id: "digital", name: "Центр «Проектный институт цифровой трансформации АПК»", short: "Цифровой ин-т" },
 ]
 
 function getGroupMeta(gId: string): { instId: string; course: number } {
@@ -2187,10 +2204,10 @@ function getGroupMeta(gId: string): { instId: string; course: number } {
     let instId = "agrobio"
     if (raw.includes("агробио") || raw.includes("агроном") || raw.includes("агрохим")) instId = "agrobio"
     else if (raw.includes("инженер") || raw.includes("механ") || raw.includes("горячкин")) instId = "mechanics"
-    else if (raw.includes("зоо") || raw.includes("животн")) instId = "zoobio"
+    else if (raw.includes("зоо") || raw.includes("животн") || raw.includes("биолог") || raw.includes("ветеринар")) instId = "zoobio"
+    else if (raw.includes("цифров") || raw.includes("проектный институт") || raw.includes("пи ")) instId = "digital"
     else if (raw.includes("эконом") || raw.includes("управл")) instId = "econ"
     else if (raw.includes("мелиор") || raw.includes("водн") || raw.includes("строит") || raw.includes("костяков")) instId = "water"
-    else if (raw.includes("биотех") || raw.includes("ветеринар")) instId = "biotech"
     else if (raw.includes("садовод") || raw.includes("ландшафт")) instId = "horticulture"
     else if (raw.includes("технолог")) instId = "tech"
 
@@ -2201,18 +2218,18 @@ function getGroupMeta(gId: string): { instId: string; course: number } {
   // Robust fallback heuristic based on group code prefix and digits
   let instId = "agrobio"
   if (/^Д-И|^ДИ|^ТТ|^Д-ЭМ|^Д-ТБ|^Д-ЭТ|^ИЭ/i.test(gId)) instId = "mechanics"
-  else if (/^Д-З|^ДЗ/i.test(gId)) instId = "zoobio"
-  else if (/^Д-Э|^ЭК|^ДЭ/i.test(gId)) instId = "econ"
-  else if (/^Д-С|^М-С|^Д-П|^ПА|^Д-ЗМ/i.test(gId)) instId = "water"
-  else if (/^Д-БТ|^М-БТ|^Д-ВС|^П-/i.test(gId)) instId = "biotech"
-  else if (/^Д-ЛА|^М-ЛА|^ЛА|^Д-ПО/i.test(gId)) instId = "horticulture"
-  else if (/^Д-ТП|^Т-|^Д-СТ/i.test(gId)) instId = "tech"
+  else if (/^Д-З|^ДЗ|^М-З/i.test(gId)) instId = "zoobio"
+  else if (/ДЭ 1[5-8]|ДЭ 2[1-2]/i.test(gId)) instId = "digital"
+  else if (/^Д-Э|^ЭК|^ДЭ|^ВЭ/i.test(gId)) instId = "econ"
+  else if (/^Д-С|^М-С|^Д-П|^ПА|^Д-ЗМ|^ДВ|^ВВ/i.test(gId)) instId = "water"
+  else if (/^Д-ЛА|^М-ЛА|^ЛА|^Д-ПО|^ДС/i.test(gId)) instId = "horticulture"
+  else if (/^Д-ТП|^Т-|^Д-СТ|^ДТ/i.test(gId)) instId = "tech"
 
   let course = 1
-  if (/20\d|2-\d| 02-|-25/i.test(gId)) course = 2
-  else if (/30\d|3-\d| 03-/i.test(gId)) course = 3
-  else if (/40\d|4-\d| 04-/i.test(gId)) course = 4
-  else if (/50\d|5-\d| 05-/i.test(gId)) course = 5
+  if (/20\d|2-\d| 02-|-25| 2\d-25| 2\d-26/i.test(gId)) course = 2
+  else if (/30\d|3-\d| 03-|-24| 3\d-26| 3\d-25/i.test(gId)) course = 3
+  else if (/40\d|4-\d| 04-|-23/i.test(gId)) course = 4
+  else if (/50\d|5-\d| 05-|-22/i.test(gId)) course = 5
 
   return { instId, course }
 }
@@ -2521,7 +2538,7 @@ function AppHeader({
           <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={onGroupOpen}
-              className="flex items-center gap-1.5 bg-muted px-3 py-1.5 rounded-xl hover:bg-border transition-colors min-w-0 cursor-pointer"
+              className="flex items-center gap-1.5 bg-muted px-2.5 sm:px-3 py-1.5 rounded-xl hover:bg-border transition-colors min-w-0 cursor-pointer active:scale-[0.98]"
             >
               <span className="text-sm font-bold text-fg truncate">
                 {groupId || "Группа"}
@@ -2532,8 +2549,8 @@ function AppHeader({
               const curWeek = getStudyWeek(TODAY)
               const isOdd = curWeek % 2 !== 0
               return (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-card border border-border/80 text-xs font-semibold text-fg shadow-xs">
-                  <span className="text-muted-fg">{curWeek}-я нед</span>
+                <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl bg-card border border-border/80 text-xs font-semibold text-fg shadow-xs flex-shrink-0">
+                  <span className="text-muted-fg font-medium">{curWeek}-я<span className="hidden sm:inline"> нед</span></span>
                   <span
                     className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
                       isOdd
@@ -7850,6 +7867,52 @@ function PageProfile({
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Official Android APK Release v1.0.1 */}
+      <div className="bg-gradient-to-br from-emerald-500/10 via-card to-primary/5 border border-emerald-500/30 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+        <div className="flex items-start justify-between gap-3 mb-2.5">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-xl shadow-xs flex-shrink-0">
+              🤖
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-extrabold text-fg">Официальный Android APK</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                  v1.0.1
+                </span>
+              </div>
+              <p className="text-xs text-muted-fg mt-0.5">
+                Нативное приложение для смартфонов и планшетов Android
+              </p>
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-muted-fg leading-relaxed mb-3">
+          432 группы всех 8 институтов РГАУ-МСХА, оффлайн-доступ, плавная физика анимаций, карта кампуса и автоматическая ночная сверка расписания.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <a
+            href="https://github.com/p44978180-del/raspos/releases/download/v1.0.1/rgau-raspos-v1.0.1.apk"
+            download="rgau-raspos-v1.0.1.apk"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-primary text-white text-xs font-bold shadow-sm hover:bg-primary-light active:scale-[0.98] transition-all cursor-pointer"
+          >
+            {I.download(15)}
+            <span>Скачать APK (v1.0.1, ~6.3 МБ)</span>
+          </a>
+          <a
+            href="https://github.com/p44978180-del/raspos/releases/tag/v1.0.1"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-border bg-card text-muted-fg hover:text-fg text-xs font-semibold hover:border-primary/40 active:scale-[0.98] transition-all cursor-pointer"
+          >
+            {I.ext(13)}
+            <span>Релиз на GitHub</span>
+          </a>
         </div>
       </div>
 

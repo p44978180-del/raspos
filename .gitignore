@@ -24,4 +24,8 @@ scripts/pdfs_all/
 scripts/*.pdf
 scripts/*.txt
 scripts/*.json
-
+*.apk
+__pycache__/
+scripts/__pycache__/
+scripts/*.jpg
+scripts/*.html

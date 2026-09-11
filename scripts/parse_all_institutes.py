@@ -75,21 +75,32 @@ def identify_day(cell_text):
 def parse_time(time_str):
     if not time_str:
         return None
+    s = "".join(time_str.split())
+    if any(x in s for x in ["0190", "09.00", "08.30", "08:30", "09:00", "8.30", "8:30", "9.00"]):
+        return 1
+    if any(x in s for x in ["1102", "10.55", "10.20", "10:55", "10:20", "11.55"]):
+        return 2
+    if any(x in s for x in ["1134", "13.00", "12.25", "13:00", "12:25", "14.00"]):
+        return 3
+    if any(x in s for x in ["1146", "14.55", "14.15", "14:55", "14:15", "15.50"]):
+        return 4
+    if any(x in s for x in ["1168", "16.50", "16.05", "16:50", "16:05", "17.40"]):
+        return 5
+    if any(x in s for x in ["1182", "18.45", "17.55", "18:45", "17:55", "19.30"]):
+        return 6
+    if any(x in s for x in ["19.45", "19:45", "20.20", "21.20"]):
+        return 7
     m = re.search(r'(\d{1,2})[.:](\d{2})', time_str)
-    if not m:
-        return None
-    start_key = f"{m.group(1).zfill(2)}.{m.group(2)}"
-    bell = TIME_TO_BELL.get(start_key)
-    if bell is None:
-        hour = int(m.group(1))
-        if hour in (8, 9): bell = 1
-        elif hour == 10: bell = 2
-        elif hour in (12, 13): bell = 3
-        elif hour in (14, 15): bell = 4
-        elif hour in (16, 17): bell = 5
-        elif hour == 18: bell = 6
-        elif hour >= 19: bell = 7
-    return bell
+    if m:
+        h = int(m.group(1))
+        if h in (8, 9): return 1
+        elif h in (10, 11): return 2
+        elif h in (12, 13): return 3
+        elif h in (14, 15): return 4
+        elif h in (16, 17): return 5
+        elif h == 18: return 6
+        elif h >= 19: return 7
+    return None
 
 def parse_class_type(text):
     t = text.lower()
@@ -232,25 +243,31 @@ def parse_pdf(pdf_path, institute, course_num):
                         continue
                         
                     current_day = None
+                    current_pair = None
                     for row in table[1:]:
                         if not row:
                             continue
                         day_cell = row[0] if row else None
                         if day_cell:
                             d = identify_day(str(day_cell))
-                            if d: current_day = d
+                            if d:
+                                current_day = d
+                                current_pair = None
                             
                         time_cell = row[1] if len(row) > 1 else None
-                        pair_num = parse_time(str(time_cell)) if time_cell else None
+                        if time_cell:
+                            p_num = parse_time(str(time_cell))
+                            if p_num:
+                                current_pair = p_num
                         
-                        if not current_day or not pair_num:
+                        if not current_day or not current_pair:
                             continue
                             
                         for col_idx, gname in group_cols.items():
                             if col_idx >= len(row): continue
                             cell = row[col_idx]
                             if not cell: continue
-                            cls = parse_class_cell(str(cell), pair_num)
+                            cls = parse_class_cell(str(cell), current_pair)
                             if not cls: continue
                             
                             class_id_counter[0] += 1

@@ -3,43 +3,43 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-bg: #F4F1EB;
+  --color-bg: #F8F9FA;
   --color-card: #FFFFFF;
-  --color-fg: #141410;
-  --color-primary: #2D5016;
-  --color-primary-light: #3D6B20;
-  --color-accent: #6B8F2A;
-  --color-muted: #EAE6DC;
-  --color-border: #CEC9B7;
-  --color-muted-fg: #4A4639;
-  --color-amber: #A86200;
+  --color-fg: #0F172A;
+  --color-primary: #15803D;
+  --color-primary-light: #16A34A;
+  --color-accent: #059669;
+  --color-muted: #F1F5F9;
+  --color-border: #E2E8F0;
+  --color-muted-fg: #64748B;
+  --color-amber: #D97706;
   --color-amber-bg: #FEF3C7;
-  --color-blue: #1A4F7A;
-  --color-blue-bg: #DBEAFE;
-  --color-red: #B91C1C;
-  --color-red-bg: #FEE2E2;
+  --color-blue: #2563EB;
+  --color-blue-bg: #EFF6FF;
+  --color-red: #DC2626;
+  --color-red-bg: #FEF2F2;
 
-  --font-body: 'Manrope', sans-serif;
+  --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
 }
 
 /* ── Dark mode overrides ── */
 .dark {
-  --color-bg:          #0F1310;
-  --color-card:        #1B201B;
-  --color-fg:          #E8E3D8;
-  --color-primary:     #5A9040;
-  --color-primary-light: #6BA84E;
-  --color-accent:      #7AB055;
-  --color-muted:       #222920;
-  --color-border:      #2D3A2D;
-  --color-muted-fg:    #7A8C74;
-  --color-amber:       #E8A030;
-  --color-amber-bg:    #2A2010;
-  --color-blue:        #5BA3E0;
-  --color-blue-bg:     #0E1A2A;
-  --color-red:         #E06060;
-  --color-red-bg:      #2A0E0E;
+  --color-bg:          #090D0B;
+  --color-card:        #131A15;
+  --color-fg:          #F1F5F9;
+  --color-primary:     #22C55E;
+  --color-primary-light: #4ADE80;
+  --color-accent:      #10B981;
+  --color-muted:       #1A241C;
+  --color-border:      #233327;
+  --color-muted-fg:    #94A3B8;
+  --color-amber:       #F59E0B;
+  --color-amber-bg:    #2B1D08;
+  --color-blue:        #38BDF8;
+  --color-blue-bg:     #0C2136;
+  --color-red:         #F87171;
+  --color-red-bg:      #301010;
 }
 
 html, body, #root {
@@ -54,7 +54,7 @@ html, body, #root {
 ::-webkit-scrollbar { width: 0; height: 0; }
 
 @keyframes slide-in-up {
-  from { transform: translateY(32px); opacity: 0; }
+  from { transform: translateY(24px); opacity: 0; }
   to   { transform: translateY(0);    opacity: 1; }
 }
 @keyframes fade-in {
@@ -70,31 +70,42 @@ html, body, #root {
   100% { background-position:  200% 0; }
 }
 @keyframes pop-in {
-  from { transform: scale(0.88); opacity: 0; }
-  to   { transform: scale(1);    opacity: 1; }
+  0%   { transform: scale(0.92); opacity: 0; }
+  70%  { transform: scale(1.02); opacity: 1; }
+  100% { transform: scale(1);    opacity: 1; }
 }
 @keyframes slide-right {
   from { transform: translateX(-12px); opacity: 0; }
   to   { transform: translateX(0);     opacity: 1; }
 }
 @keyframes bounce-in {
-  0%   { transform: scale(0.7);  opacity: 0; }
-  60%  { transform: scale(1.06); opacity: 1; }
-  80%  { transform: scale(0.97); }
+  0%   { transform: scale(0.85); opacity: 0; }
+  50%  { transform: scale(1.04); opacity: 1; }
+  75%  { transform: scale(0.98); }
   100% { transform: scale(1); }
 }
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(107,143,42,0.4); }
-  50%       { box-shadow: 0 0 0 6px rgba(107,143,42,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(21, 128, 61, 0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(21, 128, 61, 0); }
+}
+@keyframes card-entrance {
+  0%   { transform: translateY(16px) scale(0.98); opacity: 0; }
+  100% { transform: translateY(0) scale(1);       opacity: 1; }
+}
+@keyframes live-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.3); opacity: 0.7; }
 }
 
 .animate-slide-up   { animation: slide-in-up .28s cubic-bezier(.22,1,.36,1) both; }
 .animate-fade-in    { animation: fade-in     .2s  ease-out both; }
 .animate-toast-in   { animation: toast-in    .3s  cubic-bezier(.22,1,.36,1) both; }
-.animate-pop-in     { animation: pop-in      .22s cubic-bezier(.22,1,.36,1) both; }
+.animate-pop-in     { animation: pop-in      .24s cubic-bezier(.16,1,.3,1) both; }
 .animate-slide-right{ animation: slide-right .2s  cubic-bezier(.22,1,.36,1) both; }
-.animate-bounce-in  { animation: bounce-in   .38s cubic-bezier(.22,1,.36,1) both; }
+.animate-bounce-in  { animation: bounce-in   .35s cubic-bezier(.34,1.56,.64,1) both; }
+.animate-card-in    { animation: card-entrance .32s cubic-bezier(.16,1,.3,1) both; }
 .pulse-glow         { animation: pulse-glow  2s   ease-in-out infinite; }
+.live-dot           { animation: live-pulse  1.8s ease-in-out infinite; }
 
 .tab-page { animation: fade-in .18s ease-out both; }
 
@@ -122,6 +133,22 @@ html, body, #root {
 .animate-slide-from-right { animation: slide-in-from-right 250ms cubic-bezier(.22,1,.36,1) both; }
 .animate-slide-from-left  { animation: slide-in-from-left  250ms cubic-bezier(.22,1,.36,1) both; }
 .animate-shake            { animation: shake .35s cubic-bezier(.22,1,.36,1) both; }
+
+/* ── Tactile Press & Haptic Feel ── */
+.tactile-btn {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.15s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tactile-btn:active {
+  transform: scale(0.96);
+}
+.tactile-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.tactile-card:active {
+  transform: scale(0.985);
+}
 
 /* ── Smooth background & color transitions ── */
 html, body, #root { transition: background-color 0.35s ease, color 0.2s ease; }

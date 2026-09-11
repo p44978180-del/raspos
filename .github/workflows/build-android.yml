@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-android:
@@ -188,3 +188,22 @@ jobs:
           if-no-files-found: error
           retention-days: 30
           compression-level: 6
+
+      # Step 16: Prepare Named Release APK
+      - name: Prepare Named Release APK
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk rgau-raspos-v1.0.1.apk
+          ls -lh rgau-raspos-v1.0.1.apk
+
+      # Step 17: Publish official APK directly to GitHub Release v1.0.1
+      - name: Publish APK to GitHub Release
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.1
+          name: 🌾 РГАУ Расписание v1.0.1 — Официальный релиз
+          files: |
+            rgau-raspos-v1.0.1.apk
+            android/app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
