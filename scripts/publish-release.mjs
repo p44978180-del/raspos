@@ -118,8 +118,12 @@ function packageAssets() {
   execSync("npm run sync:android", { cwd: ROOT, stdio: "inherit" })
 
   console.log("\n📦 3. Packaging Android APK (rgau-raspos-v1.0.1.apk)...")
+  const publicApk = path.join(ROOT, "public", "rgau-raspos-v1.0.1.apk")
   const baseApk = path.join(ROOT, "rgau-raspos-v1.0.0.apk")
-  if (fs.existsSync(baseApk) && !fs.existsSync(ASSETS[0].path)) {
+  if (fs.existsSync(publicApk)) {
+    fs.copyFileSync(publicApk, ASSETS[0].path)
+    console.log(`✔ Prepared APK from public asset: ${ASSETS[0].name} (${(fs.statSync(ASSETS[0].path).size / 1024 / 1024).toFixed(2)} MB)`)
+  } else if (fs.existsSync(baseApk) && !fs.existsSync(ASSETS[0].path)) {
     fs.copyFileSync(baseApk, ASSETS[0].path)
     console.log(`✔ Prepared initial APK from base: ${ASSETS[0].name}`)
   }

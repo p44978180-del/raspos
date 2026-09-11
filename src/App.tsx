@@ -178,32 +178,53 @@ function CampusSkeleton() {
 
 function EmptyDayState({ weekday }: { weekday: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-      <div className="text-6xl mb-4">🎉</div>
-      <h3 className="text-xl font-bold text-foreground mb-2">Свободный день!</h3>
-      <p className="text-muted text-sm max-w-xs">
-        На {weekday.toLowerCase()} нет запланированных занятий. Отличное время для самоподготовки или отдыха.
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center animate-fade-in">
+      <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-primary mb-3.5 shadow-xs">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+          <polyline points="22 4 12 14.01 9 11.01" />
+        </svg>
+      </div>
+      <h3 className="text-base font-bold text-fg mb-1.5 tracking-tight">Свободный день</h3>
+      <p className="text-xs text-muted-fg max-w-xs leading-relaxed">
+        На {weekday.toLowerCase()} нет запланированных учебных занятий. Время для самоподготовки или отдыха.
       </p>
+      <span className="mt-3.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-muted border border-border/80 text-muted-fg">
+        Занятий нет
+      </span>
     </div>
   )
 }
 
 function EmptySearchState({ query }: { query: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-      <div className="text-5xl mb-3">🔍</div>
-      <h3 className="text-lg font-semibold text-foreground mb-1">Ничего не найдено</h3>
-      <p className="text-muted text-sm">По запросу «{query}» ничего не нашлось. Попробуйте изменить запрос.</p>
+    <div className="flex flex-col items-center justify-center py-14 px-6 text-center animate-fade-in">
+      <div className="w-12 h-12 rounded-2xl bg-muted/80 border border-border/80 flex items-center justify-center text-muted-fg mb-3 shadow-xs">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+      </div>
+      <h3 className="text-sm font-bold text-fg mb-1">Ничего не найдено</h3>
+      <p className="text-xs text-muted-fg max-w-xs leading-relaxed">По запросу «{query}» ничего не нашлось. Попробуйте изменить формулировку.</p>
     </div>
   )
 }
 
 function EmptyHomeworkState() {
   return (
-    <div className="flex flex-col items-center py-10 text-center">
-      <div className="text-5xl mb-3">📚</div>
-      <h3 className="text-lg font-semibold text-foreground mb-1">Заданий пока нет</h3>
-      <p className="text-muted text-sm">Домашние задания появятся здесь, когда их добавит староста.</p>
+    <div className="flex flex-col items-center justify-center py-12 px-6 text-center animate-fade-in">
+      <div className="w-12 h-12 rounded-2xl bg-muted/80 border border-border/80 flex items-center justify-center text-muted-fg mb-3 shadow-xs">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+      </div>
+      <h3 className="text-sm font-bold text-fg mb-1">Заданий пока нет</h3>
+      <p className="text-xs text-muted-fg max-w-xs leading-relaxed">Домашние задания появятся здесь, когда их добавит староста группы.</p>
     </div>
   )
 }
@@ -227,16 +248,6 @@ function PullIndicator({ pulling, progress }: { pulling: boolean; progress: numb
   )
 }
 
-function StatBubble({ emoji, label, count, color }: { emoji: string, label: string, count: number, color: string }) {
-  return (
-    <div className={`flex flex-col items-center p-2 rounded-xl ${color}`}>
-      <span className="text-xl mb-1">{emoji}</span>
-      <span className="text-xs font-semibold">{count}</span>
-      <span className="text-[10px] text-muted-fg opacity-80 uppercase tracking-wider">{label}</span>
-    </div>
-  )
-}
-
 function WeekStats({ weekSchedule }: { weekSchedule: DaySchedule[] }) {
   const totalClasses = weekSchedule.reduce((sum, d) => sum + d.classes.length, 0);
   const lectureCount = weekSchedule.reduce((sum, d) => sum + d.classes.filter(c => c.type === 'lecture').length, 0);
@@ -244,17 +255,57 @@ function WeekStats({ weekSchedule }: { weekSchedule: DaySchedule[] }) {
   const labCount = totalClasses - lectureCount - practiceCount;
   
   return (
-    <div className="bg-card rounded-2xl p-4 mx-4 mb-4">
-      <h3 className="font-semibold text-foreground mb-3">📊 Моя неделя</h3>
-      <div className="grid grid-cols-3 gap-3">
-        <StatBubble emoji="📖" label="Лекций" count={lectureCount} color="bg-emerald-50 dark:bg-emerald-900/20" />
-        <StatBubble emoji="⚗️" label="Практик" count={practiceCount} color="bg-amber-50 dark:bg-amber-900/20" />
-        <StatBubble emoji="🔬" label="Лабор." count={labCount} color="bg-blue-50 dark:bg-blue-900/20" />
+    <div className="bg-card border border-border/80 rounded-2xl p-4 mx-4 mb-4 shadow-xs tactile-card">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <line x1="16" y1="2" x2="16" y2="6" />
+              <line x1="8" y1="2" x2="8" y2="6" />
+              <line x1="3" y1="10" x2="21" y2="10" />
+            </svg>
+          </div>
+          <span className="text-xs font-bold text-fg uppercase tracking-wider">Учебная неделя</span>
+        </div>
+        <span className="text-xs font-mono font-extrabold text-primary px-2 py-0.5 rounded-md bg-primary/10 border border-primary/20">
+          {totalClasses} пар
+        </span>
       </div>
-      <div className="mt-3 h-2 rounded-full bg-border/20 overflow-hidden flex">
-        <div className="bg-emerald-500 h-full" style={{width: `${(lectureCount/Math.max(1,totalClasses))*100}%`}} />
-        <div className="bg-amber-500 h-full" style={{width: `${(practiceCount/Math.max(1,totalClasses))*100}%`}} />
-        <div className="bg-blue-500 h-full" style={{width: `${(labCount/Math.max(1,totalClasses))*100}%`}} />
+      <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-col items-center p-2.5 rounded-xl bg-muted/60 border border-border/60 text-center">
+          <span className="text-primary mb-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+          </span>
+          <span className="text-base font-mono font-bold text-fg leading-none mt-0.5">{lectureCount}</span>
+          <span className="text-[10px] text-muted-fg uppercase font-bold tracking-wider mt-1">Лекции</span>
+        </div>
+        <div className="flex flex-col items-center p-2.5 rounded-xl bg-muted/60 border border-border/60 text-center">
+          <span className="text-amber-600 dark:text-amber-400 mb-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+            </svg>
+          </span>
+          <span className="text-base font-mono font-bold text-fg leading-none mt-0.5">{practiceCount}</span>
+          <span className="text-[10px] text-muted-fg uppercase font-bold tracking-wider mt-1">Практики</span>
+        </div>
+        <div className="flex flex-col items-center p-2.5 rounded-xl bg-muted/60 border border-border/60 text-center">
+          <span className="text-blue-600 dark:text-blue-400 mb-1">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 3h6M10 9h4M10 3v6l-4 8a2 2 0 0 0 1.8 3h8.4a2 2 0 0 0 1.8-3l-4-8V3" />
+            </svg>
+          </span>
+          <span className="text-base font-mono font-bold text-fg leading-none mt-0.5">{labCount}</span>
+          <span className="text-[10px] text-muted-fg uppercase font-bold tracking-wider mt-1">Лабораторные</span>
+        </div>
+      </div>
+      <div className="mt-3 h-1.5 rounded-full bg-border/40 overflow-hidden flex">
+        <div className="bg-primary h-full transition-all duration-500" style={{width: `${(lectureCount/Math.max(1,totalClasses))*100}%`}} />
+        <div className="bg-amber-500 h-full transition-all duration-500" style={{width: `${(practiceCount/Math.max(1,totalClasses))*100}%`}} />
+        <div className="bg-blue-500 h-full transition-all duration-500" style={{width: `${(labCount/Math.max(1,totalClasses))*100}%`}} />
       </div>
     </div>
   )
@@ -775,7 +826,7 @@ function buildSchedule(
       baseWeek.push({
         date: WEEK_DATES[day.weekday] || "2026-09-07",
         weekday: day.weekday,
-        classes: day.classes.map((c: any) => {
+        classes: (day.classes || []).map((c: any) => {
           const bell = OFFICIAL_BELLS[c.num] || { start: c.start, end: c.end }
           return {
             id: c.id,
@@ -793,7 +844,31 @@ function buildSchedule(
         }),
       })
     })
-    baseWeek.push({ date: "2026-09-13", weekday: "Воскресенье", classes: [] })
+
+    // Ensure all 7 days of the week are present in baseWeek
+    const presentWeekdays = new Set(baseWeek.map((d) => d.weekday))
+    const ALL_DAYS_ORDER = [
+      "Понедельник",
+      "Вторник",
+      "Среда",
+      "Четверг",
+      "Пятница",
+      "Суббота",
+      "Воскресенье",
+    ]
+    ALL_DAYS_ORDER.forEach((wday) => {
+      if (!presentWeekdays.has(wday)) {
+        baseWeek.push({
+          date: WEEK_DATES[wday] || "2026-09-07",
+          weekday: wday,
+          classes: [],
+        })
+      }
+    })
+    baseWeek.sort(
+      (a, b) =>
+        (WEEK_DATES[a.weekday] || "").localeCompare(WEEK_DATES[b.weekday] || ""),
+    )
 
     const result = [...baseWeek]
     for (let w = 1; w <= 24; w++) {
@@ -1374,19 +1449,19 @@ function fmtOpenTo(f: FoodSpot) {
 
 const TYPE_CFG = {
   lecture: {
-    label: "📖 Лекция",
+    label: "Лекция",
     bar: "bg-primary",
-    chip: "bg-muted text-primary border border-primary/20",
+    chip: "bg-primary/10 text-primary border border-primary/25",
   },
   practice: {
-    label: "⚗️ Практика",
+    label: "Практика",
     bar: "bg-amber-500",
-    chip: "bg-amber-bg text-amber",
+    chip: "bg-amber-bg text-amber border border-amber/25",
   },
   lab: {
-    label: "🔬 Лаб. работа",
+    label: "Лабораторная",
     bar: "bg-blue-500",
-    chip: "bg-blue-bg text-blue",
+    chip: "bg-blue-bg text-blue border border-blue/25",
   },
 } as const
 
@@ -1947,6 +2022,38 @@ const I = {
       <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
     </svg>
   ),
+  flask: (s = 16, c = "") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={c}>
+      <path d="M9 3h6M10 9h4M10 3v6l-4 8a2 2 0 0 0 1.8 3h8.4a2 2 0 0 0 1.8-3l-4-8V3" />
+    </svg>
+  ),
+  android: (s = 16, c = "") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" className={c}>
+      <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v6c0 .83.67 1.5 1.5 1.5S5 16.33 5 15.5v-6C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v6c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-6c0-.83-.67-1.5-1.5-1.5zm-4.97-4.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.72 2.24 12.88 2 12 2c-.88 0-1.72.24-2.64.63L7.88 1.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.3 1.3C6.72 4.19 5.5 5.94 5.5 8h13c0-2.06-1.22-3.81-2.97-4.84zM9 6c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm6 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1z" />
+    </svg>
+  ),
+  academicCap: (s = 16, c = "") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor" className={c}>
+      <path d="M12 3L1 9L12 15L21 10.09V17H23V9L12 3ZM5 13.18V17.18C5 19.5 8.13 21 12 21C15.87 21 19 19.5 19 17.18V13.18L12 17L5 13.18Z" />
+    </svg>
+  ),
+  mobile: (s = 16, c = "") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={c}>
+      <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+      <line x1="12" y1="18" x2="12.01" y2="18" />
+    </svg>
+  ),
+  sparkle: (s = 16, c = "") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={c}>
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+    </svg>
+  ),
+  file: (s = 16, c = "") => (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={c}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+    </svg>
+  ),
 }
 
 // ─── Campus Pin Marker ────────────────────────────────────────────────────────
@@ -2083,7 +2190,7 @@ function Sheet({
         }`}
       />
       <div
-        className={`relative bg-card rounded-t-3xl shadow-2xl max-h-[90vh] flex flex-col ${
+        className={`relative bg-card rounded-t-3xl shadow-2xl max-h-[90vh] flex flex-col w-full max-w-lg md:max-w-xl lg:max-w-2xl mx-auto ${
           isClosing ? "sheet-spring-exit" : "sheet-spring-enter"
         }`}
         style={{
@@ -2304,23 +2411,25 @@ function GroupSheet({
         <div className="flex bg-muted rounded-xl p-0.5 gap-0.5 text-xs font-bold">
           <button
             onClick={() => setViewMode("hierarchy")}
-            className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${
+            className={`flex-1 py-2 rounded-lg transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 ${
               viewMode === "hierarchy"
-                ? "bg-card text-fg shadow-xs"
-                : "text-muted-fg hover:text-fg"
+                ? "bg-card text-fg shadow-xs font-extrabold"
+                : "text-muted-fg hover:text-fg font-semibold"
             }`}
           >
-            🏛 Институт → Курс → Группа
+            {I.academicCap(14)}
+            <span>По институтам</span>
           </button>
           <button
             onClick={() => setViewMode("search")}
-            className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${
+            className={`flex-1 py-2 rounded-lg transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 ${
               viewMode === "search"
-                ? "bg-card text-fg shadow-xs"
-                : "text-muted-fg hover:text-fg"
+                ? "bg-card text-fg shadow-xs font-extrabold"
+                : "text-muted-fg hover:text-fg font-semibold"
             }`}
           >
-            🔍 Поиск ({RGAU_GROUPS.length} групп)
+            {I.search(13)}
+            <span>Быстрый поиск ({RGAU_GROUPS.length})</span>
           </button>
         </div>
 
@@ -2580,10 +2689,10 @@ function AppHeader({
             {((isIosDevice() || isIPadDevice()) && getIosBrowserType() === "safari" && !isStandaloneMode() && onOpenIosPrompt) && (
               <button
                 onClick={onOpenIosPrompt}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/25 text-xs font-bold text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/25 text-xs font-bold text-primary hover:bg-primary/20 transition-colors cursor-pointer"
                 title="Установить на экран «Домой»"
               >
-                <span>📱</span>
+                {I.mobile(13, "text-primary")}
                 <span className="text-[10px] font-bold">На «Домой»</span>
               </button>
             )}
@@ -2633,10 +2742,10 @@ function AppHeader({
             {((isIosDevice() || isIPadDevice()) && getIosBrowserType() === "safari" && !isStandaloneMode() && onOpenIosPrompt) && (
               <button
                 onClick={onOpenIosPrompt}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/25 text-xs font-bold text-primary hover:bg-primary/20 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-primary/10 border border-primary/25 text-xs font-bold text-primary hover:bg-primary/20 transition-colors cursor-pointer"
                 title="Установить на экран «Домой»"
               >
-                <span>📱</span>
+                {I.mobile(13, "text-primary")}
                 <span className="text-[10px] font-bold">На «Домой»</span>
               </button>
             )}
@@ -4471,12 +4580,12 @@ function ClassCard({
 
   return (
     <div
-      className={`relative flex rounded-2xl overflow-hidden border transition-all duration-200 ${
+      className={`relative flex rounded-2xl overflow-hidden border transition-all duration-200 tactile-card cursor-pointer ${
         cancelled
           ? "opacity-60 border-red-bg bg-card"
           : isNow && !cancelled
-            ? "border-accent ring-2 ring-primary/30 shadow-md shadow-accent/10 bg-card"
-            : "border-border bg-card hover:border-accent/40 hover:shadow-sm"
+            ? "border-primary/50 ring-2 ring-primary/20 shadow-md shadow-primary/5 bg-card"
+            : "border-border/80 bg-card hover:border-primary/40 hover:shadow-xs active:scale-[0.985]"
       }`}
     >
       <div
@@ -4554,9 +4663,10 @@ function ClassCard({
           </button>
           <div className="flex gap-1 flex-wrap justify-end items-center max-w-[44%]">
             <span
-              className={`text-[11px] px-1.5 py-0.5 rounded-md font-semibold flex-shrink-0 ${cfg.chip}`}
+              className={`text-[11px] px-2 py-0.5 rounded-md font-semibold flex-shrink-0 inline-flex items-center gap-1 ${cfg.chip}`}
             >
-              {cfg.label}
+              {cls.type === "lecture" ? I.book(11) : cls.type === "practice" ? I.pencil(11) : I.flask(11)}
+              <span>{cfg.label}</span>
             </span>
             {weekFilter === "all" && cls.weekType && cls.weekType !== "all" && (() => {
               const isNotThisWeek =
@@ -4614,8 +4724,8 @@ function ClassCard({
               </span>
             )}
             {hasKonspekt && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold bg-muted text-muted-fg flex-shrink-0">
-                📝
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold bg-primary/10 border border-primary/20 text-primary flex-shrink-0 inline-flex items-center gap-1">
+                {I.file(10)} Конспект
               </span>
             )}
             {hasTodos && !homework && (
@@ -5028,7 +5138,7 @@ function DayView({
                   ? `movedin-${curCls.id}`
                   : `native-${curCls.id}`
               }
-              className={`space-y-1.5 animate-slide-up ${stagger}`}
+              className={`space-y-1.5 animate-slide-up stagger-card ${stagger}`}
               style={{ animationDelay: `${idx * 45}ms` }}
             >
               {prevBuilding &&
@@ -5453,32 +5563,34 @@ function PageSchedule({
           })}
         </div>
       )}
-      <DayView
-        allDays={activeDays}
-        dateStr={selDate}
-        search={search}
-        homework={homework}
-        personal={personal}
-        role={role}
-        classEdits={classEdits}
-        subgroupPrefs={subgroupPrefs}
-        dorm={dorm}
-        konspekts={konspekts}
-        dormDismissed={dormDismissed}
-        dismissedEvents={dismissedEvents}
-        showDormBanner={showDormBanner}
-        showEventBanners={showEventBanners}
-        movedInEntries={uniqueMovedIn}
-        nowMin={nowMin}
-        onDismissDorm={onDismissDorm}
-        onDismissEvent={onDismissEvent}
-        onBuildingClick={onBuildingClick}
-        onNotesClick={onNotesClick}
-        onManageClass={onManageClass}
-        onSubgroupTap={onSubgroupTap}
-        onSubjectClick={onSubjectClick}
-        onEat={onEat}
-      />
+      <div key={selDate} className="animate-fade-in">
+        <DayView
+          allDays={activeDays}
+          dateStr={selDate}
+          search={search}
+          homework={homework}
+          personal={personal}
+          role={role}
+          classEdits={classEdits}
+          subgroupPrefs={subgroupPrefs}
+          dorm={dorm}
+          konspekts={konspekts}
+          dormDismissed={dormDismissed}
+          dismissedEvents={dismissedEvents}
+          showDormBanner={showDormBanner}
+          showEventBanners={showEventBanners}
+          movedInEntries={uniqueMovedIn}
+          nowMin={nowMin}
+          onDismissDorm={onDismissDorm}
+          onDismissEvent={onDismissEvent}
+          onBuildingClick={onBuildingClick}
+          onNotesClick={onNotesClick}
+          onManageClass={onManageClass}
+          onSubgroupTap={onSubgroupTap}
+          onSubjectClick={onSubjectClick}
+          onEat={onEat}
+        />
+      </div>
     </div>
   )
 }
@@ -5973,10 +6085,10 @@ function PageCampus({
         <div className="flex items-center gap-2">
           <div className="flex-1 flex bg-muted rounded-xl p-0.5 gap-0.5">
             {([
-              ["plan", "🗺 Схема кампуса"],
-              ["territory", "📍 Яндекс Карта"],
-              ["food", "🍽 Где поесть"],
-            ] as ["plan" | "territory" | "food", string][]).map(([v, l]) => (
+              ["plan", "Схема кампуса", I.map],
+              ["territory", "Карта онлайн", I.cal],
+              ["food", "Где поесть", I.fork],
+            ] as const).map(([v, l, iconFn]) => (
               <button
                 key={v}
                 onClick={() => {
@@ -5988,13 +6100,14 @@ function PageCampus({
                   setSelectedQuickPlace(null)
                   setMapCenterCoords(null)
                 }}
-                className={`flex-1 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                className={`flex-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                   campusMode === v
-                    ? "bg-primary text-white shadow-sm"
+                    ? "bg-primary text-white shadow-xs font-extrabold"
                     : "text-muted-fg hover:text-fg"
                 }`}
               >
-                {l}
+                {iconFn(12, campusMode === v ? "text-white" : "text-muted-fg")}
+                <span>{l}</span>
               </button>
             ))}
           </div>
@@ -6211,18 +6324,18 @@ function PageCampus({
       {!showFood && (
         <div className="px-4 flex gap-1.5 flex-wrap">
           {([
-            ["none", "🌍 Обзор"],
-            ["buildings", "🏛 Корпуса"],
-            ["dorms", "🏠 Общежития"],
-            ["departments", "🔬 Кафедры"],
+            ["none", "Все объекты"],
+            ["buildings", "Корпуса"],
+            ["dorms", "Общежития"],
+            ["departments", "Кафедры"],
           ] as [CampusPinLayer, string][]).map(([id, label]) => (
             <button
               key={id}
               onClick={() => setPinLayer(id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                 pinLayer === id
-                  ? "bg-primary text-white border-primary"
-                  : "bg-card border-border text-muted-fg hover:border-accent/40 hover:text-fg"
+                  ? "bg-primary text-white border-primary shadow-xs"
+                  : "bg-card border-border text-muted-fg hover:border-primary/40 hover:text-fg"
               }`}
             >
               {label}
@@ -7871,38 +7984,46 @@ function PageProfile({
       </div>
 
       {/* Official Android APK Release v1.0.1 */}
-      <div className="bg-gradient-to-br from-emerald-500/10 via-card to-primary/5 border border-emerald-500/30 rounded-2xl p-4 shadow-sm relative overflow-hidden">
+      <div className="bg-card border border-primary/25 rounded-2xl p-4 shadow-xs relative overflow-hidden tactile-card">
         <div className="flex items-start justify-between gap-3 mb-2.5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center text-white text-xl shadow-xs flex-shrink-0">
-              🤖
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white text-xl shadow-xs flex-shrink-0">
+              {I.android(22, "text-white")}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-sm font-extrabold text-fg">Официальный Android APK</span>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/25">
                   v1.0.1
                 </span>
               </div>
               <p className="text-xs text-muted-fg mt-0.5">
-                Нативное приложение для смартфонов и планшетов Android
+                Нативное приложение для Android-смартфонов и планшетов
               </p>
             </div>
           </div>
         </div>
         <p className="text-xs text-muted-fg leading-relaxed mb-3">
-          432 группы всех 8 институтов РГАУ-МСХА, оффлайн-доступ, плавная физика анимаций, карта кампуса и автоматическая ночная сверка расписания.
+          Все 432 группы 8 институтов Тимирязевки, автономная работа без интернета, физика плавных анимаций, схема кампуса и ночная авто-сверка расписания.
         </p>
         <div className="flex flex-col sm:flex-row gap-2">
+          <a
+            href="./rgau-raspos-v1.0.1.apk"
+            download="rgau-raspos-v1.0.1.apk"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-primary text-white text-xs font-bold shadow-xs hover:bg-primary-light active:scale-[0.98] transition-all cursor-pointer"
+          >
+            {I.download(15)}
+            <span>Скачать APK напрямую (6.5 МБ)</span>
+          </a>
           <a
             href="https://github.com/p44978180-del/raspos/releases/download/v1.0.1/rgau-raspos-v1.0.1.apk"
             download="rgau-raspos-v1.0.1.apk"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-primary text-white text-xs font-bold shadow-sm hover:bg-primary-light active:scale-[0.98] transition-all cursor-pointer"
+            className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 text-xs font-semibold active:scale-[0.98] transition-all cursor-pointer"
           >
-            {I.download(15)}
-            <span>Скачать APK (v1.0.1, ~6.3 МБ)</span>
+            {I.download(13)}
+            <span>Зеркало GitHub</span>
           </a>
           <a
             href="https://github.com/p44978180-del/raspos/releases/tag/v1.0.1"
@@ -7911,8 +8032,12 @@ function PageProfile({
             className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-border bg-card text-muted-fg hover:text-fg text-xs font-semibold hover:border-primary/40 active:scale-[0.98] transition-all cursor-pointer"
           >
             {I.ext(13)}
-            <span>Релиз на GitHub</span>
+            <span>Релиз</span>
           </a>
+        </div>
+        <div className="mt-3 pt-2.5 border-t border-border/60 flex items-start gap-2 text-[11px] text-muted-fg leading-relaxed">
+          <span className="text-primary mt-0.5 flex-shrink-0">{I.sparkle(13)}</span>
+          <span>В Telegram или VK: нажмите меню вверху (три точки ⋮) и выберите «Открыть в браузере» для прямой загрузки установочного файла.</span>
         </div>
       </div>
 
@@ -8752,7 +8877,7 @@ export default function App() {
 
   return (
     <div
-      className={`h-[100dvh] min-h-[100dvh] w-full flex flex-col overflow-hidden ${dark ? "dark" : ""}`}
+      className={`h-[100dvh] min-h-[100dvh] w-full flex flex-col items-center justify-start overflow-hidden ${dark ? "dark" : ""}`}
       style={{ background: "var(--color-bg)", color: "var(--color-fg)" }}
     >
       {radialWave && (
@@ -8768,7 +8893,8 @@ export default function App() {
           }
         />
       )}
-      <AppHeader
+      <div className="h-full w-full max-w-lg md:max-w-xl lg:max-w-2xl flex flex-col overflow-hidden relative sm:shadow-2xl sm:border-x sm:border-border/40 bg-background">
+        <AppHeader
         tab={tab}
         dark={dark}
         onDarkToggle={handleDarkToggle}
@@ -8894,6 +9020,7 @@ export default function App() {
           if (t !== "campus") setCampusFood(false)
         }}
       />
+      </div>
 
       {groupSheetOpen && (
         <GroupSheet

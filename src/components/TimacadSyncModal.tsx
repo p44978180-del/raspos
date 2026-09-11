@@ -89,7 +89,7 @@ export default function TimacadSyncModal({
       aria-modal="true"
     >
       <div
-        className="relative bg-card border-t border-border rounded-t-3xl shadow-2xl px-4 pt-3 pb-6 max-h-[88vh] overflow-y-auto animate-slide-up flex flex-col gap-4 text-fg"
+        className="relative bg-card border-t border-border rounded-t-3xl shadow-2xl px-4 pt-3 pb-6 max-h-[88vh] overflow-y-auto animate-slide-up flex flex-col gap-4 text-fg w-full max-w-lg md:max-w-xl lg:max-w-2xl mx-auto"
         onClick={(e) => e.stopPropagation()}
         style={{
           paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 20px)",
