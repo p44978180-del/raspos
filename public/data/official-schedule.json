@@ -144,6 +144,8 @@
     "ДА 01-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -332,7 +334,7 @@
               "start": "16:05",
               "end": "17:40",
               "subject": "ФТД: Информатика",
-              "type": "lecture",
+              "type": "elective",
               "teacher": "СТРЫГИН С.П.",
               "building": "29-й корпус (Цифровой центр)",
               "room": "240",
@@ -401,7 +403,7 @@
               "num": 3,
               "start": "12:25",
               "end": "14:00",
-              "subject": "Агрометеорология",
+              "subject": "Агрометеорология 06-БХ",
               "type": "lecture",
               "teacher": "Преподаватель кафедры",
               "building": "Корпус агрохимии (6-й)",
@@ -431,6 +433,8 @@
     "ДА 02-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -607,7 +611,7 @@
               "start": "16:05",
               "end": "17:40",
               "subject": "ФТД: Информатика",
-              "type": "lecture",
+              "type": "elective",
               "teacher": "СТРЫГИН С.П.",
               "building": "29-й корпус (Цифровой центр)",
               "room": "240",
@@ -688,7 +692,7 @@
               "num": 3,
               "start": "12:25",
               "end": "14:00",
-              "subject": "Агрометеорология",
+              "subject": "Агрометеорология 06-БХ",
               "type": "lecture",
               "teacher": "Преподаватель кафедры",
               "building": "Корпус агрохимии (6-й)",
@@ -718,6 +722,8 @@
     "ДА 03-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -906,7 +912,7 @@
               "start": "16:05",
               "end": "17:40",
               "subject": "ФТД: Информатика",
-              "type": "lecture",
+              "type": "elective",
               "teacher": "СТРЫГИН С.П.",
               "building": "29-й корпус (Цифровой центр)",
               "room": "240",
@@ -975,7 +981,7 @@
               "num": 3,
               "start": "12:25",
               "end": "14:00",
-              "subject": "Агрометеорология",
+              "subject": "Агрометеорология 06-БХ",
               "type": "lecture",
               "teacher": "Преподаватель кафедры",
               "building": "Корпус агрохимии (6-й)",
@@ -1005,6 +1011,8 @@
     "ДА 04-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -1262,7 +1270,7 @@
               "num": 3,
               "start": "12:25",
               "end": "14:00",
-              "subject": "Агрометеорология",
+              "subject": "Агрометеорология 06-БХ",
               "type": "lecture",
               "teacher": "Преподаватель кафедры",
               "building": "Корпус агрохимии (6-й)",
@@ -1292,6 +1300,8 @@
     "ДА 05-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -1468,7 +1478,7 @@
               "start": "16:05",
               "end": "17:40",
               "subject": "ФТД: Информатика",
-              "type": "lecture",
+              "type": "elective",
               "teacher": "СТРЫГИН С.П.",
               "building": "29-й корпус (Цифровой центр)",
               "room": "240",
@@ -1561,7 +1571,7 @@
               "num": 3,
               "start": "12:25",
               "end": "14:00",
-              "subject": "Агрометеорология",
+              "subject": "Агрометеорология 06-БХ",
               "type": "lecture",
               "teacher": "Преподаватель кафедры",
               "building": "Корпус агрохимии (6-й)",
@@ -1591,6 +1601,8 @@
     "ДА 07-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -1767,7 +1779,7 @@
               "start": "16:05",
               "end": "17:40",
               "subject": "ФТД: Информатика",
-              "type": "lecture",
+              "type": "elective",
               "teacher": "СТРЫГИН С.П.",
               "building": "29-й корпус (Цифровой центр)",
               "room": "240",
@@ -1848,7 +1860,7 @@
               "num": 3,
               "start": "12:25",
               "end": "14:00",
-              "subject": "Агрометеорология",
+              "subject": "Агрометеорология 06-БХ",
               "type": "lecture",
               "teacher": "Преподаватель кафедры",
               "building": "Корпус агрохимии (6-й)",
@@ -1878,6 +1890,8 @@
     "ДА 06-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -2201,6 +2215,8 @@
     "ДА 08-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -2536,6 +2552,8 @@
     "ДА 09-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -2895,6 +2913,8 @@
     "ДА 10-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -3254,6 +3274,8 @@
     "ДА 13-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -3637,6 +3659,8 @@
     "ДА 11-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -3878,7 +3902,7 @@
               "start": "14:15",
               "end": "15:50",
               "subject": "ФТД: Информатика",
-              "type": "lecture",
+              "type": "elective",
               "teacher": "ИВАШОВА О.Н.",
               "building": "29-й корпус (Цифровой центр)",
               "room": "240",
@@ -3984,6 +4008,8 @@
     "ДА 12-26": {
       "institute": "Институт агробиотехнологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357517_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -4237,7 +4263,7 @@
               "start": "14:15",
               "end": "15:50",
               "subject": "ФТД: Информатика",
-              "type": "lecture",
+              "type": "elective",
               "teacher": "ИВАШОВА О.Н.",
               "building": "29-й корпус (Цифровой центр)",
               "room": "240",
@@ -4331,6 +4357,8 @@
     "ДЗ 01-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -4775,6 +4803,8 @@
     "ДЗ 02-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -5063,6 +5093,8 @@
     "ДЗ 03-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -5327,6 +5359,8 @@
     "ДЗ 04-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -5675,6 +5709,8 @@
     "ДЗ 05-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -5987,6 +6023,8 @@
     "ДЗ 06-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -6323,6 +6361,8 @@
     "ДЗ 07-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -6683,6 +6723,8 @@
     "ДЗ 08-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -7043,6 +7085,8 @@
     "ДЗ 09-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -7535,6 +7579,8 @@
     "ДЗ 11-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -7823,6 +7869,8 @@
     "ДЗ 12-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -8098,6 +8146,8 @@
     "ДЗ 13-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -8398,6 +8448,8 @@
     "ДЗ 14-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -8674,6 +8726,8 @@
     "ДЗ 15-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -8950,6 +9004,8 @@
     "ДЗ 16-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -9262,6 +9318,8 @@
     "ДЗ 17-26": {
       "institute": "Институт зоотехнии и биологии",
       "course": 1,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357544_1 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -9526,6 +9584,8 @@
     "ДА 01-25": {
       "institute": "Институт садоводства и ландшафтной архитектуры",
       "course": 2,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357549_2 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -9837,6 +9897,8 @@
     "ДА 02-25": {
       "institute": "Институт садоводства и ландшафтной архитектуры",
       "course": 2,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357549_2 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -10196,6 +10258,8 @@
     "ДА 03-25": {
       "institute": "Институт садоводства и ландшафтной архитектуры",
       "course": 2,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357549_2 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -10531,6 +10595,8 @@
     "ДА 04-25": {
       "institute": "Институт садоводства и ландшафтной архитектуры",
       "course": 2,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357549_2 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -11225,6 +11291,8 @@
     "ДА 06-25": {
       "institute": "Институт садоводства и ландшафтной архитектуры",
       "course": 2,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357549_2 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -11560,6 +11628,8 @@
     "ДА 07-25": {
       "institute": "Институт садоводства и ландшафтной архитектуры",
       "course": 2,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357549_2 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",
@@ -13906,6 +13976,8 @@
     "ДА 12-25": {
       "institute": "Институт садоводства и ландшафтной архитектуры",
       "course": 2,
+      "level": "Бакалавриат",
+      "officialPdfUrl": "https://www.timacad.ru/uploads/files/20260902/1788357602_2 курс.pdf",
       "schedule": [
         {
           "weekday": "Понедельник",

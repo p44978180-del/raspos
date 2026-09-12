@@ -158,7 +158,7 @@ try {
     stdio: "pipe",
   })
   assert(true, "npm run build completes with exit code 0")
-  assertMatch(buildOutput, /built in \d+ms/, "Vite build outputs build duration confirmation")
+  assertMatch(buildOutput, /built in (\d+ms|[\d.]+s)/, "Vite build outputs build duration confirmation")
 } catch (err) {
   assert(false, "npm run build completes with exit code 0", err.stdout || err.stderr || err.message)
 }

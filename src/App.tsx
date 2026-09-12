@@ -41,7 +41,7 @@ import {
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type ClassType = "lecture" | "practice" | "lab"
+type ClassType = "lecture" | "practice" | "lab" | "elective"
 type UserRole = "student" | "headstudent"
 type FoodFilter = "all" | "canteen" | "cafe" | "supermarket" | "open"
 type EventCat = "all" | "news" | "announcement" | "faculty" | "science" | "sport" | "profcom" | "career"
@@ -58,6 +58,14 @@ interface ClassItem {
   building: string
   room: string
   subgroup?: 1 | 2
+  subgroups?: number[]
+  subgroupDetails?: Array<{
+    subgroup: number
+    discipline: string
+    type: string
+    teacher?: string
+    auditorium?: string
+  }>
   weekType?: "all" | "odd" | "even"
 }
 interface DaySchedule {
@@ -1463,6 +1471,11 @@ const TYPE_CFG = {
     bar: "bg-blue-500",
     chip: "bg-blue-bg text-blue border border-blue/25",
   },
+  elective: {
+    label: "Факультатив",
+    bar: "bg-purple-500",
+    chip: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/25",
+  },
 } as const
 
 const WDAY = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
@@ -1655,6 +1668,21 @@ const I = {
     >
       <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+    </svg>
+  ),
+  star: (s = 15, c = "") => (
+    <svg
+      width={s}
+      height={s}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={c}
+    >
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
   ),
   bldg: (s = 18, c = "") => (
@@ -4599,7 +4627,9 @@ function ClassCard({
                 ? "linear-gradient(180deg,var(--color-primary),var(--color-primary-light))"
                 : cls.type === "practice"
                   ? "linear-gradient(180deg,#f59e0b,#d97706)"
-                  : "linear-gradient(180deg,var(--color-blue),#5ba3e0)",
+                  : cls.type === "elective"
+                    ? "linear-gradient(180deg,#a855f7,#7e22ce)"
+                    : "linear-gradient(180deg,var(--color-blue),#5ba3e0)",
         }}
       />
       <div className="flex-1 p-3.5 min-w-0">
@@ -4665,7 +4695,7 @@ function ClassCard({
             <span
               className={`text-[11px] px-2 py-0.5 rounded-md font-semibold flex-shrink-0 inline-flex items-center gap-1 ${cfg.chip}`}
             >
-              {cls.type === "lecture" ? I.book(11) : cls.type === "practice" ? I.pencil(11) : I.flask(11)}
+              {cls.type === "lecture" ? I.book(11) : cls.type === "practice" ? I.pencil(11) : cls.type === "elective" ? I.star(11) : I.flask(11)}
               <span>{cfg.label}</span>
             </span>
             {weekFilter === "all" && cls.weekType && cls.weekType !== "all" && (() => {
@@ -4701,7 +4731,7 @@ function ClassCard({
                 </span>
               )
             })()}
-            {cls.subgroup && (
+            {(cls.subgroup || (cls.subgroups && cls.subgroups.length === 1)) && (
               <button
                 onClick={(e) => {
                   e.stopPropagation()
@@ -4709,7 +4739,7 @@ function ClassCard({
                 }}
                 className="flex items-center gap-0.5 text-[11px] px-1.5 py-0.5 rounded-md font-semibold bg-muted text-muted-fg hover:bg-border transition-colors flex-shrink-0"
               >
-                {subgroupLabel}
+                {cls.subgroup ? `${cls.subgroup} п/г` : cls.subgroups?.[0] ? `${cls.subgroups[0]} п/г` : subgroupLabel}
                 {I.chev("down", 9)}
               </button>
             )}
