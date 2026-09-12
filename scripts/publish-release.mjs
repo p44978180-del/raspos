@@ -14,45 +14,45 @@ if (!TOKEN && !process.argv.includes("--package-only")) {
   console.error("Error: GitHub access token is required. Pass via GITHUB_TOKEN env var or CLI argument.")
   process.exit(1)
 }
-const TAG = "v1.0.1"
-const RELEASE_NAME = "🌾 РГАУ Расписание v1.0.1 — Официальный релиз"
+const TAG = process.env.RELEASE_TAG || (process.argv.find((a) => a.startsWith("--tag=")) ? process.argv.find((a) => a.startsWith("--tag=")).split("=")[1] : "v1.0.2")
+const RELEASE_NAME = `🌾 РГАУ Расписание ${TAG} — Официальный релиз с новым парсером и полным расписанием`
 
-const RELEASE_BODY = `## 🌾 РГАУ Расписание v1.0.1 — Официальный релиз для студентов и преподавателей
+const RELEASE_BODY = `## 🌾 РГАУ Расписание ${TAG} — Официальный релиз для студентов и преподавателей
 
 Официальное веб-приложение (PWA) и нативная мобильная сборка расписания РГАУ-МСХА имени К.А. Тимирязева.
 
 ---
 
-### ✨ Ключевые возможности v1.0.1
+### ✨ Ключевые возможности ${TAG}
 
-1. **🌾 Полный охват всех 8 институтов (432 группы)**:
-   - 100% групп очного бакалавриата, магистратуры, вечернего отделения и Цифрового института с актуальным расписанием.
-   - Корректная иерархия по институтам и курсам (1–5).
+1. **🌾 Новый высокоточный скрапер и 2D PDF-парсер (409 групп, 9 192 занятия)**:
+   - Полный охват всех 8 институтов (Бакалавриат, Магистратура, Очно-заочное).
+   - Распознавание сложной 2D сетки ячеек с детекцией bounding box (pdfplumber) и исправлением межстрочных артефактов (y_tolerance).
+   - Строгая валидация структуры данных через Pydantic.
+   - Экспорт в единый структурированный датасет (JSON и SQLite: \`downloads/official-schedule.sqlite\`).
+   - Автоматическое разделение числитель/знаменатель (odd/even) и детальный парсинг подгрупп (subgroups: [1, 2]).
 
-2. **🎨 Профессиональный продуктовый дизайн**:
-   - Адаптивный интерфейс от ультра-узких экранов (320px) до планшетов и десктопов (4K).
-   - Физика пружинных анимаций (Spring Physics, cubic-bezier(0.32, 0.72, 0, 1)).
-   - Тактильный отклик при переключении дней и интерактивных элементов.
+2. **🎨 Профессиональный продуктовый дизайн без визуального шума**:
+   - Адаптивный интерфейс без черных полос (edge-to-edge на экранах 20:9, 21:9, планшетах и foldables).
+   - Центрированный контейнер для ультра-широких мониторов.
+   - Физика пружинных анимаций (Spring Physics) и каскадное появление списков.
    - Индикатор текущей пары в реальном времени с полосой прогресса.
 
 3. **🗺️ Интерактивная карта кампуса и звонки**:
-   - Кастомные пины учебных корпусов (1–29, СК), общежитий, столовых, музеев и памятников.
-   - Официальный график звонков РГАУ с расчетом переходов между парами.
+   - Кастомные пины учебных корпусов (1–29, СК, ЦНБ), общежитий, столовых и памятников.
+   - Официальный график звонков РГАУ с быстрым вызовом расписания пар.
 
 4. **⚡ Автономный режим, PWA и Android APK**:
    - Полный оффлайн-доступ к сетке расписания, карте и контактам.
    - Настоящий установочный Android APK для прямой установки на устройства.
    - Поддержка установки на экран «Домой» для iOS (Safari) и Android.
 
-5. **⏰ Автоматическая ночная сверка в 04:00 МСК**:
-   - Регулярная сверка с официальным сайтом \`timacad.ru\` и умный кэш с Garbage Collection (TTL 45 дней).
-
 ---
 
 ### 📦 Прикрепленные бинарные сборки релиза:
-- \`rgau-raspos-v1.0.1.apk\` — Нативное Android-приложение (прямая установка на смартфон или планшет).
-- \`rgau-raspos-v1.0.1-pwa.zip\` — Готовый веб-дистрибутив PWA.
-- \`rgau-raspos-v1.0.1-android-assets.zip\` — Полный проект Capacitor Android со скомпилированными веб-ассетами.
+- \`rgau-raspos-${TAG}.apk\` — Нативное Android-приложение (прямая установка на смартфон или планшет).
+- \`rgau-raspos-${TAG}-pwa.zip\` — Готовый веб-дистрибутив PWA.
+- \`rgau-raspos-${TAG}-android-assets.zip\` — Полный проект Capacitor Android со скомпилированными веб-ассетами.
 
 ---
 *РГАУ-МСХА имени К.А. Тимирязева · Основан в 1865 году*
@@ -60,18 +60,18 @@ const RELEASE_BODY = `## 🌾 РГАУ Расписание v1.0.1 — Офиц�
 
 const ASSETS = [
   {
-    name: "rgau-raspos-v1.0.1.apk",
-    path: path.join(ROOT, "rgau-raspos-v1.0.1.apk"),
+    name: `rgau-raspos-${TAG}.apk`,
+    path: path.join(ROOT, `rgau-raspos-${TAG}.apk`),
     contentType: "application/vnd.android.package-archive",
   },
   {
-    name: "rgau-raspos-v1.0.1-pwa.zip",
-    path: path.join(ROOT, "rgau-raspos-v1.0.1-pwa.zip"),
+    name: `rgau-raspos-${TAG}-pwa.zip`,
+    path: path.join(ROOT, `rgau-raspos-${TAG}-pwa.zip`),
     contentType: "application/zip",
   },
   {
-    name: "rgau-raspos-v1.0.1-android-assets.zip",
-    path: path.join(ROOT, "rgau-raspos-v1.0.1-android-assets.zip"),
+    name: `rgau-raspos-${TAG}-android-assets.zip`,
+    path: path.join(ROOT, `rgau-raspos-${TAG}-android-assets.zip`),
     contentType: "application/zip",
   },
 ]
@@ -117,21 +117,25 @@ function packageAssets() {
   console.log("\n📦 2. Synchronizing Capacitor Android assets (npm run sync:android)...")
   execSync("npm run sync:android", { cwd: ROOT, stdio: "inherit" })
 
-  console.log("\n📦 3. Packaging Android APK (rgau-raspos-v1.0.1.apk)...")
-  const publicApk = path.join(ROOT, "public", "rgau-raspos-v1.0.1.apk")
+  console.log(`\n📦 3. Packaging Android APK (${ASSETS[0].name})...`)
+  const targetPublicApk = path.join(ROOT, "public", `rgau-raspos-${TAG}.apk`)
+  const v101PublicApk = path.join(ROOT, "public", "rgau-raspos-v1.0.1.apk")
   const baseApk = path.join(ROOT, "rgau-raspos-v1.0.0.apk")
-  if (fs.existsSync(publicApk)) {
-    fs.copyFileSync(publicApk, ASSETS[0].path)
-    console.log(`✔ Prepared APK from public asset: ${ASSETS[0].name} (${(fs.statSync(ASSETS[0].path).size / 1024 / 1024).toFixed(2)} MB)`)
+  if (fs.existsSync(targetPublicApk)) {
+    fs.copyFileSync(targetPublicApk, ASSETS[0].path)
+    console.log(`✔ Prepared APK from target public asset: ${ASSETS[0].name} (${(fs.statSync(ASSETS[0].path).size / 1024 / 1024).toFixed(2)} MB)`)
+  } else if (fs.existsSync(v101PublicApk)) {
+    fs.copyFileSync(v101PublicApk, ASSETS[0].path)
+    console.log(`✔ Prepared APK from v1.0.1 public asset: ${ASSETS[0].name} (${(fs.statSync(ASSETS[0].path).size / 1024 / 1024).toFixed(2)} MB)`)
   } else if (fs.existsSync(baseApk) && !fs.existsSync(ASSETS[0].path)) {
     fs.copyFileSync(baseApk, ASSETS[0].path)
     console.log(`✔ Prepared initial APK from base: ${ASSETS[0].name}`)
   }
 
-  console.log("\n📦 4. Compressing PWA distribution (rgau-raspos-v1.0.1-pwa.zip)...")
+  console.log(`\n📦 4. Compressing PWA distribution (${ASSETS[1].name})...`)
   execSync(`powershell -Command "Compress-Archive -Path dist/* -DestinationPath '${ASSETS[1].path}' -Force"`, { cwd: ROOT, stdio: "inherit" })
 
-  console.log("\n📦 5. Compressing Android assets distribution (rgau-raspos-v1.0.1-android-assets.zip)...")
+  console.log(`\n📦 5. Compressing Android assets distribution (${ASSETS[2].name})...`)
   execSync(`powershell -Command "Compress-Archive -Path android/* -DestinationPath '${ASSETS[2].path}' -Force"`, { cwd: ROOT, stdio: "inherit" })
   console.log("\n✔ Packaging completed successfully!\n")
 }
