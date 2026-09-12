@@ -46,6 +46,7 @@ type UserRole = "student" | "headstudent"
 type FoodFilter = "all" | "canteen" | "cafe" | "supermarket" | "open"
 type EventCat = "all" | "news" | "announcement" | "faculty" | "science" | "sport" | "profcom" | "career"
 type SubgroupPref = "1" | "2" | "all"
+type WeekFilterMode = "current" | "odd" | "even" | "all"
 
 interface ClassItem {
   id: number
@@ -846,6 +847,8 @@ function buildSchedule(
             building: c.building,
             room: c.room,
             subgroup: c.subgroup,
+            subgroups: c.subgroups,
+            subgroupDetails: c.subgroupDetails,
             weekType: c.weekType || "all",
           }
         }),
@@ -1348,6 +1351,45 @@ function getStudyWeek(ds: string) {
     Math.floor((d.getTime() - ws.getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
   )
 }
+
+function cleanRoomNumber(building?: string, room?: string): string {
+  let rm = (room || "").trim()
+  if (!rm || rm === "—" || rm === "-") return "—"
+  if (rm.toUpperCase() === "СК") return "СК"
+  const bldg = (building || "").trim()
+  const bldgNumMatch = bldg.match(/\d+/)
+  if (bldgNumMatch) {
+    const bNum = bldgNumMatch[0]
+    const prefixRe = new RegExp(`^0?${bNum}\\s*-\\s*`, "i")
+    if (prefixRe.test(rm)) {
+      rm = rm.replace(prefixRe, "").trim()
+    }
+  }
+  return rm
+}
+
+function formatLocationDisplay(building?: string, room?: string): string {
+  const bldg = (building || "").trim()
+  const rm = cleanRoomNumber(bldg, room)
+
+  if (!bldg || bldg === "Корпус уточняется") {
+    if (rm && rm !== "—" && rm !== "-") {
+      return `Ауд. ${rm}`
+    }
+    return "Корпус и ауд. уточняются"
+  }
+
+  if (bldg === "Спорткомплекс" || rm.toUpperCase() === "СК") {
+    return "Спорткомплекс (СК)"
+  }
+
+  if (!rm || rm === "—" || rm === "-") {
+    return bldg
+  }
+
+  return `${bldg}, ауд. ${rm}`
+}
+
 export interface WalkRouteResult {
   mins: number
   meters: number
@@ -2262,56 +2304,7 @@ function Sheet({
 // ─── Status Bar ───────────────────────────────────────────────────────────────
 
 function StatusBar() {
-  const isMobileOrStandalone = isRealMobileOrStandalone()
-  if (isMobileOrStandalone) {
-    return <div className="h-[env(safe-area-inset-top,0px)] flex-shrink-0" />
-  }
-  return (
-    <div className="flex items-center justify-between px-5 h-[44px] flex-shrink-0">
-      <span
-        className="text-[13px] font-bold"
-        style={{ fontFamily: "var(--font-mono)" }}
-      >
-        9:41
-      </span>
-      <div className="flex items-center gap-1.5">
-        <svg
-          width="17"
-          height="12"
-          viewBox="0 0 17 12"
-          fill="currentColor"
-          className="opacity-70"
-        >
-          <rect x="0" y="7" width="3" height="5" rx="0.5" />
-          <rect x="4.5" y="5" width="3" height="7" rx="0.5" />
-          <rect x="9" y="2" width="3" height="10" rx="0.5" />
-          <rect x="13.5" y="0" width="3" height="12" rx="0.5" opacity="0.3" />
-        </svg>
-        <svg
-          width="24"
-          height="12"
-          viewBox="0 0 24 12"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.2"
-          className="opacity-70"
-        >
-          <rect x="0.5" y="0.5" width="20" height="11" rx="2" />
-          <path d="M21 4v4" strokeWidth="2" strokeLinecap="round" />
-          <rect
-            x="2"
-            y="2"
-            width="14"
-            height="8"
-            rx="1"
-            fill="currentColor"
-            stroke="none"
-          />
-        </svg>
-
-</div>
-    </div>
-  )
+  return <div className="h-[env(safe-area-inset-top,0px)] flex-shrink-0" />
 }
 
 // ─── Group Sheet ──────────────────────────────────────────────────────────────
@@ -2644,6 +2637,7 @@ function AppHeader({
   lastSyncDisplay,
   onOpenIosPrompt,
   onGoHome,
+  activeDate,
 }: {
   tab: string
   dark: boolean
@@ -2656,6 +2650,7 @@ function AppHeader({
   lastSyncDisplay?: string
   onOpenIosPrompt?: () => void
   onGoHome?: () => void
+  activeDate?: string
 }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -2682,7 +2677,7 @@ function AppHeader({
               {I.chev("down", 13, "text-muted-fg flex-shrink-0")}
             </button>
             {(() => {
-              const curWeek = getStudyWeek(TODAY)
+              const curWeek = getStudyWeek(activeDate || TODAY)
               const isOdd = curWeek % 2 !== 0
               return (
                 <div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1 rounded-xl bg-card border border-border/80 text-xs font-semibold text-fg shadow-xs flex-shrink-0">
@@ -4697,24 +4692,24 @@ function ClassCard({
               {cls.type === "lecture" ? I.book(11) : cls.type === "practice" ? I.pencil(11) : cls.type === "elective" ? I.star(11) : I.flask(11)}
               <span>{cfg.label}</span>
             </span>
-            {weekFilter === "all" && cls.weekType && cls.weekType !== "all" && (() => {
+            {cls.weekType && cls.weekType !== "all" && (() => {
               const isNotThisWeek =
                 (isOddWeek && cls.weekType === "even") ||
                 (!isOddWeek && cls.weekType === "odd")
               const isOdd = cls.weekType === "odd"
               const badgeText = isNotThisWeek
                 ? isOdd
-                  ? "Верхняя нед. (не на этой неделе)"
-                  : "Нижняя нед. (не на этой неделе)"
+                  ? "Верхняя нед. (не на этой)"
+                  : "Нижняя нед. (не на этой)"
                 : isOdd
-                  ? "Верхняя"
-                  : "Нижняя"
+                  ? "Верхняя нед."
+                  : "Нижняя нед."
               return (
                 <span
                   className={`text-[10px] px-1.5 py-0.5 rounded-md font-bold flex-shrink-0 ${
                     isOdd
-                      ? "bg-blue-bg text-blue border border-blue/30"
-                      : "bg-amber-bg text-amber border border-amber/30"
+                      ? "bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30"
+                      : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
                   }`}
                   title={
                     isOdd
@@ -4775,6 +4770,7 @@ function ClassCard({
           const teacherText = activeDetail?.teacher || displayTeacher
           const bldgText = activeDetail?.building || displayBuilding
           const roomText = activeDetail?.room || displayRoom
+          const formattedLoc = formatLocationDisplay(bldgText, roomText)
 
           return (
             <div className="space-y-1">
@@ -4783,7 +4779,7 @@ function ClassCard({
                 <span className="truncate">{teacherText}</span>
               </div>
               <a
-                href={`https://yandex.ru/maps/?text=${encodeURIComponent("РГАУ-МСХА " + bldgText)}`}
+                href={`https://yandex.ru/maps/?text=${encodeURIComponent("РГАУ-МСХА " + (bldgText === "Корпус уточняется" ? "Тимирязевская" : bldgText))}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
@@ -4791,7 +4787,7 @@ function ClassCard({
               >
                 {I.map(12)}
                 <span>
-                  {bldgText}, ауд.&nbsp;{roomText}
+                  {formattedLoc}
                 </span>
               </a>
               {subgroupPref === "all" && cls.subgroupDetails && cls.subgroupDetails.length > 1 && (
@@ -4805,7 +4801,7 @@ function ClassCard({
                         {sd.subgroup} п/г
                       </span>
                       <span className="truncate text-muted-fg flex-1 font-medium">{sd.teacher}</span>
-                      <span className="text-fg font-semibold flex-shrink-0">{sd.room}</span>
+                      <span className="text-fg font-semibold flex-shrink-0">{cleanRoomNumber(sd.building, sd.room)}</span>
                     </div>
                   ))}
                 </div>
@@ -4944,6 +4940,7 @@ function DayView({
   onSubjectClick,
   onEat,
   allDays,
+  weekFilterMode,
 }: {
   allDays?: DaySchedule[]
   dateStr: string
@@ -4969,9 +4966,10 @@ function DayView({
   onSubgroupTap: (cls: ClassItem) => void
   onSubjectClick: (cls: ClassItem) => void
   onEat: () => void
+  weekFilterMode?: WeekFilterMode
 }) {
   const [restOpen, setRestOpen] = useState(false)
-  const [weekFilter, setWeekFilter] = useState<"current" | "all">("current")
+  const effectiveFilter = weekFilterMode ?? "current"
   const activeDays = allDays ?? ALL_DAYS
   const data = activeDays.find((d) => d.date === dateStr)
   const isToday = dateStr === TODAY
@@ -5004,9 +5002,13 @@ function DayView({
   const entries: ListEntry[] = []
 
   data.classes.forEach((c) => {
-    if (weekFilter === "current" && c.weekType && c.weekType !== "all") {
-      if (isOddWeek && c.weekType === "even") return
-      if (!isOddWeek && c.weekType === "odd") return
+    if (c.weekType && c.weekType !== "all") {
+      if (effectiveFilter === "odd" && c.weekType !== "odd") return
+      if (effectiveFilter === "even" && c.weekType !== "even") return
+      if (effectiveFilter === "current") {
+        if (isOddWeek && c.weekType === "even") return
+        if (!isOddWeek && c.weekType === "odd") return
+      }
     }
     if (c.subgroup || (c.subgroups && c.subgroups.length === 1)) {
       const effectiveSub = c.subgroup ?? c.subgroups?.[0]
@@ -5030,9 +5032,13 @@ function DayView({
   })
 
   movedInEntries.forEach(({ cls, fromWeekday }) => {
-    if (weekFilter === "current" && cls.weekType && cls.weekType !== "all") {
-      if (isOddWeek && cls.weekType === "even") return
-      if (!isOddWeek && cls.weekType === "odd") return
+    if (cls.weekType && cls.weekType !== "all") {
+      if (effectiveFilter === "odd" && cls.weekType !== "odd") return
+      if (effectiveFilter === "even" && cls.weekType !== "even") return
+      if (effectiveFilter === "current") {
+        if (isOddWeek && cls.weekType === "even") return
+        if (!isOddWeek && cls.weekType === "odd") return
+      }
     }
     if (
       !search ||
@@ -5254,7 +5260,7 @@ function DayView({
                   }
                   onSubjectClick={() => onSubjectClick(curCls)}
                   isOddWeek={isOddWeek}
-                  weekFilter={weekFilter}
+                  weekFilter={effectiveFilter === "all" ? "all" : "current"}
                 />
               </div>
             </div>
@@ -5292,6 +5298,8 @@ function PageSchedule({
   onSubgroupTap,
   onSubjectClick,
   onEat,
+  selDate: propsSelDate,
+  onDateChange: propsOnDateChange,
 }: {
   allDays?: DaySchedule[]
   homework: Homework[]
@@ -5316,8 +5324,16 @@ function PageSchedule({
   onSubgroupTap: (cls: ClassItem) => void
   onSubjectClick: (cls: ClassItem) => void
   onEat: () => void
+  selDate?: string
+  onDateChange?: (d: string) => void
 }) {
-  const [selDate, setSelDate] = useState(TODAY)
+  const [internalSelDate, setInternalSelDate] = useState(TODAY)
+  const selDate = propsSelDate ?? internalSelDate
+  const setSelDate = (d: string) => {
+    if (propsOnDateChange) propsOnDateChange(d)
+    else setInternalSelDate(d)
+  }
+  const [weekFilterMode, setWeekFilterMode] = useState<WeekFilterMode>("current")
   const [showWeek, setShowWeek] = useState(false)
   const [bellOpen, setBellOpen] = useState(false)
   const [nowMin, setNowMin] = useState(() => {
@@ -5373,7 +5389,11 @@ function PageSchedule({
     (c) =>
       !c.weekType ||
       c.weekType === "all" ||
-      (currentIsOdd ? c.weekType === "odd" : c.weekType === "even"),
+      (weekFilterMode === "odd" && c.weekType === "odd") ||
+      (weekFilterMode === "even" && c.weekType === "even") ||
+      weekFilterMode === "all" ||
+      (weekFilterMode === "current" &&
+        (currentIsOdd ? c.weekType === "odd" : c.weekType === "even")),
   )
 
   const weekTotalClasses = weekDays.reduce((acc, d) => {
@@ -5384,7 +5404,11 @@ function PageSchedule({
       (c) =>
         !c.weekType ||
         c.weekType === "all" ||
-        (dayIsOdd ? c.weekType === "odd" : c.weekType === "even"),
+        (weekFilterMode === "odd" && c.weekType === "odd") ||
+        (weekFilterMode === "even" && c.weekType === "even") ||
+        weekFilterMode === "all" ||
+        (weekFilterMode === "current" &&
+          (dayIsOdd ? c.weekType === "odd" : c.weekType === "even")),
     )
     return acc + filtered.length
   }, 0)
@@ -5415,6 +5439,56 @@ function PageSchedule({
           <p className="text-[10px] text-muted-fg font-semibold mt-0.5">
             сегодня · на неделе
           </p>
+        </div>
+      </div>
+
+      {/* 4-segment week parity switcher */}
+      <div className="px-4 mb-2">
+        <div className="flex p-1 bg-muted/80 rounded-xl border border-border/80 text-xs font-semibold gap-1">
+          <button
+            onClick={() => setWeekFilterMode("current")}
+            className={`flex-1 py-1.5 px-1.5 rounded-lg text-center transition-all cursor-pointer truncate ${
+              weekFilterMode === "current"
+                ? "bg-card text-fg shadow-xs font-bold border border-border/60"
+                : "text-muted-fg hover:text-fg"
+            }`}
+            title="Отображать пары для текущей недели"
+          >
+            Текущая ({currentIsOdd ? "Верхн." : "Нижн."})
+          </button>
+          <button
+            onClick={() => setWeekFilterMode("odd")}
+            className={`flex-1 py-1.5 px-1.5 rounded-lg text-center transition-all cursor-pointer truncate ${
+              weekFilterMode === "odd"
+                ? "bg-sky-500 text-white shadow-xs font-bold"
+                : "text-muted-fg hover:text-sky-600 dark:hover:text-sky-400"
+            }`}
+            title="Отображать только пары верхней недели (Числитель)"
+          >
+            Верхняя
+          </button>
+          <button
+            onClick={() => setWeekFilterMode("even")}
+            className={`flex-1 py-1.5 px-1.5 rounded-lg text-center transition-all cursor-pointer truncate ${
+              weekFilterMode === "even"
+                ? "bg-amber-500 text-white shadow-xs font-bold"
+                : "text-muted-fg hover:text-amber-600 dark:hover:text-amber-400"
+            }`}
+            title="Отображать только пары нижней недели (Знаменатель)"
+          >
+            Нижняя
+          </button>
+          <button
+            onClick={() => setWeekFilterMode("all")}
+            className={`flex-1 py-1.5 px-1.5 rounded-lg text-center transition-all cursor-pointer truncate ${
+              weekFilterMode === "all"
+                ? "bg-card text-fg shadow-xs font-bold border border-border/60"
+                : "text-muted-fg hover:text-fg"
+            }`}
+            title="Отображать пары обеих недель"
+          >
+            Все недели
+          </button>
         </div>
       </div>
       {searchOpen && (
@@ -5493,7 +5567,11 @@ function PageSchedule({
             (c) =>
               !c.weekType ||
               c.weekType === "all" ||
-              (dayIsOdd ? c.weekType === "odd" : c.weekType === "even"),
+              (weekFilterMode === "odd" && c.weekType === "odd") ||
+              (weekFilterMode === "even" && c.weekType === "even") ||
+              weekFilterMode === "all" ||
+              (weekFilterMode === "current" &&
+                (dayIsOdd ? c.weekType === "odd" : c.weekType === "even")),
           )
           const clsCount = activeClasses.length
           const isSel = d === selDate
@@ -5556,7 +5634,11 @@ function PageSchedule({
               (c) =>
                 !c.weekType ||
                 c.weekType === "all" ||
-                (dayIsOdd ? c.weekType === "odd" : c.weekType === "even"),
+                (weekFilterMode === "odd" && c.weekType === "odd") ||
+                (weekFilterMode === "even" && c.weekType === "even") ||
+                weekFilterMode === "all" ||
+                (weekFilterMode === "current" &&
+                  (dayIsOdd ? c.weekType === "odd" : c.weekType === "even")),
             )
             if (!data || !dayClasses.length)
               return (
@@ -5650,6 +5732,7 @@ function PageSchedule({
           onSubgroupTap={onSubgroupTap}
           onSubjectClick={onSubjectClick}
           onEat={onEat}
+          weekFilterMode={weekFilterMode}
         />
       </div>
     </div>
@@ -8735,6 +8818,7 @@ export default function App() {
       return ["ДА 01-26"]
     }
   })
+  const [scheduleDate, setScheduleDate] = useState<string>(TODAY)
 
   useEffect(() => {
     try {
@@ -8974,6 +9058,7 @@ export default function App() {
         lastSyncDisplay={lastSyncDisplay}
         onOpenIosPrompt={() => setShowIosPrompt(true)}
         onGoHome={() => setTab("schedule")}
+        activeDate={tab === "schedule" ? scheduleDate : TODAY}
       />
       <Toast toasts={toasts} onDismiss={dismissToast} />
       <main className="flex-1 overflow-y-auto overflow-x-hidden relative min-h-0">
@@ -9029,6 +9114,8 @@ export default function App() {
                 setCampusFood(true)
                 setTab("campus")
               }}
+              selDate={scheduleDate}
+              onDateChange={setScheduleDate}
             />
           )}
           {tab === "campus" && (

@@ -99,35 +99,48 @@ def normalize_spaced_text(text: str) -> str:
     return '\n'.join(processed_lines)
 
 def normalize_building_room(room_str: str) -> Tuple[str, str]:
-    """Resolves campus building and room representation."""
+    """Resolves campus building and room representation according to 'Корпус-Кабинет' schema."""
     if not room_str or room_str == "—":
-        return "1-й учебный корпус", "—"
+        return "Корпус уточняется", "—"
     r = room_str.strip()
     if r.upper() == "СК":
         return "Спорткомплекс", "СК"
     if "Планетарий" in r:
-        return "12-й учебный корпус", r
+        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        return "12-й учебный корпус", clean_rm or r
     if "ИЦ" in r:
-        return "29-й учебный корпус", r
+        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        return "Корпус 29 (Цифровой центр)", clean_rm or r
     if "старый" in r:
-        return "17-й учебный корпус (старый)", r
+        clean_rm = re.sub(r'^\d{1,2}\s*\([^\)]+\)\s*[-\s]?', '', r).strip()
+        return "17-й учебный корпус (старый)", clean_rm or r
     if "БАг" in r or "БП" in r or "Белая дача" in r:
-        return "17-й учебный корпус", r
+        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        return "17-й учебный корпус", clean_rm or r
     if "БХ" in r:
-        return "6-й учебный корпус", r
+        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        return "Корпус 6 (Агрохимия)", clean_rm or "БХ"
     if "БАн" in r:
-        return "16-й учебный корпус", r
+        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        return "Корпус 16 (Биологический)", clean_rm or "БАн"
     if "ВУЦ" in r:
-        return "4-й учебный корпус", r
+        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        return "4-й учебный корпус (ВУЦ)", clean_rm or r
     if "сыроварня" in r:
-        return "2Д-сыроварня", r
+        return "2Д-сыроварня", "Сыроварня"
     if "Цокольный" in r or "каф" in r:
-        return "25-й учебный корпус", r
-    m = re.match(r'^(\d{1,2})-', r)
+        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        return "25-й учебный корпус", clean_rm or r
+
+    # Standard format: {bldg}-{room}, e.g. "27-315", "01-416", "16-219", "25-4"
+    m = re.match(r'^(\d{1,2})\s*-\s*(.+)$', r)
     if m:
         b_num = int(m.group(1))
-        return f"Корпус {b_num:02d}" if b_num < 10 else f"Корпус {b_num}", r
-    return "1-й учебный корпус", r
+        rm_num = m.group(2).strip()
+        bldg_name = f"Корпус {b_num:02d}" if b_num < 10 else f"Корпус {b_num}"
+        return bldg_name, rm_num
+
+    return "Корпус уточняется", r
 
 def parse_day(text: str) -> Optional[str]:
     if not text:
@@ -183,8 +196,16 @@ def parse_cell(
     fixed = re.sub(r'^noб\.', 'лаб.', fixed, flags=re.IGNORECASE)
     fixed = re.sub(r'^nр\.', 'пр.', fixed, flags=re.IGNORECASE)
 
-    # Special sports handling
-    if "КпоВ" in fixed and ("спорт" in fixed.lower() or "культура" in fixed.lower() or "СК" in fixed):
+    # Special sports handling (foolproof against tracking/spacing artifacts)
+    clean_nospace = re.sub(r'\s+', '', text).lower()
+    is_pe = (
+        ("кпов" in clean_nospace and any(w in clean_nospace for w in ["базов", "спорт", "физ", "ск"])) or
+        "базовыевидыспорта" in clean_nospace or
+        "физическаякультура" in clean_nospace or
+        "элективныедисциплиныпофизической" in clean_nospace or
+        ("физкульт" in clean_nospace and "физиология" not in clean_nospace)
+    )
+    if is_pe:
         return [{
             "num": pair_num,
             "start": start,
@@ -205,7 +226,7 @@ def parse_cell(
         class_type = "practice"
     elif re.search(r'\b(?:ФТД|факульт)\b', fixed, re.IGNORECASE):
         class_type = "elective"
-    elif "КпоВ" in fixed or "спорт" in fixed.lower() or "физическая культура" in fixed.lower():
+    elif "КпоВ" in fixed or "спорт" in fixed.lower() or "физическая культура" in fixed.lower() or is_pe:
         class_type = "practice"
 
     # Explicit week markers in text override bounding box if present
@@ -282,18 +303,21 @@ def parse_cell(
     if len(subgroup_items) > 1:
         subgroups = list(range(1, len(subgroup_items) + 1))
         all_teachers = " / ".join(dict.fromkeys(filter(None, [s["teacher"] for s in subgroup_items]))) or "Преподаватель"
-        all_rooms = " / ".join(dict.fromkeys(filter(None, [s["room"] for s in subgroup_items]))) or "—"
-        first_bldg, _ = normalize_building_room(subgroup_items[0]["room"])
 
         details = []
+        clean_rooms = []
         for idx, s in enumerate(subgroup_items):
             bldg, rm = normalize_building_room(s["room"])
+            clean_rooms.append(rm if rm != "—" else s["room"])
             details.append({
                 "subgroup": idx + 1,
                 "teacher": s["teacher"] or all_teachers,
                 "building": bldg,
                 "room": rm or "—",
             })
+
+        first_bldg = details[0]["building"]
+        all_rooms = " / ".join(dict.fromkeys(filter(None, clean_rooms))) or "—"
 
         return [{
             "num": pair_num,
@@ -323,7 +347,7 @@ def parse_cell(
             "weekType": wt,
         }]
     else:
-        bldg, rm = normalize_building_room("СК" if "СК" in fixed else "—")
+        bldg, rm = normalize_building_room("СК" if "СК" in fixed or "спорт" in clean_nospace else "—")
         return [{
             "num": pair_num,
             "start": start,
@@ -456,44 +480,49 @@ def parse_single_pdf(
                             if not col_cells:
                                 continue
 
-                            # Check if 2 sub-rows need merging into 1 class (continuation row)
+                            # Resolve weekType for cells in this time slot
                             merged_cells = []
+                            total_slot_h = (items[-1][6] - items[0][5]) if (items[0][5] and items[-1][6]) else (len(items) * 20.6)
+
                             if len(col_cells) == 2:
                                 c1_text = col_cells[0]["text"]
                                 c2_text = col_cells[1]["text"]
 
-                                has_c1_prefix = bool(re.search(r'^(?:лек\.|лек|лаб\.|лаб|пр\.|пр|ФТД)', c1_text, re.IGNORECASE))
-                                has_c2_prefix = bool(re.search(r'^(?:лек\.|лек|лаб\.|лаб|пр\.|пр|ФТД)', c2_text, re.IGNORECASE))
-                                has_c1_meta = bool(TEACHER_RE.search(c1_text) or COMBINED_ROOM_RE.search(c1_text))
-                                has_c2_meta = bool(TEACHER_RE.search(c2_text) or COMBINED_ROOM_RE.search(c2_text))
-
-                                if (has_c1_prefix and not has_c1_meta and not has_c2_prefix) or (not has_c2_prefix and has_c2_meta and not has_c1_meta):
-                                    # Merge continuation rows
-                                    merged_text = c1_text + "\n" + c2_text
+                                # If identical text repeated in both rows, it's conducted every week (all)
+                                if c1_text.strip().lower() == c2_text.strip().lower():
                                     merged_cells.append({
-                                        "text": merged_text,
+                                        "text": c1_text,
                                         "bbox": col_cells[0]["bbox"],
                                         "weekType": "all",
                                     })
                                 else:
-                                    # Two distinct classes: Upper = odd, Lower = even
+                                    # Upper row = odd (Числитель), Lower row = even (Знаменатель)
                                     col_cells[0]["weekType"] = "odd"
                                     col_cells[1]["weekType"] = "even"
                                     merged_cells.extend(col_cells)
                             elif len(col_cells) == 1:
-                                cell_bbox = col_cells[0]["bbox"]
-                                if cell_bbox:
-                                    cy0, cy1 = cell_bbox[1], cell_bbox[3]
-                                    ch = cy1 - cy0
-                                    if ch < 0.75 * slot_h:
-                                        midpoint = sy0 + slot_h / 2
-                                        wt = "odd" if cy1 <= midpoint + 2.5 else "even"
-                                    else:
-                                        wt = "all"
+                                cell_item = col_cells[0]
+                                cell_bbox = cell_item["bbox"]
+                                r_idx = cell_item["r_idx"]
+
+                                # Check if cell is merged across the entire slot height
+                                is_full_slot = False
+                                if cell_bbox and total_slot_h > 0:
+                                    ch = cell_bbox[3] - cell_bbox[1]
+                                    if len(items) > 1 and ch >= 0.70 * total_slot_h:
+                                        is_full_slot = True
+
+                                if len(items) == 1 or is_full_slot:
+                                    cell_item["weekType"] = "all"
                                 else:
-                                    wt = "all"
-                                col_cells[0]["weekType"] = wt
-                                merged_cells.append(col_cells[0])
+                                    # In multi-row slot: determine if cell is in upper or lower row
+                                    upper_row_idx = items[0][0]
+                                    if r_idx == upper_row_idx:
+                                        cell_item["weekType"] = "odd"
+                                    else:
+                                        cell_item["weekType"] = "even"
+
+                                merged_cells.append(cell_item)
                             else:
                                 for c in col_cells:
                                     c["weekType"] = "all"
@@ -811,25 +840,26 @@ def run_pdf_parser():
         raise
 
     # Build initial offline bundle for src/data/official-schedule.json
+    FULL_SAMPLE_GROUPS = {
+        "ДА 01-26", "ДА 02-26", "ДА 03-26", "ДА 04-26", "ДА 05-26",
+        "ДЭ 01-26", "ДЭ 02-26",
+        "ДЗ 01-26", "ДС 01-26", "ДМ 01-26", "ДП 01-26",
+        "Д-А 101", "Д-Э 101", "ДА 01-25",
+    }
     src_groups = {}
     for gid, ginfo in all_groups.items():
-        slim_schedule = []
-        classes_taken = 0
-        for day in ginfo.get("schedule", []):
-            day_classes = []
-            for c in day.get("classes", []):
-                if classes_taken < 2:
-                    day_classes.append(c)
-                    classes_taken += 1
-            slim_schedule.append({
-                "weekday": day["weekday"],
-                "classes": day_classes,
-            })
-        src_groups[gid] = {
-            "institute": ginfo["institute"],
-            "course": ginfo["course"],
-            "schedule": slim_schedule,
-        }
+        if gid in FULL_SAMPLE_GROUPS:
+            src_groups[gid] = {
+                "institute": ginfo["institute"],
+                "course": ginfo["course"],
+                "schedule": ginfo["schedule"],
+            }
+        else:
+            src_groups[gid] = {
+                "institute": ginfo["institute"],
+                "course": ginfo["course"],
+                "schedule": [],
+            }
     src_dataset_dict = {
         "metadata": dataset_dict["metadata"],
         "groups": src_groups,

@@ -5,6 +5,24 @@
       "page": 1,
       "group": "ДТ 04-24",
       "day": "Понедельник",
+      "slot": 1,
+      "bbox": [
+        216.89,
+        146.32399999999996,
+        306.417499375,
+        157.97428857142853
+      ]
+    },
+    "raw_text": "лек.Биотехнология переработки",
+    "parsed_subject": "Биотехнология переработки",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357606_3 курс.pdf",
+      "page": 1,
+      "group": "ДТ 04-24",
+      "day": "Понедельник",
       "slot": 3,
       "bbox": [
         216.89,
@@ -15,6 +33,24 @@
     },
     "raw_text": "пр.Биотехнология переработки растительной",
     "parsed_subject": "Биотехнология переработки растительной",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357606_3 курс.pdf",
+      "page": 1,
+      "group": "ДТ 04-24",
+      "day": "Вторник",
+      "slot": 4,
+      "bbox": [
+        216.89,
+        332.5696318181818,
+        306.417499375,
+        344.2500033333333
+      ]
+    },
+    "raw_text": "пр.Технология продуктов питания для",
+    "parsed_subject": "Технология продуктов питания для",
     "reason": "Teacher and room patterns could not be parsed via regex"
   },
   {
@@ -33,6 +69,438 @@
     },
     "raw_text": "лаб.Биотехнология переработки растительной",
     "parsed_subject": "Биотехнология переработки растительной",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357610_4 курс.pdf",
+      "page": 1,
+      "group": "Д-Т 404",
+      "day": "Вторник",
+      "slot": 3,
+      "bbox": [
+        306.3073316666667,
+        309.28999562499996,
+        395.7442857142857,
+        320.98999999999995
+      ]
+    },
+    "raw_text": "пр.Компьютерное проектирование\nпищевых и перерабатывающих объектов",
+    "parsed_subject": "Компьютерное проектирование пищевых и перерабатывающих объектов",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357610_4 курс.pdf",
+      "page": 1,
+      "group": "Д-Т 407",
+      "day": "Среда",
+      "slot": 2,
+      "bbox": [
+        485.17420000000004,
+        402.43000933333326,
+        574.668704117647,
+        414.12999999999994
+      ]
+    },
+    "raw_text": "пр.КпоВ: Сублимационная техника",
+    "parsed_subject": "КпоВ: Сублимационная техника",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357610_4 курс.pdf",
+      "page": 1,
+      "group": "Д-Т 405",
+      "day": "Среда",
+      "slot": 4,
+      "bbox": [
+        395.7442857142857,
+        448.99750874999995,
+        485.17420000000004,
+        460.68999999999994
+      ]
+    },
+    "raw_text": "лаб.Проектирование предприятий отрасли",
+    "parsed_subject": "Проектирование предприятий отрасли",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357610_4 курс.pdf",
+      "page": 1,
+      "group": "Д-Т 405",
+      "day": "Пятница",
+      "slot": 2,
+      "bbox": [
+        395.7442857142857,
+        635.2674825,
+        485.17420000000004,
+        646.9300025
+      ]
+    },
+    "raw_text": "пр.Реология",
+    "parsed_subject": "Реология",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 07-26",
+      "day": "Понедельник",
+      "slot": 3,
+      "bbox": [
+        173.1199975,
+        111.98444444444446,
+        246.0200025,
+        121.48000000000003
+      ]
+    },
+    "raw_text": "пр.Информатика",
+    "parsed_subject": "Информатика",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 11-26",
+      "day": "Вторник",
+      "slot": 2,
+      "bbox": [
+        464.47352970588236,
+        187.8248461538462,
+        537.4179933333334,
+        197.36000250000006
+      ]
+    },
+    "raw_text": "пр.Иностранный язык",
+    "parsed_subject": "Иностранный язык",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 14-26",
+      "day": "Вторник",
+      "slot": 2,
+      "bbox": [
+        537.4179933333334,
+        187.8248461538462,
+        610.286969090909,
+        197.36000250000006
+      ]
+    },
+    "raw_text": "пр.Иностранный язык",
+    "parsed_subject": "Иностранный язык",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 11-26",
+      "day": "Вторник",
+      "slot": 3,
+      "bbox": [
+        464.47352970588236,
+        206.81461538461542,
+        537.4179933333334,
+        216.30199600000006
+      ]
+    },
+    "raw_text": "лаб.Химия",
+    "parsed_subject": "Химия",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 11-26",
+      "day": "Четверг",
+      "slot": 2,
+      "bbox": [
+        464.47352970588236,
+        377.4746107692308,
+        537.4179933333334,
+        386.96200400000004
+      ]
+    },
+    "raw_text": "пр.Высшая математика",
+    "parsed_subject": "Высшая математика",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 14-26",
+      "day": "Четверг",
+      "slot": 2,
+      "bbox": [
+        537.4179933333334,
+        377.4746107692308,
+        610.286969090909,
+        386.96200400000004
+      ]
+    },
+    "raw_text": "пр.Высшая математика",
+    "parsed_subject": "Высшая математика",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 11-26",
+      "day": "Четверг",
+      "slot": 3,
+      "bbox": [
+        464.47352970588236,
+        396.43462423076926,
+        537.4179933333334,
+        405.93999500000007
+      ]
+    },
+    "raw_text": "лек.История России",
+    "parsed_subject": "История России",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 14-26",
+      "day": "Четверг",
+      "slot": 3,
+      "bbox": [
+        537.4179933333334,
+        396.43462423076926,
+        610.286969090909,
+        405.93999500000007
+      ]
+    },
+    "raw_text": "лек.История России",
+    "parsed_subject": "История России",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 11-26",
+      "day": "Четверг",
+      "slot": 4,
+      "bbox": [
+        464.47352970588236,
+        415.3948553846154,
+        537.4179933333334,
+        424.9150037500001
+      ]
+    },
+    "raw_text": "лаб.Материаловедение и технология",
+    "parsed_subject": "Материаловедение и технология",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 14-26",
+      "day": "Четверг",
+      "slot": 4,
+      "bbox": [
+        537.4179933333334,
+        415.3948553846154,
+        610.286969090909,
+        424.9150037500001
+      ]
+    },
+    "raw_text": "лаб.Материаловедение и технология",
+    "parsed_subject": "Материаловедение и технология",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 11-26",
+      "day": "Пятница",
+      "slot": 1,
+      "bbox": [
+        464.47352970588236,
+        453.3799966666667,
+        537.4179933333334,
+        462.8266711111112
+      ]
+    },
+    "raw_text": "пр.Информатика",
+    "parsed_subject": "Информатика",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 14-26",
+      "day": "Пятница",
+      "slot": 1,
+      "bbox": [
+        537.4179933333334,
+        453.3799966666667,
+        610.286969090909,
+        462.8266711111112
+      ]
+    },
+    "raw_text": "пр.Информатика",
+    "parsed_subject": "Информатика",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 11-26",
+      "day": "Пятница",
+      "slot": 2,
+      "bbox": [
+        464.47352970588236,
+        472.3046107692308,
+        537.4179933333334,
+        481.7920040000001
+      ]
+    },
+    "raw_text": "пр.Начертательная геометрия",
+    "parsed_subject": "Начертательная геометрия",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 14-26",
+      "day": "Пятница",
+      "slot": 2,
+      "bbox": [
+        537.4179933333334,
+        472.3046107692308,
+        610.286969090909,
+        481.7920040000001
+      ]
+    },
+    "raw_text": "пр.Начертательная геометрия",
+    "parsed_subject": "Начертательная геометрия",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357647_1 курс.pdf",
+      "page": 1,
+      "group": "ДМ 14-26",
+      "day": "Пятница",
+      "slot": 3,
+      "bbox": [
+        537.4179933333334,
+        491.2644576923077,
+        610.286969090909,
+        500.74349125000003
+      ]
+    },
+    "raw_text": "лаб.Химия",
+    "parsed_subject": "Химия",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357655_3 курс.pdf",
+      "page": 2,
+      "group": "ДМ 09-24",
+      "day": "Пятница",
+      "slot": 3,
+      "bbox": [
+        306.35363545454544,
+        658.5397426666666,
+        395.71000000000004,
+        670.2300025
+      ]
+    },
+    "raw_text": "пр.Практическая подготовка по должности",
+    "parsed_subject": "Практическая подготовка по должности",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357655_3 курс.pdf",
+      "page": 2,
+      "group": "ДМ 19-24",
+      "day": "Пятница",
+      "slot": 4,
+      "bbox": [
+        395.71000000000004,
+        681.8474825000001,
+        485.195,
+        693.5000033333332
+      ]
+    },
+    "raw_text": "лаб.Гидравлика",
+    "parsed_subject": "Гидравлика",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357660_4 курс.pdf",
+      "page": 2,
+      "group": "Д-М 416",
+      "day": "Среда",
+      "slot": 4,
+      "bbox": [
+        275.93,
+        321.5500093333333,
+        352.1913333333334,
+        331.4100033333334
+      ]
+    },
+    "raw_text": "пр.Проектирование наземных транспортно-\nтехнологических средств",
+    "parsed_subject": "Проектирование наземных транспортно- технологических средств",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357688_3 курс.pdf",
+      "page": 1,
+      "group": "ДВ 16-24",
+      "day": "Понедельник",
+      "slot": 2,
+      "bbox": [
+        692.3578218181818,
+        111.07777777777783,
+        758.615996,
+        119.67499625000005
+      ]
+    },
+    "raw_text": "пр.Основы химизации сельского",
+    "parsed_subject": "Основы химизации сельского",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357688_3 курс.pdf",
+      "page": 1,
+      "group": "ДВ 08-24",
+      "day": "Вторник",
+      "slot": 2,
+      "bbox": [
+        427.27999833333337,
+        197.50777777777782,
+        493.62000083333334,
+        206.10199600000004
+      ]
+    },
+    "raw_text": "пр.Геопозиционирование",
+    "parsed_subject": "Геопозиционирование",
     "reason": "Teacher and room patterns could not be parsed via regex"
   },
   {
@@ -69,6 +537,24 @@
     },
     "raw_text": "пр.Научно-исследовательская работа",
     "parsed_subject": "Научно-исследовательская работа",
+    "reason": "Teacher and room patterns could not be parsed via regex"
+  },
+  {
+    "context": {
+      "pdf": "1788357842_1 курс.pdf",
+      "page": 2,
+      "group": "ДВ 26-26",
+      "day": "Вторник",
+      "slot": 2,
+      "bbox": [
+        345.07,
+        239.5699999999999,
+        424.5856,
+        249.94999999999993
+      ]
+    },
+    "raw_text": "пр.Речные гидроузлы и гидротехнические",
+    "parsed_subject": "Речные гидроузлы и гидротехнические",
     "reason": "Teacher and room patterns could not be parsed via regex"
   },
   {
