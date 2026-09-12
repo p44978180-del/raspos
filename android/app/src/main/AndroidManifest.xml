@@ -9,7 +9,8 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
 
-        <meta-data android:name="android.max_aspect" android:value="2.5" />
+        <meta-data android:name="android.max_aspect" android:value="3.0" />
+        <meta-data android:name="android.min_aspect" android:value="1.0" />
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"

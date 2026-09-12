@@ -61,10 +61,9 @@ interface ClassItem {
   subgroups?: number[]
   subgroupDetails?: Array<{
     subgroup: number
-    discipline: string
-    type: string
-    teacher?: string
-    auditorium?: string
+    teacher: string
+    building: string
+    room: string
   }>
   weekType?: "all" | "odd" | "even"
 }
@@ -4731,15 +4730,21 @@ function ClassCard({
                 </span>
               )
             })()}
-            {(cls.subgroup || (cls.subgroups && cls.subgroups.length === 1)) && (
+            {(cls.subgroup || (cls.subgroups && cls.subgroups.length > 0)) && (
               <button
                 onClick={(e) => {
                   e.stopPropagation()
                   onSubgroupTap?.()
                 }}
-                className="flex items-center gap-0.5 text-[11px] px-1.5 py-0.5 rounded-md font-semibold bg-muted text-muted-fg hover:bg-border transition-colors flex-shrink-0"
+                className="flex items-center gap-0.5 text-[11px] px-1.5 py-0.5 rounded-md font-semibold bg-muted text-muted-fg hover:bg-border transition-colors flex-shrink-0 cursor-pointer"
               >
-                {cls.subgroup ? `${cls.subgroup} п/г` : cls.subgroups?.[0] ? `${cls.subgroups[0]} п/г` : subgroupLabel}
+                {cls.subgroup
+                  ? `${cls.subgroup} п/г`
+                  : cls.subgroups && cls.subgroups.length === 1
+                    ? `${cls.subgroups[0]} п/г`
+                    : subgroupPref && subgroupPref !== "all"
+                      ? `${subgroupPref} п/г`
+                      : "1, 2 п/г"}
                 {I.chev("down", 9)}
               </button>
             )}
@@ -4765,24 +4770,49 @@ function ClassCard({
             )}
           </div>
         </div>
-        <div className="space-y-1">
-          <div className="flex items-center gap-1.5 text-xs text-muted-fg">
-            {I.user(12, "flex-shrink-0")}
-            <span className="truncate">{displayTeacher}</span>
-          </div>
-          <a
-            href={`https://yandex.ru/maps/?text=${encodeURIComponent("РГАУ-МСХА " + displayBuilding)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 text-xs text-primary hover:text-accent transition-colors"
-          >
-            {I.map(12)}
-            <span>
-              {displayBuilding}, ауд.&nbsp;{displayRoom}
-            </span>
-          </a>
-        </div>
+        {(() => {
+          const activeDetail = cls.subgroupDetails?.find((d) => String(d.subgroup) === subgroupPref)
+          const teacherText = activeDetail?.teacher || displayTeacher
+          const bldgText = activeDetail?.building || displayBuilding
+          const roomText = activeDetail?.room || displayRoom
+
+          return (
+            <div className="space-y-1">
+              <div className="flex items-center gap-1.5 text-xs text-muted-fg">
+                {I.user(12, "flex-shrink-0")}
+                <span className="truncate">{teacherText}</span>
+              </div>
+              <a
+                href={`https://yandex.ru/maps/?text=${encodeURIComponent("РГАУ-МСХА " + bldgText)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1.5 text-xs text-primary hover:text-accent transition-colors"
+              >
+                {I.map(12)}
+                <span>
+                  {bldgText}, ауд.&nbsp;{roomText}
+                </span>
+              </a>
+              {subgroupPref === "all" && cls.subgroupDetails && cls.subgroupDetails.length > 1 && (
+                <div className="mt-2 pt-1.5 border-t border-border/50 flex flex-col gap-1">
+                  {cls.subgroupDetails.map((sd) => (
+                    <div
+                      key={sd.subgroup}
+                      className="flex items-center justify-between text-[11px] bg-muted/60 dark:bg-muted/30 rounded-md px-2 py-0.5 gap-1.5"
+                    >
+                      <span className="font-bold text-primary text-[10px] px-1 py-0.2 rounded bg-primary/10 flex-shrink-0">
+                        {sd.subgroup} п/г
+                      </span>
+                      <span className="truncate text-muted-fg flex-1 font-medium">{sd.teacher}</span>
+                      <span className="text-fg font-semibold flex-shrink-0">{sd.room}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        })()}
         {(hasMoved ||
           hasTimeChange ||
           hasBuildingChange ||
@@ -4978,9 +5008,10 @@ function DayView({
       if (isOddWeek && c.weekType === "even") return
       if (!isOddWeek && c.weekType === "odd") return
     }
-    if (c.subgroup) {
+    if (c.subgroup || (c.subgroups && c.subgroups.length === 1)) {
+      const effectiveSub = c.subgroup ?? c.subgroups?.[0]
       const pref = subgroupPrefs[c.subject] ?? "all"
-      if (pref !== "all" && c.subgroup !== Number(pref)) return
+      if (pref !== "all" && effectiveSub !== Number(pref)) return
     }
     if (search) {
       const q = search.toLowerCase()
@@ -5157,7 +5188,7 @@ function DayView({
             )
           }
 
-          const subPref = curCls.subgroup
+          const subPref = (curCls.subgroup || (curCls.subgroups && curCls.subgroups.length > 0))
             ? (subgroupPrefs[curCls.subject] ?? "all")
             : undefined
           const stagger = `list-item-${Math.min(idx, 5)}`
@@ -8602,10 +8633,14 @@ export default function App() {
     }
   })
 
-  // Synchronize <html class="dark"> on documentElement
+  // Synchronize <html class="dark"> and theme-color on documentElement
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.classList.toggle("dark", dark)
+      const metaTheme = document.querySelector('meta[name="theme-color"]:not([media])')
+      if (metaTheme) {
+        metaTheme.setAttribute("content", dark ? "#090D0B" : "#F8F9FA")
+      }
     }
   }, [dark])
 

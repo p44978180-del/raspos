@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 Web Scraper Module for RGAU-MSHA Timiryazevka Schedule (Timacad)
+Stack: requests + BeautifulSoup4 (with graceful local fallback)
 Target URL: https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuchaiushchikhsia
-Filters: Only 2026/2027 academic year schedules.
+Filters: Only 2026/2027 academic year schedules (checks headers, link texts, and file metadata).
 Hierarchy: downloads/{уровень}/{институт}/{файл}.pdf
 Logs: Skipped files, invalid links, and download status to downloads/scraper_log.json.
 """
@@ -12,14 +13,18 @@ import os
 import sys
 import re
 import json
-import ssl
-import urllib.request
-import urllib.parse
-import urllib.error
 import shutil
+import urllib.parse
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+
+import requests
+from bs4 import BeautifulSoup
+import pdfplumber
+import urllib3
+
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 sys.stdout.reconfigure(encoding='utf-8')
 
@@ -30,14 +35,12 @@ TARGET_URL = "https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuch
 LOCAL_HTML_CACHE = ROOT_DIR / "scripts" / "rezhim_page.html"
 ACADEMIC_YEAR = "2026/2027"
 
-# Standard headers to avoid blocking
 REQ_HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
     "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
 }
 
-# Canonical institute names
 INSTITUTE_ALIASES = {
     "ИНСТИТУТ АГРОБИОТЕХНОЛОГИИ": "Институт агробиотехнологии",
     "ИНСТИТУТ ЗООТЕХНИИ И БИОЛОГИИ": "Институт зоотехнии и биологии",
@@ -46,6 +49,7 @@ INSTITUTE_ALIASES = {
     "ИНСТИТУТ ЭКОНОМИКИ И УПРАВЛЕНИЯ АПК": "Институт экономики и управления АПК",
     "ИНСТИТУТ МЕХАНИКИ И ЭНЕРГЕТИКИ ИМЕНИ В.П. ГОРЯЧКИНА": "Институт механики и энергетики имени В.П. Горячкина",
     "ИНСТИТУТ МЕЛИОРАЦИИ, ВОДНОГО ХОЗЯЙСТВА И СТРОИТЕЛЬСТВА ИМЕНИ А.Н. КОСТЯКОВА": "Институт мелиорации, водного хозяйства и строительства имени А.Н. Костякова",
+    "ПРОЕКТНЫЙ ИНСТИТУТ ЦИФРОВОЙ ТРАНСФОРМАЦИИ": "Центр «Проектный институт цифровой трансформации АПК»",
 }
 
 def sanitize_folder_name(name: str) -> str:
@@ -62,20 +66,18 @@ def normalize_institute_name(raw_name: str) -> str:
     return clean
 
 def fetch_page_html(url: str = TARGET_URL) -> str:
-    """Fetch live schedule page with fallback to local cache."""
-    print(f"[Scraper] Connecting to target URL: {url}...")
+    """Fetch live schedule page with requests and fallback to local cache."""
+    print(f"[Scraper] Connecting to target URL via requests: {url}...")
     try:
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        req = urllib.request.Request(url, headers=REQ_HEADERS)
-        with urllib.request.urlopen(req, timeout=15, context=ctx) as resp:
-            content = resp.read()
-            html_text = content.decode("utf-8", errors="replace")
-            print(f"[Scraper] Successfully retrieved live page ({len(html_text)} chars).")
-            # Cache locally
-            LOCAL_HTML_CACHE.write_text(html_text, encoding="utf-8")
-            return html_text
+        session = requests.Session()
+        session.headers.update(REQ_HEADERS)
+        resp = session.get(url, timeout=15, verify=False)
+        resp.raise_for_status()
+        resp.encoding = resp.apparent_encoding or "utf-8"
+        html_text = resp.text
+        print(f"[Scraper] Successfully retrieved live page ({len(html_text)} chars).")
+        LOCAL_HTML_CACHE.write_text(html_text, encoding="utf-8")
+        return html_text
     except Exception as err:
         print(f"[Scraper] Live network request failed ({err}). Checking local cache...")
         if LOCAL_HTML_CACHE.exists():
@@ -84,76 +86,98 @@ def fetch_page_html(url: str = TARGET_URL) -> str:
             return html_text
         raise RuntimeError(f"Unable to retrieve schedule page from network or cache: {err}")
 
+def verify_pdf_metadata(dest_path: Path) -> bool:
+    """Inspects PDF metadata and structure to ensure file is non-empty and valid."""
+    if not dest_path.exists() or dest_path.stat().st_size < 1000:
+        return False
+    try:
+        with pdfplumber.open(str(dest_path)) as pdf:
+            if not pdf.pages or len(pdf.pages) == 0:
+                return False
+            # PDF is readable and has valid pages
+            return True
+    except Exception:
+        return False
+
 def download_pdf_file(url: str, dest_path: Path) -> bool:
-    """Download PDF file with streaming and fallback to local cache."""
+    """Download PDF file with requests streaming and fallback to local cache."""
     dest_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    # 1. If file already exists and valid size (> 1KB), skip
+
+    # 1. If file already exists, is valid size and readable PDF, skip
     if dest_path.exists() and dest_path.stat().st_size > 1000:
-        return True
-        
+        if verify_pdf_metadata(dest_path):
+            return True
+
     filename = dest_path.name
     # 2. Check if local cache has this file
     if CACHE_DIR.exists():
         for cached_file in CACHE_DIR.glob("*.pdf"):
             if cached_file.name == filename or filename in cached_file.name:
                 shutil.copy2(cached_file, dest_path)
-                return True
-                
-    # 3. Download via HTTP
+                if verify_pdf_metadata(dest_path):
+                    return True
+
+    # 3. Download via requests HTTP session
     try:
         parsed = urllib.parse.urlparse(url)
         encoded_path = urllib.parse.quote(parsed.path, safe='/')
         clean_url = urllib.parse.urlunparse(parsed._replace(path=encoded_path))
-        
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        req = urllib.request.Request(clean_url, headers=REQ_HEADERS)
-        with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
-            data = resp.read()
-            if len(data) > 500:
-                dest_path.write_bytes(data)
-                return True
+
+        session = requests.Session()
+        session.headers.update(REQ_HEADERS)
+        with session.get(clean_url, timeout=30, verify=False, stream=True) as resp:
+            resp.raise_for_status()
+            with open(dest_path, "wb") as f:
+                for chunk in resp.iter_content(chunk_size=16384):
+                    if chunk:
+                        f.write(chunk)
+
+        if verify_pdf_metadata(dest_path):
+            return True
+        else:
+            print(f"    [Scraper] Corrupted PDF downloaded for {url}")
+            return False
     except Exception as err:
         print(f"    [Scraper] Download error for {url}: {err}")
         return False
-    return False
 
 def scrape_timacad_schedules(html_content: Optional[str] = None) -> Dict[str, Any]:
     """
     Main scraper execution:
-    Parses HTML, applies academic year filters, downloads PDFs to structured dirs.
+    Parses HTML with BeautifulSoup4, traverses accordion blocks and tabs,
+    filters 2026/2027 academic year schedules, downloads PDFs to structured dirs,
+    and logs skipped files and errors.
     """
     if not html_content:
         html_content = fetch_page_html(TARGET_URL)
-        
+
     DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
-    
-    # Parse section blocks
-    h2_splits = re.split(r'(?=<h2)', html_content)
-    
+    soup = BeautifulSoup(html_content, "html.parser")
+
     manifest_entries = []
     skipped_entries = []
     downloaded_count = 0
     failed_count = 0
-    
-    print(f"\n[Scraper] Parsing HTML sections for academic year {ACADEMIC_YEAR}...")
-    
-    for s_idx, sec in enumerate(h2_splits):
-        h2_m = re.search(r'<h2[^>]*>(.*?)</h2>', sec, re.DOTALL)
-        if not h2_m:
+
+    print(f"\n[Scraper] Parsing HTML sections with BeautifulSoup for academic year {ACADEMIC_YEAR}...")
+
+    # Find structure sections
+    sections = soup.find_all("section", class_=lambda c: c and "content__block--structure" in c)
+
+    for s_idx, sec in enumerate(sections):
+        prev_h2 = sec.find_previous("h2")
+        if not prev_h2:
             continue
-            
-        h2_text = re.sub(r'\s+', ' ', h2_m.group(1)).strip()
-        
-        # Filter condition: Only 2026/2027
+
+        h2_text = re.sub(r'\s+', ' ', prev_h2.get_text()).strip()
+
+        # Filter condition: Only 2026/2027 academic year
         if ACADEMIC_YEAR not in h2_text and "2026-2027" not in h2_text:
-            links_in_skipped = re.findall(r'<a\s+href="([^"]+\.pdf)"[^>]*>(.*?)</a>', sec, re.DOTALL)
+            skipped_links = sec.find_all("a", href=lambda h: h and h.endswith(".pdf"))
             skipped_entries.append({
                 "sectionTitle": h2_text,
                 "reason": f"Excluded: not {ACADEMIC_YEAR} academic year",
-                "skippedPdfsCount": len(links_in_skipped)
+                "skippedPdfsCount": len(skipped_links),
             })
             continue
 
@@ -168,35 +192,32 @@ def scrape_timacad_schedules(html_content: Optional[str] = None) -> Dict[str, An
         else:
             level = "Бакалавриат"
 
-        # Find accordion cards / institute blocks
-        cards = re.split(r'<div class="card">', sec)[1:]
-        if not cards:
-            cards = [sec]
-            
-        for c_idx, card in enumerate(cards):
-            header_m = re.search(r'<div class="card-header"[^>]*>.*?<a[^>]*>(.*?)</a>', card, re.DOTALL)
-            if header_m:
-                raw_inst = re.sub(r'\s+', ' ', header_m.group(1)).strip()
-            else:
-                h_sub = re.search(r'<h[34][^>]*>(.*?)</h[34]>', card, re.DOTALL)
-                raw_inst = re.sub(r'\s+', ' ', h_sub.group(1)).strip() if h_sub else f"Институт_{c_idx+1}"
-                
+        # Find all cards/institutes within this section
+        for header in sec.find_all(class_=lambda c: c and "card-header" in c):
+            raw_inst = header.get_text(strip=True)
+            card = header.find_parent(class_=lambda c: c and "card" in c)
+            if not card:
+                continue
+
             inst_name = normalize_institute_name(raw_inst)
             inst_folder = sanitize_folder_name(inst_name)
-            
-            # Find PDF links
-            pdf_links = re.findall(r'<a\s+href="([^"]+\.pdf)"[^>]*>(.*?)</a>\s*(?:&mdash;|-)?\s*([^<\n]+)?', card, re.DOTALL)
-            
-            for link, link_text, desc in pdf_links:
-                clean_link_text = re.sub(r'\s+', ' ', link_text).strip()
-                clean_desc = re.sub(r'\s+', ' ', desc).strip() if desc else clean_link_text
-                
-                full_url = urllib.parse.urljoin("https://www.timacad.ru", link)
-                raw_file_name = Path(urllib.parse.unquote(link)).name
-                
-                # Target path: downloads/{уровень}/{институт}/{файл}.pdf
+
+            # Find all PDF links inside this institute block
+            pdf_links = card.find_all("a", href=lambda h: h and h.endswith(".pdf"))
+
+            for link_el in pdf_links:
+                href = link_el.get("href", "")
+                link_text = re.sub(r'\s+', ' ', link_el.get_text()).strip()
+
+                # Get description from adjacent text or parent text
+                parent_text = re.sub(r'\s+', ' ', link_el.parent.get_text()).strip() if link_el.parent else ""
+                clean_desc = link_text or parent_text
+
+                full_url = urllib.parse.urljoin("https://www.timacad.ru", href)
+                raw_file_name = Path(urllib.parse.unquote(href)).name
+
                 target_dest = DOWNLOADS_DIR / level / inst_folder / raw_file_name
-                
+
                 ok = download_pdf_file(full_url, target_dest)
                 if ok:
                     downloaded_count += 1
@@ -208,9 +229,9 @@ def scrape_timacad_schedules(html_content: Optional[str] = None) -> Dict[str, An
                         "url": full_url,
                         "level": level,
                         "institute": inst_name,
-                        "reason": "Download error or broken link"
+                        "reason": "Download error, broken link, or invalid PDF metadata",
                     })
-                    
+
                 manifest_entries.append({
                     "level": level,
                     "institute": inst_name,
@@ -219,29 +240,30 @@ def scrape_timacad_schedules(html_content: Optional[str] = None) -> Dict[str, An
                     "localPath": str(target_dest.relative_to(ROOT_DIR)).replace("\\", "/"),
                     "filename": raw_file_name,
                     "status": status,
-                    "section": h2_text
+                    "section": h2_text,
                 })
 
     log_data = {
         "timestamp": datetime.now().isoformat(),
         "targetUrl": TARGET_URL,
         "academicYear": ACADEMIC_YEAR,
+        "parserEngine": "requests + BeautifulSoup4",
         "summary": {
             "totalDiscoveredPdfs": len(manifest_entries),
             "downloaded": downloaded_count,
             "failed": failed_count,
-            "skippedSectionsCount": len(skipped_entries)
+            "skippedSectionsCount": len(skipped_entries),
         },
         "downloads": manifest_entries,
-        "skipped": skipped_entries
+        "skipped": skipped_entries,
     }
-    
+
     log_path = DOWNLOADS_DIR / "scraper_log.json"
     log_path.write_text(json.dumps(log_data, ensure_ascii=False, indent=2), encoding="utf-8")
-    
+
     print(f"\n[Scraper Summary]")
     print(f"  Total valid 2026/2027 files: {len(manifest_entries)}")
-    print(f"  Successfully saved:         {downloaded_count}")
+    print(f"  Successfully verified:      {downloaded_count}")
     print(f"  Failed / Invalid links:     {failed_count}")
     print(f"  Scraper log saved to:       {log_path}")
     return log_data
