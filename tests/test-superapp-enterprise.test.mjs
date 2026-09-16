@@ -571,6 +571,66 @@ it("7.8 src/widgets/schedule-grid/ui/DayView.tsx eliminates Framer Motion stagge
   assert(content.includes("gpu-accelerated"), "DayView must use GPU accelerated rendering")
 })
 
+// ====================================================================
+// SUITE 8: Composite Classrooms, Normalization & SuperApp Interconnect
+// ====================================================================
+console.log("\n--- SUITE 8: Composite Classrooms & SuperApp Interconnect ---")
+
+it("8.1 cleanRoomNumber strips building prefix from composite classrooms like '17 (старый) 200'", () => {
+  const locPath = path.join(rootDir, "src", "entities", "lesson", "lib", "location.ts")
+  assert(fs.existsSync(locPath), "location.ts must exist")
+  const locContent = fs.readFileSync(locPath, "utf-8")
+  assert(locContent.includes("cleanRoomNumber"), "location.ts must export cleanRoomNumber")
+  assert(locContent.includes("formatLocationDisplay"), "location.ts must export formatLocationDisplay")
+  assert(locContent.includes("планетарий|сыроварня"), "Must recognize special venues in formatLocationDisplay")
+})
+
+it("8.2 location.ts and App.tsx normalizeBldg correctly handles 'Корпус 26' and numeric boundaries", () => {
+  const locContent = fs.readFileSync(path.join(rootDir, "src", "entities", "lesson", "lib", "location.ts"), "utf-8")
+  assert(locContent.includes("\\b26\\b"), "normalizeBldg in location.ts must match \\b26\\b")
+  const appContent = fs.readFileSync(path.join(rootDir, "src", "App.tsx"), "utf-8")
+  assert(appContent.includes("\\b26\\b"), "normalizeBldg in App.tsx must match \\b26\\b")
+})
+
+it("8.3 src/widgets/schedule-grid/ui/ClassCard.tsx exports onCrowdsource action prop", () => {
+  const ccPath = path.join(rootDir, "src", "widgets", "schedule-grid", "ui", "ClassCard.tsx")
+  const content = fs.readFileSync(ccPath, "utf-8")
+  assert(content.includes("onCrowdsource?: () => void"), "ClassCardProps must declare onCrowdsource")
+  assert(content.includes("Перенос / отмена"), "ClassCard must render crowdsource action button")
+})
+
+it("8.4 src/widgets/schedule-grid/ui/OknoCard.tsx provides onRadar and onMatchmaking quick actions", () => {
+  const ocPath = path.join(rootDir, "src", "widgets", "schedule-grid", "ui", "OknoCard.tsx")
+  const content = fs.readFileSync(ocPath, "utf-8")
+  assert(content.includes("onRadar?: () => void"), "OknoCardProps must declare onRadar")
+  assert(content.includes("onMatchmaking?: () => void"), "OknoCardProps must declare onMatchmaking")
+  assert(content.includes("Радар ауд"), "OknoCard must render radar button")
+  assert(content.includes("Общие окна"), "OknoCard must render matchmaking button")
+})
+
+it("8.5 src/widgets/schedule-grid/ui/TravelBanner.tsx provides onOpenNavigation in-app transit callback", () => {
+  const tbPath = path.join(rootDir, "src", "widgets", "schedule-grid", "ui", "TravelBanner.tsx")
+  const content = fs.readFileSync(tbPath, "utf-8")
+  assert(content.includes("onOpenNavigation?: (from: string, to: string) => void"), "TravelBannerProps must declare onOpenNavigation")
+  assert(content.includes("Навигатор"), "TravelBanner must render campus transit navigator button")
+})
+
+it("8.6 src/widgets/schedule-grid/ui/DayView.tsx forwards SuperApp actions to cards", () => {
+  const dvPath = path.join(rootDir, "src", "widgets", "schedule-grid", "ui", "DayView.tsx")
+  const content = fs.readFileSync(dvPath, "utf-8")
+  assert(content.includes("onOpenCrowdsource?: (cls: ClassItem) => void"), "DayViewProps must declare onOpenCrowdsource")
+  assert(content.includes("onOpenNavigation?: (from: string, to?: string) => void"), "DayViewProps must declare onOpenNavigation")
+  assert(content.includes("onOpenRadar?: () => void"), "DayViewProps must declare onOpenRadar")
+  assert(content.includes("onOpenMatchmaking?: () => void"), "DayViewProps must declare onOpenMatchmaking")
+})
+
+it("8.7 scripts/publish-release.mjs targets v2.0.0 Enterprise SuperApp release", () => {
+  const prPath = path.join(rootDir, "scripts", "publish-release.mjs")
+  const content = fs.readFileSync(prPath, "utf-8")
+  assert(content.includes("v2.0.0"), "publish-release.mjs must target v2.0.0")
+  assert(content.includes("Enterprise SuperApp"), "publish-release.mjs must describe Enterprise SuperApp")
+})
+
 console.log("\n==================================================================")
 console.log(`  TOTAL TESTS: ${totalTests} | PASSED: ${testsPassed} | FAILED: 0`)
 console.log("==================================================================")

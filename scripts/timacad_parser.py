@@ -106,34 +106,34 @@ def normalize_building_room(room_str: str) -> Tuple[str, str]:
     if r.upper() == "СК":
         return "Спорткомплекс", "СК"
     if "Планетарий" in r:
-        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
-        return "12-й учебный корпус", clean_rm or r
+        clean_rm = re.sub(r'^\d{1,2}\s*[-–—\s]?\s*', '', r).strip()
+        return "12-й учебный корпус", clean_rm or "Планетарий 1"
     if "ИЦ" in r:
-        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        clean_rm = re.sub(r'^\d{1,2}\s*[-–—\s]?\s*', '', r).strip()
         return "Корпус 29 (Цифровой центр)", clean_rm or r
     if "старый" in r:
-        clean_rm = re.sub(r'^\d{1,2}\s*\([^\)]+\)\s*[-\s]?', '', r).strip()
+        clean_rm = re.sub(r'^\d{1,2}\s*\([^\)]+\)\s*[-–—\s]?', '', r).strip()
         return "17-й учебный корпус (старый)", clean_rm or r
     if "БАг" in r or "БП" in r or "Белая дача" in r:
-        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        clean_rm = re.sub(r'^\d{1,2}\s*[-–—\s]?\s*', '', r).strip()
         return "17-й учебный корпус", clean_rm or r
     if "БХ" in r:
-        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        clean_rm = re.sub(r'^\d{1,2}\s*[-–—\s]?\s*', '', r).strip()
         return "Корпус 6 (Агрохимия)", clean_rm or "БХ"
     if "БАн" in r:
-        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        clean_rm = re.sub(r'^\d{1,2}\s*[-–—\s]?\s*', '', r).strip()
         return "Корпус 16 (Биологический)", clean_rm or "БАн"
     if "ВУЦ" in r:
-        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        clean_rm = re.sub(r'^\d{1,2}\s*[-–—\s]?\s*', '', r).strip()
         return "4-й учебный корпус (ВУЦ)", clean_rm or r
     if "сыроварня" in r:
         return "2Д-сыроварня", "Сыроварня"
     if "Цокольный" in r or "каф" in r:
-        clean_rm = re.sub(r'^\d{1,2}\s*-\s*', '', r).strip()
+        clean_rm = re.sub(r'^\d{1,2}\s*[-–—\s]?\s*', '', r).strip()
         return "25-й учебный корпус", clean_rm or r
 
     # Standard format: {bldg}-{room}, e.g. "27-315", "01-416", "16-219", "25-4"
-    m = re.match(r'^(\d{1,2})\s*-\s*(.+)$', r)
+    m = re.match(r'^(\d{1,2})\s*[-–—]\s*(.+)$', r)
     if m:
         b_num = int(m.group(1))
         rm_num = m.group(2).strip()

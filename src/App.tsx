@@ -429,16 +429,22 @@ function getBldgGenitive(name: string): string {
   for (const [k, v] of Object.entries(BGEN)) {
     if (name.includes(k) || k.includes(name)) return v
   }
-  if (/агрохим|6-й/i.test(name)) return "корпуса агрохимии (6-го)"
-  if (/16-й|биолог/i.test(name)) return "биологического корпуса (16-го)"
-  if (/17-й|почв/i.test(name)) return "17-го почвенного корпуса"
-  if (/18-й|метео/i.test(name)) return "18-го метеорологического корпуса"
-  if (/26-й/i.test(name)) return "26-го учебного корпуса"
-  if (/27-й|лингв/i.test(name)) return "27-го лингвистического корпуса"
-  if (/28-й|инженер/i.test(name)) return "инженерного корпуса (28-го)"
-  if (/29-й|цифр/i.test(name)) return "29-го цифрового корпуса"
-  if (/37-й|биотех/i.test(name)) return "37-го корпуса биотехнологии"
-  if (/8-й/i.test(name)) return "8-го учебного корпуса"
+  if (/агрохим|\b6\b|6-й/i.test(name)) return "корпуса агрохимии (6-го)"
+  if (/16-й|\b16\b|биолог/i.test(name)) return "биологического корпуса (16-го)"
+  if (/17-й|\b17\b|почв/i.test(name)) return "17-го почвенного корпуса"
+  if (/18-й|\b18\b|метео/i.test(name)) return "18-го метеорологического корпуса"
+  if (/26-й|\b26\b/i.test(name)) return "26-го учебного корпуса"
+  if (/27-й|\b27\b|лингв/i.test(name)) return "27-го лингвистического корпуса"
+  if (/28-й|\b28\b|инженер/i.test(name)) return "инженерного корпуса (28-го)"
+  if (/29-й|\b29\b|цифр/i.test(name)) return "29-го цифрового корпуса"
+  if (/37-й|\b37\b|биотех/i.test(name)) return "37-го корпуса биотехнологии"
+  if (/8-й|\b8\b/i.test(name)) return "8-го учебного корпуса"
+  if (/9-й|\b9\b/i.test(name)) return "9-го учебного корпуса"
+  if (/12-й|\b12\b/i.test(name)) return "12-го учебного корпуса"
+  if (/4-й|\b4\b/i.test(name)) return "4-го учебного корпуса"
+  if (/3-й|\b3\b/i.test(name)) return "3-го учебного корпуса"
+  if (/2-й|\b2\b/i.test(name)) return "2-го учебного корпуса"
+  if (/1-й|\b1\b|01\b/i.test(name)) return "1-го учебного корпуса"
   if (/цнб|библиотек/i.test(name)) return "Центральной научной библиотеки"
   if (/общежит|студгород/i.test(name)) return "студгородка"
   if (/спорт|СК/i.test(name)) return "спортивного комплекса"
@@ -452,27 +458,27 @@ function normalizeBldg(name: string): string {
   for (const [k, v] of Object.entries(BIDS)) {
     if (name.includes(k) || k.includes(name)) return v
   }
-  if (/агрохим|6-й/i.test(name)) return "agrochem"
-  if (/16-й|биолог/i.test(name)) return "bio16"
-  if (/17-й|почв/i.test(name)) return "soil17"
-  if (/18-й|метео/i.test(name)) return "meteo18"
-  if (/26-й/i.test(name)) return "corp26"
-  if (/27-й|лингв/i.test(name)) return "ling27"
-  if (/28-й|инженер/i.test(name)) return "engineering"
-  if (/29-й|цифр/i.test(name)) return "digital29"
-  if (/37-й|биотех/i.test(name)) return "biotech37"
-  if (/8-й/i.test(name)) return "corp8"
+  if (/агрохим|\b6\b|6-й/i.test(name)) return "agrochem"
+  if (/16-й|\b16\b|биолог/i.test(name)) return "bio16"
+  if (/17-й|\b17\b|почв/i.test(name)) return "soil17"
+  if (/18-й|\b18\b|метео/i.test(name)) return "meteo18"
+  if (/26-й|\b26\b/i.test(name)) return "corp26"
+  if (/27-й|\b27\b|лингв/i.test(name)) return "ling27"
+  if (/28-й|\b28\b|инженер/i.test(name)) return "engineering"
+  if (/29-й|\b29\b|цифр/i.test(name)) return "digital29"
+  if (/37-й|\b37\b|биотех/i.test(name)) return "biotech37"
+  if (/8-й|\b8\b/i.test(name)) return "corp8"
+  if (/9-й|\b9\b/i.test(name)) return "corp9"
+  if (/12-й|\b12\b/i.test(name)) return "corp12"
+  if (/4-й|\b4\b/i.test(name)) return "corp4"
+  if (/3-й|\b3\b/i.test(name)) return "corp3"
+  if (/2-й|\b2\b/i.test(name)) return "corp2"
+  if (/1-й|\b1\b|01\b/i.test(name)) return "corp1"
   if (/цнб|библиотек/i.test(name)) return "lib"
   if (/общежит|студгород/i.test(name)) return "dorms"
   if (/спорт|СК/i.test(name)) return "sport"
   if (/станци|опытн/i.test(name)) return "station"
-  if (/1-й/i.test(name)) return "corp1"
-  if (/2-й/i.test(name)) return "corp2"
-  if (/3-й/i.test(name)) return "corp3"
-  if (/4-й/i.test(name)) return "corp4"
-  if (/9-й/i.test(name)) return "corp9"
-  if (/12-й/i.test(name)) return "corp12"
-  return name.trim().toLowerCase()
+  return "corp1"
 }
 
 const DORMS = [
@@ -1368,12 +1374,18 @@ function cleanRoomNumber(building?: string, room?: string): string {
   const bldgNumMatch = bldg.match(/\d+/)
   if (bldgNumMatch) {
     const bNum = bldgNumMatch[0]
-    const prefixRe = new RegExp(`^0?${bNum}\\s*-\\s*`, "i")
+    // Matches "17-200", "01-416", "17 (старый) 200", "17 (старый)-208", "12-Планетарий 1", "29-ИЦ 2"
+    const prefixRe = new RegExp(`^0?${bNum}\\s*(?:\\([^)]+\\))?\\s*[-–—\\s]?\\s*`, "i")
     if (prefixRe.test(rm)) {
-      rm = rm.replace(prefixRe, "").trim()
+      const stripped = rm.replace(prefixRe, "").trim()
+      if (stripped) {
+        rm = stripped
+      }
     }
   }
-  return rm
+  // Strip duplicate "ауд." or "ауд " prefix
+  rm = rm.replace(/^ауд\.?\s*/i, "").trim()
+  return rm || "—"
 }
 
 function formatLocationDisplay(building?: string, room?: string): string {
@@ -1393,6 +1405,11 @@ function formatLocationDisplay(building?: string, room?: string): string {
 
   if (!rm || rm === "—" || rm === "-") {
     return bldg
+  }
+
+  // If rm already specifies a named venue or custom non-numeric designation (like "Планетарий 1", "Сыроварня", "ВУЦ")
+  if (/^(?:планетарий|сыроварня|иц|вуц|баг|бп|бх|бан)\b/i.test(rm)) {
+    return `${bldg}, ${rm}`
   }
 
   return `${bldg}, ауд. ${rm}`

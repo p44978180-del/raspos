@@ -26,6 +26,7 @@ export interface ClassCardProps {
   onBuildingClick?: (b: string) => void
   onManage?: () => void
   onSubjectClick?: () => void
+  onCrowdsource?: () => void
   isOddWeek?: boolean
   weekFilter?: "current" | "all"
 }
@@ -46,6 +47,7 @@ export function ClassCard({
   onBuildingClick,
   onManage,
   onSubjectClick,
+  onCrowdsource,
   isOddWeek = true,
   weekFilter = "current",
 }: ClassCardProps) {
@@ -361,15 +363,33 @@ export function ClassCard({
             Слот: {edit.displacedNote}
           </p>
         )}
-        {onNotesClick && (
-          <button
-            onClick={onNotesClick}
-            className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-fg hover:text-primary transition-colors"
-          >
-            {I.book(12)}
-            <span>{homework ? "ДЗ и заметки" : "Заметки"}</span>
-            {I.chev("right", 11)}
-          </button>
+        {(onNotesClick || onCrowdsource) && (
+          <div className="mt-2.5 flex items-center justify-between gap-2 pt-1 border-t border-border/40">
+            {onNotesClick && (
+              <button
+                onClick={onNotesClick}
+                className="flex items-center gap-1.5 text-xs text-muted-fg hover:text-primary transition-colors cursor-pointer"
+              >
+                {I.book(12)}
+                <span>{homework ? "ДЗ и заметки" : "Заметки"}</span>
+                {I.chev("right", 11)}
+              </button>
+            )}
+            {onCrowdsource && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onCrowdsource()
+                }}
+                className="flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300 hover:text-amber-800 transition-colors cursor-pointer bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20 active:scale-95"
+                title="Сообщить о переносе пары или отмене"
+              >
+                <span>📣</span>
+                <span>Перенос / отмена</span>
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

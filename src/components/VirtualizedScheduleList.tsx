@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import type { ScheduleItem } from "../proto/schedule"
+import { formatLocationDisplay } from "../entities/lesson/lib/location"
 
 interface VirtualizedScheduleListProps {
   items: ScheduleItem[]
@@ -140,8 +141,7 @@ export default function VirtualizedScheduleList({
                       className="flex items-center gap-1 hover:text-fg font-medium"
                     >
                       <span>📍</span>
-                      <span>{item.building}</span>
-                      {item.room && <span className="font-semibold text-fg">, ауд. {item.room}</span>}
+                      <span>{formatLocationDisplay(item.building, item.room)}</span>
                     </button>
                   )}
 

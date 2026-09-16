@@ -6,9 +6,10 @@ export interface TravelBannerProps {
   from: string
   to: string
   breakMin: number
+  onOpenNavigation?: (from: string, to: string) => void
 }
 
-export function TravelBanner({ from, to, breakMin }: TravelBannerProps) {
+export function TravelBanner({ from, to, breakMin, onOpenNavigation }: TravelBannerProps) {
   const walkInfo = calculateWalkBetween(from, to)
   if (!walkInfo) return null
   if (walkInfo.mins === 0) {
@@ -28,21 +29,36 @@ export function TravelBanner({ from, to, breakMin }: TravelBannerProps) {
           : "bg-muted text-muted-fg"
       }`}
     >
-      <div className="flex items-center gap-2 min-w-0">
+      <div
+        onClick={() => onOpenNavigation?.(from, to)}
+        className="flex items-center gap-2 min-w-0 cursor-pointer hover:opacity-85"
+      >
         {I.route(13, "flex-shrink-0")}
         <span className="truncate">{walkInfo.text}</span>
       </div>
-      {walkInfo.routeUrl && (
-        <a
-          href={walkInfo.routeUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[11px] font-semibold text-primary underline flex-shrink-0 hover:opacity-80"
-          title="Открыть пешеходный маршрут на Яндекс.Картах"
-        >
-          Маршрут →
-        </a>
-      )}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {onOpenNavigation && (
+          <button
+            type="button"
+            onClick={() => onOpenNavigation(from, to)}
+            className="text-[11px] font-bold text-primary hover:opacity-80 cursor-pointer"
+            title="Открыть умную навигацию между корпусами"
+          >
+            🧭 Навигатор
+          </button>
+        )}
+        {walkInfo.routeUrl && (
+          <a
+            href={walkInfo.routeUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] font-semibold text-muted-fg underline hover:opacity-80"
+            title="Открыть пешеходный маршрут на Яндекс.Картах"
+          >
+            Карты →
+          </a>
+        )}
+      </div>
     </div>
   )
 }

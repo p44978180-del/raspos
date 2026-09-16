@@ -48,6 +48,10 @@ export interface DayViewProps {
   onSubjectClick: (cls: ClassItem) => void
   onEat: () => void
   weekFilterMode?: WeekFilterMode
+  onOpenCrowdsource?: (cls: ClassItem) => void
+  onOpenNavigation?: (from: string, to?: string) => void
+  onOpenRadar?: () => void
+  onOpenMatchmaking?: () => void
 }
 
 export function DayView({
@@ -75,7 +79,11 @@ export function DayView({
   onSubgroupTap,
   onSubjectClick,
   onEat,
-  weekFilterMode = "current",
+  weekFilterMode,
+  onOpenCrowdsource,
+  onOpenNavigation,
+  onOpenRadar,
+  onOpenMatchmaking,
 }: DayViewProps) {
   const [restOpen, setRestOpen] = useState(false)
   const effectiveFilter = weekFilterMode ?? "current"
@@ -317,6 +325,7 @@ export function DayView({
                     from={prevBuilding}
                     to={curBuilding}
                     breakMin={breakMin}
+                    onOpenNavigation={onOpenNavigation}
                   />
                 )}
               {hasWindow && entry.type === "native" && prevEnd && (
@@ -326,6 +335,8 @@ export function DayView({
                   gapMin={windowGap?.durationMinutes ?? gapMin}
                   onEat={onEat}
                   onRest={() => setRestOpen(true)}
+                  onRadar={onOpenRadar}
+                  onMatchmaking={onOpenMatchmaking}
                 />
               )}
               <div className="mx-4">
@@ -361,6 +372,9 @@ export function DayView({
                       : undefined
                   }
                   onSubjectClick={() => onSubjectClick(curCls)}
+                  onCrowdsource={
+                    onOpenCrowdsource ? () => onOpenCrowdsource(curCls) : undefined
+                  }
                   isOddWeek={isOddWeek}
                   weekFilter={effectiveFilter === "all" ? "all" : "current"}
                 />

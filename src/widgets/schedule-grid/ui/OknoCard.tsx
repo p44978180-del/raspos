@@ -9,9 +9,11 @@ export interface OknoCardProps {
   gapMin: number
   onEat: () => void
   onRest: () => void
+  onRadar?: () => void
+  onMatchmaking?: () => void
 }
 
-export function OknoCard({ from, to, gapMin, onEat, onRest }: OknoCardProps) {
+export function OknoCard({ from, to, gapMin, onEat, onRest, onRadar, onMatchmaking }: OknoCardProps) {
   const h = Math.floor(gapMin / 60)
   const m = gapMin % 60
   const durationText = h > 0 ? `${h} ч. ${m > 0 ? `${m} мин.` : "00 мин."}` : `${m} мин.`
@@ -34,19 +36,37 @@ export function OknoCard({ from, to, gapMin, onEat, onRest }: OknoCardProps) {
           </p>
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         <button
           onClick={onEat}
-          className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold bg-muted text-fg hover:bg-border rounded-xl py-2 transition-colors cursor-pointer"
+          className="flex-1 min-w-[110px] flex items-center justify-center gap-1.5 text-xs font-semibold bg-muted text-fg hover:bg-border rounded-xl py-2 transition-colors cursor-pointer"
         >
           {I.fork(14, "flex-shrink-0")} Где поесть
         </button>
         <button
           onClick={onRest}
-          className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold bg-muted text-fg hover:bg-border rounded-xl py-2 transition-colors cursor-pointer"
+          className="flex-1 min-w-[110px] flex items-center justify-center gap-1.5 text-xs font-semibold bg-muted text-fg hover:bg-border rounded-xl py-2 transition-colors cursor-pointer"
         >
           {I.book(14, "flex-shrink-0")} Где переждать
         </button>
+        {onRadar && (
+          <button
+            onClick={onRadar}
+            className="flex-1 min-w-[110px] flex items-center justify-center gap-1.5 text-xs font-bold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/25 rounded-xl py-2 transition-all cursor-pointer shadow-xs active:scale-95"
+            title="Инвертированный поиск свободных аудиторий с розетками"
+          >
+            <span>📡</span> Радар ауд.
+          </button>
+        )}
+        {onMatchmaking && (
+          <button
+            onClick={onMatchmaking}
+            className="flex-1 min-w-[110px] flex items-center justify-center gap-1.5 text-xs font-bold bg-purple-500/15 text-purple-800 dark:text-purple-300 border border-purple-500/25 hover:bg-purple-500/25 rounded-xl py-2 transition-all cursor-pointer shadow-xs active:scale-95"
+            title="Синхронизация свободных окон с друзьями"
+          >
+            <span>🤝</span> Общие окна
+          </button>
+        )}
       </div>
     </motion.div>
   )
