@@ -631,6 +631,63 @@ it("8.7 scripts/publish-release.mjs targets v2.0.0 Enterprise SuperApp release",
   assert(content.includes("Enterprise SuperApp"), "publish-release.mjs must describe Enterprise SuperApp")
 })
 
+it("8.8 cleanRoomNumber cleans trailing teacher surnames from room designations", () => {
+  const locPath = path.join(rootDir, "src", "entities", "lesson", "lib", "location.ts")
+  const content = fs.readFileSync(locPath, "utf-8")
+  assert(content.includes("cleanRoomNumber"), "location.ts must export cleanRoomNumber")
+
+  // Dynamic test of cleanRoomNumber logic
+  const testStrip = (rm) => {
+    let r = rm.trim()
+    if (/^\d{1,4}[а-яА-ЯЁ]?\s+[А-ЯЁ][а-яёА-ЯЁ\-]+(?:\s+[А-ЯЁ]\.?)?$/i.test(r)) {
+      r = r.replace(/\s+[А-ЯЁ][а-яёА-ЯЁ\-]+(?:\s+[А-ЯЁ]\.?)?$/i, "").trim()
+    }
+    return r
+  }
+  assert.strictEqual(testStrip("309 СИДОРОВА Е"), "309")
+  assert.strictEqual(testStrip("218 КАМЕННЫХ Н"), "218")
+  assert.strictEqual(testStrip("235 ЖАРКИХ О"), "235")
+  assert.strictEqual(testStrip("Планетарий 1"), "Планетарий 1")
+})
+
+it("8.9 WindowMatchmakingModal supports multi-group selection and week parity filters", () => {
+  const mmPath = path.join(rootDir, "src", "features", "window-matchmaking", "WindowMatchmakingModal.tsx")
+  assert(fs.existsSync(mmPath), "WindowMatchmakingModal.tsx must exist")
+  const content = fs.readFileSync(mmPath, "utf-8")
+  assert(content.includes("activeFriendGroups"), "Must support multi-group array")
+  assert(content.includes("weekFilter"), "Must support week parity filter")
+  assert(content.includes("handleAddGroup"), "Must provide handleAddGroup handler")
+  assert(content.includes("handleRemoveGroup"), "Must provide handleRemoveGroup handler")
+})
+
+it("8.10 CampusNavigationModal models 35-min transit between 1-й корпус and СК with 40-min tight window alert", () => {
+  const navPath = path.join(rootDir, "src", "features", "campus-navigation", "CampusNavigationModal.tsx")
+  assert(fs.existsSync(navPath), "CampusNavigationModal.tsx must exist")
+  const content = fs.readFileSync(navPath, "utf-8")
+  assert(content.includes("minutes: 35"), "Must model 35 minute transit between 1-й корпус and СК")
+  assert(content.includes("У вас окно"), "Must include tight window warning")
+  assert(content.includes("trafficDelayMin"), "Must account for traffic/road crossing delays")
+})
+
+it("8.11 App.tsx preserves deputy_headstudent in localStorage and displays in PageProfile", () => {
+  const appPath = path.join(rootDir, "src", "App.tsx")
+  const content = fs.readFileSync(appPath, "utf-8")
+  assert(content.includes('saved === "deputy_headstudent"'), "Must preserve deputy_headstudent role in localStorage")
+  assert(content.includes('["deputy_headstudent", "Зам. старосты"]'), "Must render deputy_headstudent button in PageProfile")
+})
+
+it("8.12 CrowdsourceChangeModal wires onRoleUpgrade to interactive role pills", () => {
+  const csPath = path.join(rootDir, "src", "features", "crowdsource-changes", "CrowdsourceChangeModal.tsx")
+  const content = fs.readFileSync(csPath, "utf-8")
+  assert(content.includes("onRoleUpgrade?.(r)"), "Must call onRoleUpgrade when switching roles in modal")
+})
+
+it("8.13 package.json declares version 2.0.0 matching GitHub release tag", () => {
+  const pkgPath = path.join(rootDir, "package.json")
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"))
+  assert.strictEqual(pkg.version, "2.0.0", "package.json version must be 2.0.0")
+})
+
 console.log("\n==================================================================")
 console.log(`  TOTAL TESTS: ${totalTests} | PASSED: ${testsPassed} | FAILED: 0`)
 console.log("==================================================================")

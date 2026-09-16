@@ -1385,6 +1385,10 @@ function cleanRoomNumber(building?: string, room?: string): string {
   }
   // Strip duplicate "ауд." or "ауд " prefix
   rm = rm.replace(/^ауд\.?\s*/i, "").trim()
+  // Strip trailing teacher surname and initials if captured in room cell (e.g. "309 СИДОРОВА Е", "218 КАМЕННЫХ Н")
+  if (/^\d{1,4}[а-яА-ЯЁ]?\s+[А-ЯЁ][а-яёА-ЯЁ\-]+(?:\s+[А-ЯЁ]\.?)?$/i.test(rm)) {
+    rm = rm.replace(/\s+[А-ЯЁ][а-яёА-ЯЁ\-]+(?:\s+[А-ЯЁ]\.?)?$/i, "").trim()
+  }
   return rm || "—"
 }
 
@@ -8127,6 +8131,7 @@ function PageProfile({
           <div className="flex bg-muted rounded-xl p-0.5 gap-0.5">
             {([
               ["student", "Студент"],
+              ["deputy_headstudent", "Зам. старосты"],
               ["headstudent", "Старостa"],
             ] as [UserRole, string][]).map(([r, l]) => (
               <button
@@ -8142,9 +8147,26 @@ function PageProfile({
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-muted-fg">
-            Старостa: управление парами, ДЗ, события
+          <p className="text-[11px] text-muted-fg leading-relaxed">
+            {role === "headstudent"
+              ? "👑 Старостa: полное управление парами, ДЗ, событиями и назначение зам. старосты"
+              : role === "deputy_headstudent"
+              ? "⭐ Зам. старосты: подтверждение переноса пар с приоритетным бейджем в краудсорсинге"
+              : "🎓 Студент: голосование за перенос (3+ подтверждения выставляют бейдж «Возможен перенос»)"}
           </p>
+          {role === "deputy_headstudent" && (
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
+              <span className="text-base">⭐</span>
+              <div>
+                <p className="text-xs font-bold text-amber-700 dark:text-amber-400">
+                  Режим Зам. старосты активен
+                </p>
+                <p className="text-[10px] text-muted-fg">
+                  Ваши голоса в краудсорсинге изменений отмечаются особым бейджем куратора
+                </p>
+              </div>
+            </div>
+          )}
           {/* Headstudent authentication and control panel */}
           <div className="mt-2 space-y-3">
             {role !== "headstudent" ? (
@@ -9035,7 +9057,7 @@ export default function App() {
   const [role, setRole] = useState<UserRole>(() => {
     try {
       const saved = localStorage.getItem("rgau_role")
-      if (saved === "student" || saved === "headstudent") return saved
+      if (saved === "student" || saved === "headstudent" || saved === "deputy_headstudent") return saved
     } catch {}
     return "student"
   })

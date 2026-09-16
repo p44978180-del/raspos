@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { localDb } from "../../utils/localDatabase"
 import { connectClient } from "../../shared/api/connectClient"
+import { cleanRoomNumber } from "../../entities/lesson/lib/location"
 import type { EmptyClassroomItem } from "../../proto/schedule"
 
 interface EmptyClassroomRadarProps {
@@ -12,13 +13,23 @@ interface EmptyClassroomRadarProps {
 const BUILDINGS = [
   "1-й учебный корпус",
   "2-й учебный корпус",
+  "3-й учебный корпус",
   "4-й учебный корпус",
   "Корпус агрохимии (6-й)",
+  "8-й учебный корпус",
+  "9-й учебный корпус",
+  "11-й учебный корпус",
   "12-й учебный корпус",
+  "15-й учебный корпус",
   "Биологический корпус (16-й)",
   "17-й корпус (Почвенно-агрономический)",
+  "18-й корпус (Метеорологический)",
+  "23-й учебный корпус",
+  "26-й учебный корпус",
+  "27-й корпус (Лингвистический центр)",
   "Инженерный корпус (28-й)",
   "29-й корпус (Цифровой центр)",
+  "37-й корпус (Биотехнология)",
   "Спортивный комплекс",
 ]
 
@@ -209,11 +220,11 @@ export default function EmptyClassroomRadar({
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary font-black flex items-center justify-center text-sm">
-                    {room.room}
+                    {cleanRoomNumber(selectedBuilding, room.room)}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-fg">Аудитория {room.room}</span>
+                      <span className="text-sm font-bold text-fg">Аудитория {cleanRoomNumber(selectedBuilding, room.room)}</span>
                       <span className="text-[11px] font-semibold text-muted-fg">
                         ({room.floor} этаж)
                       </span>

@@ -14,6 +14,7 @@ const DINING_SPOTS = [
   { name: "Коворкинг и буфет (28-й Инженерный корпус)", walkMin: 6, type: "Учеба / Перекус" },
   { name: "Буфет 1-го корпуса (2 этаж)", walkMin: 2, type: "Выпечка / Чай" },
   { name: "Зона отдыха ЦНБ им. Железнова", walkMin: 4, type: "Тихий коворкинг" },
+  { name: "Кофейня в 26-м корпусе", walkMin: 4, type: "Быстрый перекус" },
 ]
 
 const BELL_PAIRS = [
@@ -37,31 +38,64 @@ export default function WindowMatchmakingModal({
     return raw?.groups ? Object.keys(raw.groups) : []
   }, [])
 
-  const [friendGroup, setFriendGroup] = useState<string>(() => {
+  const defaultFriendGroup = useMemo(() => {
     return allGroups.find((g) => g !== myGroup) || "ДЭ 17-26"
-  })
-  const [selectedDay, setSelectedDay] = useState<string>("Понедельник")
+  }, [allGroups, myGroup])
 
-  // Calculate matching free slots (windows) across selected groups
+  const [friendGroups, setFriendGroups] = useState<string[]>(() => [defaultFriendGroup])
+  const [selectedDay, setSelectedDay] = useState<string>("Понедельник")
+  const [weekFilter, setWeekFilter] = useState<"all" | "odd" | "even">("all")
+  const [groupToAdd, setGroupToAdd] = useState<string>("")
+  const [showAddSelector, setShowAddSelector] = useState(false)
+
+  // Ensure default friend group is set if list gets empty
+  const activeFriendGroups = friendGroups.length > 0 ? friendGroups : [defaultFriendGroup]
+  const allParticipatingGroups = useMemo(() => {
+    const set = new Set([myGroup, ...activeFriendGroups])
+    return Array.from(set)
+  }, [myGroup, activeFriendGroups])
+
+  const handleAddGroup = (grp: string) => {
+    if (!grp || grp === myGroup || friendGroups.includes(grp)) return
+    setFriendGroups((prev) => [...prev, grp])
+    setShowAddSelector(false)
+    setGroupToAdd("")
+  }
+
+  const handleRemoveGroup = (grp: string) => {
+    if (friendGroups.length <= 1) return
+    setFriendGroups((prev) => prev.filter((g) => g !== grp))
+  }
+
+  // Calculate matching free slots (windows) intersected across ALL selected groups & parity
   const sharedWindows = useMemo<SharedWindowSlot[]>(() => {
     const raw = officialScheduleData as any
     if (!raw?.groups) return []
 
-    const gData1 = raw.groups[myGroup]
-    const gData2 = raw.groups[friendGroup]
-    if (!gData1 || !gData2) return []
+    const getBusySlotsForGroup = (grpName: string): Set<number> => {
+      const gData = raw.groups[grpName]
+      if (!gData) return new Set()
+      const daySched = gData.schedule?.find((d: any) => d.weekday === selectedDay)
+      if (!daySched?.classes) return new Set()
 
-    const daySchedule1 = gData1.schedule?.find((d: any) => d.weekday === selectedDay)
-    const daySchedule2 = gData2.schedule?.find((d: any) => d.weekday === selectedDay)
+      const busy = new Set<number>()
+      for (const c of daySched.classes) {
+        if (weekFilter === "all" || !c.weekType || c.weekType === "all" || c.weekType === weekFilter) {
+          busy.add(c.num)
+        }
+      }
+      return busy
+    }
 
-    const busySlots1 = new Set<number>(daySchedule1?.classes?.map((c: any) => c.num) || [])
-    const busySlots2 = new Set<number>(daySchedule2?.classes?.map((c: any) => c.num) || [])
-
+    const busyMaps = allParticipatingGroups.map(getBusySlotsForGroup)
     const matches: SharedWindowSlot[] = []
     const dayIdx = WEEKDAYS.indexOf(selectedDay) + 1
 
     for (const pair of BELL_PAIRS) {
-      if (!busySlots1.has(pair.slot) && !busySlots2.has(pair.slot)) {
+      // Slot is free if NO group has a scheduled lesson during it
+      const isFreeForAll = busyMaps.every((busySet) => !busySet.has(pair.slot))
+
+      if (isFreeForAll) {
         const spot = DINING_SPOTS[(dayIdx + pair.slot) % DINING_SPOTS.length]
         matches.push({
           day_of_week: dayIdx,
@@ -70,7 +104,7 @@ export default function WindowMatchmakingModal({
           start_time: pair.start,
           end_time: pair.end,
           duration_minutes: 95,
-          participating_group_names: [myGroup, friendGroup],
+          participating_group_names: allParticipatingGroups,
           suggested_meetup_spot: spot.name,
           walk_minutes_to_spot: spot.walkMin,
         })
@@ -78,13 +112,13 @@ export default function WindowMatchmakingModal({
     }
 
     return matches
-  }, [myGroup, friendGroup, selectedDay])
+  }, [allParticipatingGroups, selectedDay, weekFilter])
 
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-fade-in" onClick={onClose} />
 
       <div
         className="relative w-full max-w-lg bg-card border border-border rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col max-h-[85vh] animate-slide-in-up overflow-hidden"
@@ -98,12 +132,14 @@ export default function WindowMatchmakingModal({
             </div>
             <div>
               <h3 className="text-base font-extrabold text-fg">Синхронизация окон («Matchmaking»)</h3>
-              <p className="text-xs text-muted-fg">Поиск общего свободного времени для обеда или подготовки</p>
+              <p className="text-xs text-muted-fg">
+                Пересечение свободных слотов {allParticipatingGroups.length} групп
+              </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-fg hover:text-fg"
+            className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-muted-fg hover:text-fg active:scale-95 transition-all"
           >
             ✕
           </button>
@@ -111,31 +147,95 @@ export default function WindowMatchmakingModal({
 
         {/* Group Selector Controls */}
         <div className="p-4 border-b border-border/60 space-y-3 bg-muted/20">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-[10px] font-bold text-muted-fg uppercase tracking-wider block mb-1">
-                Ваша группа
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[10px] font-bold text-muted-fg uppercase tracking-wider">
+                Сравниваемые группы ({allParticipatingGroups.length})
               </label>
-              <div className="px-3 py-2 rounded-xl bg-card border border-border text-sm font-bold text-primary">
-                {myGroup || "Не выбрана"}
-              </div>
+              <button
+                onClick={() => setShowAddSelector(!showAddSelector)}
+                className="text-[11px] font-bold text-primary hover:underline"
+              >
+                + Добавить группу
+              </button>
             </div>
 
-            <div>
-              <label className="text-[10px] font-bold text-muted-fg uppercase tracking-wider block mb-1">
-                Группа друга
-              </label>
-              <select
-                value={friendGroup}
-                onChange={(e) => setFriendGroup(e.target.value)}
-                className="w-full bg-card border border-border rounded-xl px-3 py-2 text-sm font-bold text-fg outline-none focus:border-primary"
-              >
-                {allGroups.map((g) => (
-                  <option key={g} value={g}>
-                    {g}
-                  </option>
-                ))}
-              </select>
+            {/* Chips of active groups */}
+            <div className="flex flex-wrap gap-1.5 items-center">
+              {/* My group chip */}
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-extrabold bg-primary/15 text-primary border border-primary/25">
+                <span>⭐ Моя: {myGroup || "Не выбрана"}</span>
+              </span>
+
+              {/* Friend groups chips */}
+              {activeFriendGroups.map((grp) => (
+                <span
+                  key={grp}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold bg-card border border-border text-fg shadow-2xs"
+                >
+                  <span>👥 {grp}</span>
+                  {activeFriendGroups.length > 1 && (
+                    <button
+                      onClick={() => handleRemoveGroup(grp)}
+                      className="text-muted-fg hover:text-red-500 font-bold ml-0.5"
+                      title="Убрать группу"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </span>
+              ))}
+            </div>
+
+            {/* Selector to add another group */}
+            {showAddSelector && (
+              <div className="mt-2 p-2 rounded-xl bg-card border border-border shadow-xs flex gap-2 animate-fade-in">
+                <select
+                  value={groupToAdd}
+                  onChange={(e) => setGroupToAdd(e.target.value)}
+                  className="flex-1 bg-muted border border-border rounded-lg px-2.5 py-1.5 text-xs font-bold text-fg outline-none focus:border-primary"
+                >
+                  <option value="">Выберите группу друга...</option>
+                  {allGroups
+                    .filter((g) => !allParticipatingGroups.includes(g))
+                    .map((g) => (
+                      <option key={g} value={g}>
+                        {g}
+                      </option>
+                    ))}
+                </select>
+                <button
+                  onClick={() => handleAddGroup(groupToAdd)}
+                  disabled={!groupToAdd}
+                  className="px-3 py-1.5 bg-primary disabled:opacity-50 text-white rounded-lg text-xs font-bold active:scale-95 transition-all"
+                >
+                  Добавить
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Week Parity Filters */}
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-bold text-muted-fg uppercase">Неделя:</span>
+            <div className="flex bg-card border border-border rounded-xl p-0.5 gap-0.5">
+              {[
+                ["all", "Все"],
+                ["odd", "1 неч. (верх)"],
+                ["even", "2 чет. (нижн)"],
+              ].map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setWeekFilter(key as any)}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                    weekFilter === key
+                      ? "bg-purple-600 text-white shadow-2xs"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -160,14 +260,18 @@ export default function WindowMatchmakingModal({
         {/* Shared Windows List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
           {sharedWindows.length === 0 ? (
-            <div className="py-12 text-center text-xs text-muted-fg">
-              В {selectedDay.toLowerCase()} у групп {myGroup} и {friendGroup} нет совпадающих свободных окон.
+            <div className="py-12 text-center text-xs text-muted-fg space-y-1">
+              <div className="text-2xl">⏳</div>
+              <p className="font-bold">Нет совпадающих свободных окон</p>
+              <p className="text-[11px]">
+                В {selectedDay.toLowerCase()} у всех {allParticipatingGroups.length} групп нет одновременно свободных пар.
+              </p>
             </div>
           ) : (
             sharedWindows.map((win, idx) => (
               <div
                 key={idx}
-                className="p-3.5 rounded-2xl bg-card border border-purple-500/25 bg-gradient-to-r from-purple-500/5 to-transparent space-y-2 shadow-xs"
+                className="p-3.5 rounded-2xl bg-card border border-purple-500/25 bg-gradient-to-r from-purple-500/5 to-transparent space-y-2 shadow-xs hover:border-purple-500/40 transition-colors"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -178,13 +282,13 @@ export default function WindowMatchmakingModal({
                       {win.start_time} – {win.end_time}
                     </span>
                   </div>
-                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                    Окно свободно
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
+                    ✓ Свободно у всех {allParticipatingGroups.length} групп
                   </span>
                 </div>
 
                 <div className="text-xs text-muted-fg leading-relaxed">
-                  Обе группы свободны. Идеальное время для обеда или совместной домашки.
+                  Полное совпадение свободного слота. Идеальное время для обеда в столовой или совместной подготовки.
                 </div>
 
                 <div className="pt-2 border-t border-border/60 flex items-center justify-between text-xs">

@@ -137,6 +137,9 @@ def normalize_building_room(room_str: str) -> Tuple[str, str]:
     if m:
         b_num = int(m.group(1))
         rm_num = m.group(2).strip()
+        # Clean trailing teacher surname/initials if leaked into room field (e.g. "309 СИДОРОВА Е")
+        if re.match(r'^\d{1,4}[а-яА-ЯЁ]?\s+[А-ЯЁ][а-яёА-ЯЁ\-]+', rm_num):
+            rm_num = re.sub(r'\s+[А-ЯЁ][а-яёА-ЯЁ\-]+(?:\s+[А-ЯЁ]\.?)?$', '', rm_num).strip()
         bldg_name = f"Корпус {b_num:02d}" if b_num < 10 else f"Корпус {b_num}"
         return bldg_name, rm_num
 

@@ -211,22 +211,35 @@ export default function CrowdsourceChangeModal({
         </div>
 
         {/* Role Banner & Deputy Designation */}
-        <div className="p-3 bg-muted/40 border-b border-border/60 flex items-center justify-between text-xs">
+        <div className="p-3 bg-muted/30 border-b border-border/60 flex items-center justify-between gap-2 flex-wrap text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-muted-fg">Ваша роль:</span>
-            <span className="font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-              {currentRole === "headstudent"
-                ? "👑 Староста группы"
-                : currentRole === "deputy_headstudent"
-                ? "⭐ Зам. старосты"
-                : "🎓 Студент"}
-            </span>
+            <span className="font-semibold text-muted-fg">Роль:</span>
+            <div className="flex items-center gap-1 bg-card border border-border/80 rounded-xl p-0.5 shadow-2xs">
+              {([
+                ["student", "🎓 Студент"],
+                ["deputy_headstudent", "⭐ Зам. старосты"],
+                ["headstudent", "👑 Староста"],
+              ] as [RoleInGroup, string][]).map(([r, label]) => (
+                <button
+                  key={r}
+                  onClick={() => onRoleUpgrade?.(r)}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                    currentRole === r
+                      ? "bg-primary text-white shadow-2xs"
+                      : "text-muted-fg hover:text-fg"
+                  }`}
+                  title={`Переключить режим на ${label}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {currentRole === "headstudent" && (
             <button
               onClick={() => setShowDeputyAppoint(!showDeputyAppoint)}
-              className="text-primary font-bold hover:underline"
+              className="text-primary font-bold hover:underline ml-auto"
             >
               + Назначить зам. старосты
             </button>

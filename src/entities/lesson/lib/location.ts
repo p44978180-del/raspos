@@ -142,6 +142,10 @@ export function cleanRoomNumber(building?: string, room?: string): string {
   }
   // Strip duplicate "ауд." or "ауд " prefix
   rm = rm.replace(/^ауд\.?\s*/i, "").trim()
+  // Strip trailing teacher surname and initials if captured in room cell (e.g. "309 СИДОРОВА Е", "218 КАМЕННЫХ Н")
+  if (/^\d{1,4}[а-яА-ЯЁ]?\s+[А-ЯЁ][а-яёА-ЯЁ\-]+(?:\s+[А-ЯЁ]\.?)?$/i.test(rm)) {
+    rm = rm.replace(/\s+[А-ЯЁ][а-яёА-ЯЁ\-]+(?:\s+[А-ЯЁ]\.?)?$/i, "").trim()
+  }
   return rm || "—"
 }
 
