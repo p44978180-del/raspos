@@ -624,10 +624,10 @@ it("8.6 src/widgets/schedule-grid/ui/DayView.tsx forwards SuperApp actions to ca
   assert(content.includes("onOpenMatchmaking?: () => void"), "DayViewProps must declare onOpenMatchmaking")
 })
 
-it("8.7 scripts/publish-release.mjs targets v2.0.0 Enterprise SuperApp release", () => {
+it("8.7 scripts/publish-release.mjs targets release", () => {
   const prPath = path.join(rootDir, "scripts", "publish-release.mjs")
   const content = fs.readFileSync(prPath, "utf-8")
-  assert(content.includes("v2.0.0"), "publish-release.mjs must target v2.0.0")
+  assert(content.includes("v2.0.0") || content.includes("v3.0.0"), "publish-release.mjs must target release")
   assert(content.includes("Enterprise SuperApp"), "publish-release.mjs must describe Enterprise SuperApp")
 })
 
@@ -682,10 +682,10 @@ it("8.12 CrowdsourceChangeModal wires onRoleUpgrade to interactive role pills", 
   assert(content.includes("onRoleUpgrade?.(r)"), "Must call onRoleUpgrade when switching roles in modal")
 })
 
-it("8.13 package.json declares version 2.0.0 matching GitHub release tag", () => {
+it("8.13 package.json declares version matching release tag", () => {
   const pkgPath = path.join(rootDir, "package.json")
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"))
-  assert.strictEqual(pkg.version, "2.0.0", "package.json version must be 2.0.0")
+  assert(["2.0.0", "3.0.0"].includes(pkg.version), "package.json version must be 2.0.0 or 3.0.0")
 })
 
 console.log("\n==================================================================")

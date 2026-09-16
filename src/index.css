@@ -375,4 +375,117 @@ button, a, [role="button"] {
   backface-visibility: hidden;
 }
 
+/* ── v3.0 Design Improvements ────────────────────────────────────────────── */
 
+/* Enhanced glass morphism for header */
+.header-glass {
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+}
+
+/* Responsive container: phone → tablet → desktop */
+@media (min-width: 768px) {
+  .app-shell {
+    max-width: 480px;
+    margin: 0 auto;
+    border-radius: 24px;
+    margin-top: 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06);
+    overflow: hidden;
+    height: calc(100dvh - 24px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .app-shell {
+    max-width: 420px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.15);
+  }
+}
+
+/* Touch target minimum size for accessibility */
+button, [role="button"] {
+  min-height: 36px;
+}
+
+/* SVG Campus Map pan/zoom cursor */
+.campus-map-dragging {
+  cursor: grabbing !important;
+}
+.campus-map-interactive {
+  cursor: grab;
+}
+
+/* Smooth color transitions for dark/light mode */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 150ms;
+  transition-timing-function: ease;
+}
+
+/* Override for animations that should not transition */
+.animate-pulse *, .animate-spin *, .live-dot * {
+  transition: none;
+}
+
+/* Barcode SVG in wallet card */
+.barcode-svg svg {
+  display: block;
+  width: 100%;
+  height: 48px;
+}
+
+/* Next class banner transitions */
+.next-class-progress {
+  transition: width 30000ms linear;
+}
+
+/* Improved scrollbar for macOS/desktop in dark mode */
+@media (pointer: fine) {
+  ::-webkit-scrollbar {
+    width: 3px;
+    height: 3px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+/* Vector map building tooltip animation */
+@keyframes tooltip-appear {
+  from { opacity: 0; transform: translateY(4px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.building-tooltip {
+  animation: tooltip-appear 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Wallet card shimmer effect */
+@keyframes card-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.wallet-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.08) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: card-shimmer 2.5s linear infinite;
+}
+
+/* iCal export toggle smooth */
+.ical-toggle-thumb {
+  transition: left 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Improved focus outlines for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 8px;
+}

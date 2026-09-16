@@ -45,6 +45,13 @@ import CrowdsourceChangeModal from "./features/crowdsource-changes/CrowdsourceCh
 import VirtualizedScheduleList from "./components/VirtualizedScheduleList"
 import { localDb } from "./utils/localDatabase"
 import { initRealtimeScheduleEvents } from "./utils/realtimeClient"
+import IcalExportModal from "./features/ical-export/IcalExportModal"
+import WalletPassModal from "./features/wallet-pass/WalletPassModal"
+import VectorCampusMap from "./features/vector-campus-map/VectorCampusMap"
+import NextClassBanner from "./features/next-class-widget/NextClassBanner"
+import DynamicIsland from "./features/dynamic-island/DynamicIsland"
+import MiniAppRuntime from "./features/micro-runtime/MiniAppRuntime"
+import { crdtEngine } from "./utils/crdtSync"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -2333,7 +2340,8 @@ function Sheet({
 // ─── Status Bar ───────────────────────────────────────────────────────────────
 
 function StatusBar() {
-  return <div className="h-[env(safe-area-inset-top,0px)] flex-shrink-0" />
+  // Uses bg-background to match the header backdrop — eliminates the black bar on iOS/Android
+  return <div className="h-[env(safe-area-inset-top,0px)] flex-shrink-0 bg-background" style={{ background: "var(--color-bg)" }} />
 }
 
 // ─── Group Sheet ──────────────────────────────────────────────────────────────
@@ -2667,6 +2675,7 @@ function AppHeader({
   onOpenIosPrompt,
   onGoHome,
   activeDate,
+  onOpenIcal,
 }: {
   tab: string
   dark: boolean
@@ -2680,6 +2689,7 @@ function AppHeader({
   onOpenIosPrompt?: () => void
   onGoHome?: () => void
   activeDate?: string
+  onOpenIcal?: () => void
 }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -2757,6 +2767,17 @@ function AppHeader({
             >
               {I.search(17)}
             </button>
+            {onOpenIcal && (
+              <button
+                onClick={onOpenIcal}
+                className="p-2 rounded-xl hover:bg-muted text-muted-fg transition-colors cursor-pointer"
+                title="Экспорт в Календарь (.ics)"
+              >
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+                </svg>
+              </button>
+            )}
             <button
               onClick={onDarkToggle}
               className="p-2 rounded-xl hover:bg-muted text-muted-fg transition-colors cursor-pointer"
@@ -5546,6 +5567,11 @@ function PageSchedule({
 
   return (
     <div>
+      {/* Next Class Live Banner — shows countdown to upcoming or in-progress class */}
+      <NextClassBanner
+        allDays={activeDays}
+        weekFilter={weekFilterMode}
+      />
       <div className="px-4 pt-1 pb-2 flex items-end justify-between">
         <div>
           <p className="text-xs text-muted-fg font-semibold uppercase tracking-widest">
@@ -7743,6 +7769,12 @@ function PageProfile({
   const [notifDormMin, setNotifDormMin] = useState(10)
   const [notifChanges, setNotifChanges] = useState(false)
 
+  // v3.0 new features
+  const [walletOpen, setWalletOpen] = useState(false)
+  const [icalProfileOpen, setIcalProfileOpen] = useState(false)
+  const [vectorMapOpen, setVectorMapOpen] = useState(false)
+  const [profileMiniAppsOpen, setProfileMiniAppsOpen] = useState(false)
+
   const [codeVal, setCodeVal] = useState("")
   const [shaking, setShaking] = useState(false)
   const [pdfModalOpen, setPdfModalOpen] = useState(false)
@@ -7869,6 +7901,84 @@ function PageProfile({
         ))}
       </div>
 
+
+      {/* v3.0 Quick Actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <button
+          onClick={() => setIcalProfileOpen(true)}
+          className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-blue-500/8 border border-blue-500/20 hover:bg-blue-500/12 transition-all cursor-pointer active:scale-[0.97]"
+        >
+          <div className="w-8 h-8 rounded-xl bg-blue-500/15 flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 text-center leading-tight">{"Экспорт в Календарь"}</span>
+        </button>
+        <button
+          onClick={() => setWalletOpen(true)}
+          className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-primary/8 border border-primary/20 hover:bg-primary/12 transition-all cursor-pointer active:scale-[0.97]"
+        >
+          <div className="w-8 h-8 rounded-xl bg-primary/15 flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#15803D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>
+            </svg>
+          </div>
+          <span className="text-[10px] font-bold text-primary text-center leading-tight">{"Студенческий билет"}</span>
+        </button>
+        <button
+          onClick={() => setVectorMapOpen(true)}
+          className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-emerald-500/8 border border-emerald-500/20 hover:bg-emerald-500/12 transition-all cursor-pointer active:scale-[0.97]"
+        >
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/15 flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/>
+            </svg>
+          </div>
+          <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 text-center leading-tight">{"Карта кампуса"}</span>
+        </button>
+        <button
+          onClick={() => setProfileMiniAppsOpen(true)}
+          className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-amber-500/8 border border-amber-500/20 hover:bg-amber-500/12 transition-all cursor-pointer active:scale-[0.97]"
+        >
+          <div className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#D97706" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+          <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 text-center leading-tight">{"Мини-аппы РГАУ"}</span>
+        </button>
+      </div>
+
+      {walletOpen && (
+        <WalletPassModal
+          isOpen={walletOpen}
+          onClose={() => setWalletOpen(false)}
+          group={activeGroup}
+          myMode={myMode}
+        />
+      )}
+      {icalProfileOpen && (
+        <IcalExportModal
+          isOpen={icalProfileOpen}
+          onClose={() => setIcalProfileOpen(false)}
+          group={activeGroup}
+          schedule={[]}
+        />
+      )}
+      {vectorMapOpen && (
+        <VectorCampusMap
+          isOpen={vectorMapOpen}
+          onClose={() => setVectorMapOpen(false)}
+        />
+      )}
+      {profileMiniAppsOpen && (
+        <MiniAppRuntime
+          isOpen={profileMiniAppsOpen}
+          onClose={() => setProfileMiniAppsOpen(false)}
+          group={activeGroup}
+        />
+      )}
       <div className="bg-card border border-border rounded-2xl overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
           {I.route(16, "text-muted-fg")}
@@ -8942,6 +9052,10 @@ export default function App() {
   const [crowdsourceOpen, setCrowdsourceOpen] = useState(false)
   const [crowdsourceClass, setCrowdsourceClass] = useState<ClassItem | null>(null)
 
+  // v3.0 new feature states
+  const [icalOpen, setIcalOpen] = useState(false)
+  const [miniAppsOpen, setMiniAppsOpen] = useState(false)
+
   // Start client-side daily sync watcher on boot (schedules next 04:00 AM MSK auto-sync)
   useEffect(() => {
     const handleSync = (e: any) => {
@@ -9164,6 +9278,41 @@ export default function App() {
     addToast("Расписание сброшено к официальным данным РГАУ-МСХА", "info")
   }
 
+  const [nowMinute, setNowMinute] = useState(() => {
+    const d = new Date()
+    return d.getHours() * 60 + d.getMinutes()
+  })
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const d = new Date()
+      setNowMinute(d.getHours() * 60 + d.getMinutes())
+    }, 15000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const dynamicIslandInfo = useMemo(() => {
+    const todayStr = new Date().toISOString().split("T")[0]
+    const todaySched = (allDays ?? ALL_DAYS).find((d) => d.date === todayStr)
+    if (!todaySched) return { current: null, next: null, untilNext: null, leftCurrent: null }
+
+    const classes = todaySched.classes
+    const current = classes.find((c) => toMin(c.start) <= nowMinute && nowMinute < toMin(c.end)) || null
+    const next = classes.find((c) => toMin(c.start) > nowMinute) || null
+
+    let untilNext: number | null = null
+    if (next) {
+      untilNext = Math.max(0, toMin(next.start) - nowMinute)
+    }
+
+    let leftCurrent: number | null = null
+    if (current) {
+      leftCurrent = Math.max(0, toMin(current.end) - nowMinute)
+    }
+
+    return { current, next, untilNext, leftCurrent }
+  }, [allDays, nowMinute])
+
   // Synchronize React states when cache is cleared
   useEffect(() => {
     const handleCacheCleared = () => {
@@ -9327,6 +9476,19 @@ export default function App() {
         />
       )}
       <div className="h-full w-full max-w-lg md:max-w-xl lg:max-w-2xl flex flex-col overflow-hidden relative sm:shadow-2xl sm:border-x sm:border-border/40 bg-background">
+        <DynamicIsland
+          currentClass={dynamicIslandInfo.current}
+          nextClass={dynamicIslandInfo.next}
+          minutesUntilNext={dynamicIslandInfo.untilNext}
+          minutesLeftCurrent={dynamicIslandInfo.leftCurrent}
+          onOpenNavigation={(building) => {
+            setNavToBuilding(building)
+            setNavigationOpen(true)
+          }}
+          onOpenClassDetail={(cls) => {
+            setSheetClassId(cls.id)
+          }}
+        />
         <AppHeader
         tab={tab}
         dark={dark}
@@ -9343,6 +9505,7 @@ export default function App() {
         onOpenIosPrompt={() => setShowIosPrompt(true)}
         onGoHome={() => setTab("schedule")}
         activeDate={tab === "schedule" ? scheduleDate : TODAY}
+        onOpenIcal={tab === "schedule" ? () => setIcalOpen(true) : undefined}
       />
       <Toast toasts={toasts} onDismiss={dismissToast} />
       <main className="flex-1 overflow-y-auto overflow-x-hidden relative min-h-0">
@@ -9589,6 +9752,29 @@ export default function App() {
           currentRole={role as any}
           onRoleUpgrade={(r) => handleRoleChange(r as any)}
           onToast={addToast}
+        />
+      )}
+
+      {/* v3.0 iCal Export Modal */}
+      {icalOpen && (
+        <IcalExportModal
+          isOpen={icalOpen}
+          onClose={() => setIcalOpen(false)}
+          group={groupId}
+          schedule={allDays || []}
+        />
+      )}
+
+      {/* v3.0 SuperApp Micro-Runtime Modal */}
+      {miniAppsOpen && (
+        <MiniAppRuntime
+          isOpen={miniAppsOpen}
+          onClose={() => setMiniAppsOpen(false)}
+          group={groupId}
+          onNavigateToBuilding={(b) => {
+            setNavToBuilding(b)
+            setNavigationOpen(true)
+          }}
         />
       )}
     </div>

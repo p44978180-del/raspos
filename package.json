@@ -1,7 +1,7 @@
 {
   "name": "figma-make-app",
   "private": true,
-  "version": "2.0.0",
+  "version": "3.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,7 +14,7 @@
     "sync:schedule": "node scripts/sync-schedule.mjs",
     "package:release": "node scripts/publish-release.mjs --package-only",
     "release": "node scripts/publish-release.mjs",
-    "test": "node tests/manifest-stress.test.mjs && node tests/m2-capacitor-stress.test.mjs && node tests/m3-cartography-spring-stress.test.mjs && node tests/m3-theme-wave-stress.test.mjs && node tests/m4-deploy-stress.test.mjs && node tests/m4-build-verification-stress.test.mjs && node tests/test-ios-prompt.mjs && node tests/test-timacad-autosync.mjs && node tests/test-cache-retention.test.mjs && node tests/test-superapp-enterprise.test.mjs"
+    "test": "node tests/manifest-stress.test.mjs && node tests/m2-capacitor-stress.test.mjs && node tests/m3-cartography-spring-stress.test.mjs && node tests/m3-theme-wave-stress.test.mjs && node tests/m4-deploy-stress.test.mjs && node tests/m4-build-verification-stress.test.mjs && node tests/test-ios-prompt.mjs && node tests/test-timacad-autosync.mjs && node tests/test-cache-retention.test.mjs && node tests/test-superapp-enterprise.test.mjs && node tests/test-v3-architecture.test.mjs"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.15.0",
