@@ -59,9 +59,10 @@ export default function DynamicIsland({
     } catch {}
   }
 
+  const [dismissed, setDismissed] = useState(false)
   const active = currentClass || (nextClass && minutesUntilNext !== null && minutesUntilNext <= 45)
 
-  if (!active) {
+  if (!active || dismissed) {
     return null
   }
 
@@ -85,10 +86,10 @@ export default function DynamicIsland({
       >
         <div
           onClick={handleToggleExpand}
-          className={`pointer-events-auto cursor-pointer select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden shadow-2xl ${
+          className={`pointer-events-auto cursor-pointer select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden shadow-xl ${
             expanded
-              ? "w-[94vw] max-w-md rounded-3xl bg-[#090D0B] text-white border border-emerald-500/30 p-4 ring-2 ring-emerald-500/20"
-              : "rounded-full bg-[#090D0B] text-white border border-white/10 px-3.5 py-1.5 hover:border-emerald-500/40 hover:scale-[1.02] active:scale-[0.97]"
+              ? "w-[94vw] max-w-md rounded-3xl bg-[#0B120E] text-white border border-emerald-500/30 p-4 ring-1 ring-emerald-500/20"
+              : "rounded-full bg-[#0B120E]/95 backdrop-blur-2xl text-white border border-emerald-500/25 px-3 py-1 hover:border-emerald-400/50 hover:scale-[1.02] active:scale-[0.97]"
           }`}
           style={{
             backdropFilter: "blur(24px)",
@@ -97,7 +98,7 @@ export default function DynamicIsland({
         >
           {!expanded ? (
             /* ── Compact Pill View (0 ms footprint) ── */
-            <div className="flex items-center gap-2.5 text-xs font-semibold">
+            <div className="flex items-center gap-2 text-xs font-semibold">
               {/* Left Indicator */}
               <div className="flex items-center gap-1.5">
                 <span className="text-sm leading-none">{emoji}</span>
@@ -114,23 +115,34 @@ export default function DynamicIsland({
               </div>
 
               {/* Center Micro Summary */}
-              <div className="flex items-center gap-1.5 truncate max-w-[200px] sm:max-w-[260px]">
-                <span className="truncate font-bold text-gray-200">
+              <div className="flex items-center gap-1.5 truncate max-w-[180px] sm:max-w-[240px]">
+                <span className="truncate font-bold text-gray-200 text-[11px]">
                   {displayClass.subject}
                 </span>
-                <span className="text-white/40">•</span>
-                <span className="font-mono text-emerald-300 font-bold text-[11px] flex-shrink-0">
-                  ауд. {displayClass.room || "—"}
+                <span className="text-white/30">•</span>
+                <span className="font-mono text-emerald-400 font-bold text-[10px] flex-shrink-0">
+                  {displayClass.room || "—"}
                 </span>
               </div>
 
               {/* Right Indicator / Bell Countdown */}
-              <div className="flex items-center gap-1 ml-auto text-[10px] font-mono font-bold text-white/70">
+              <div className="flex items-center gap-1.5 ml-auto text-[10px] font-mono font-bold text-white/70">
                 {isCurrent ? (
-                  <span className="text-emerald-400 font-mono">ещё {minutesLeftCurrent}м</span>
+                  <span className="text-emerald-400 font-mono text-[10px]">ещё {minutesLeftCurrent}м</span>
                 ) : (
-                  <span className="text-amber-300 font-mono">{displayClass.start}</span>
+                  <span className="text-amber-300 font-mono text-[10px]">{displayClass.start}</span>
                 )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setDismissed(true)
+                  }}
+                  className="p-0.5 rounded-full hover:bg-white/20 text-white/40 hover:text-white transition-colors"
+                  title="Скрыть полосу"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
               </div>
             </div>
           ) : (

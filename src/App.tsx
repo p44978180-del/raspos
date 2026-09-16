@@ -2700,7 +2700,8 @@ function AppHeader({
 
   return (
     <div
-      className={`sticky top-0 z-40 flex-shrink-0 backdrop-blur-xl bg-background/80 transition-shadow ${scrolled ? 'shadow-sm' : ''}`}
+      className={`sticky top-0 z-40 flex-shrink-0 bg-background transition-shadow ${scrolled ? 'shadow-sm' : ''}`}
+      style={{ background: "var(--color-bg)" }}
     >
       <StatusBar />
       {tab === "schedule" ? (

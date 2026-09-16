@@ -125,14 +125,14 @@ html, body, #root {
 
 .tab-page { animation: fade-in .18s ease-out both; }
 
-/* ── Directional tab transitions (translateX 100% -> 0, duration 250ms) ── */
+/* ── Silky 120 FPS Apple & Linear Tab Transitions ── */
 @keyframes slide-in-from-right {
-  from { transform: translateX(100%); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
+  from { transform: translateY(6px) scale(0.995); opacity: 0; }
+  to   { transform: translateY(0) scale(1);       opacity: 1; }
 }
 @keyframes slide-in-from-left {
-  from { transform: translateX(-100%); opacity: 0; }
-  to   { transform: translateX(0);     opacity: 1; }
+  from { transform: translateY(6px) scale(0.995); opacity: 0; }
+  to   { transform: translateY(0) scale(1);       opacity: 1; }
 }
 @keyframes tab-indicator {
   from { transform: scaleX(0); }
@@ -146,8 +146,8 @@ html, body, #root {
   80%     { transform: translateX(4px); }
 }
 
-.animate-slide-from-right { animation: slide-in-from-right 250ms cubic-bezier(.22,1,.36,1) both; }
-.animate-slide-from-left  { animation: slide-in-from-left  250ms cubic-bezier(.22,1,.36,1) both; }
+.animate-slide-from-right { animation: slide-in-from-right 180ms cubic-bezier(.16,1,.3,1) both; }
+.animate-slide-from-left  { animation: slide-in-from-left  180ms cubic-bezier(.16,1,.3,1) both; }
 .animate-shake            { animation: shake .35s cubic-bezier(.22,1,.36,1) both; }
 
 /* ── Tactile Press & Haptic Feel ── */

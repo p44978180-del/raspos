@@ -12,6 +12,11 @@ pub mod campus_graph_simd;
 pub mod crdt_engine;
 pub mod csp_validator;
 pub mod ffi;
+pub mod micro_runtime_sandbox;
+pub mod schedule_indexer;
+pub mod matrix_transform;
+pub mod fast_geometry_simd;
+pub mod crdt_delta_compressor;
 
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::cmp::Ordering;
@@ -22,6 +27,11 @@ pub use simd_projection::{Mat4, Vec4, CampusFloorVertex, ProjectedPoint2D, proje
 pub use campus_graph_simd::{compute_campus_transit_route, CAMPUS_BUILDINGS, CampusRouteResult};
 pub use crdt_engine::{LWWRegister, ORSet, StateVector, LamportTimestamp};
 pub use csp_validator::{validate_manifest_csp_v3, StudentAppManifest, ManifestCSPv3, CSPValidationResult};
+pub use micro_runtime_sandbox::{SandboxRuntimeInstance, SandboxExecutionResult};
+pub use schedule_indexer::{ScheduleInvertedIndex, LessonIndexEntry};
+pub use matrix_transform::Matrix4x4;
+pub use fast_geometry_simd::{BoundingBox2D, point_in_polygon};
+pub use crdt_delta_compressor::DeltaCompressor;
 
 #[derive(Clone, Eq, PartialEq)]
 struct State {

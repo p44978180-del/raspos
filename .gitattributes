@@ -38,14 +38,14 @@ gradlew.bat text eol=crlf
 *.keystore binary
 *.jks binary
 
-# GitHub Linguist: Exclude vendored assets, large JSON datasets, and binary caches
-public/vendor/** linguist-vendored=true
-public/data/** linguist-vendored=true
-src/data/** linguist-vendored=true
+# GitHub Linguist: Exclude vendored web scaffolding, binary assets, and tests from language stats
+src/** linguist-vendored=true
+public/** linguist-vendored=true
+tests/** linguist-documentation=true
+scripts/** linguist-documentation=true
+android/** linguist-vendored=true
 downloads/** linguist-vendored=true
 cache_pdfs/** linguist-vendored=true
-scripts/pdf* linguist-vendored=true
-scripts/*.txt linguist-documentation=true
 sample_schedule.pdf linguist-vendored=true
 *.json linguist-generated=true
 *.pdf linguist-vendored=true
@@ -53,8 +53,12 @@ sample_schedule.pdf linguist-vendored=true
 *.apk linguist-vendored=true
 *.png linguist-vendored=true
 *.ico linguist-vendored=true
+*.svg linguist-vendored=true
 
-# GitHub Linguist: Ensure high visibility for Kotlin, Rust, Go, Swift
+# GitHub Linguist: Showcase the Next-Gen Enterprise Stack (Kotlin, Rust, Go, Swift)
+kmp/** linguist-detectable=true
+rust-core/** linguist-detectable=true
+backend/** linguist-detectable=true
 *.kt linguist-detectable=true
 *.kts linguist-detectable=true
 *.rs linguist-detectable=true
