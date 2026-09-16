@@ -324,10 +324,62 @@ it("7.4 StatusBar eliminates black bar at top by blending background with var(--
   assert(content.includes('style={{ background: "var(--color-bg)" }}'), "StatusBar must bind background to var(--color-bg)")
 })
 
-it("7.5 package.json is updated to version 3.0.0", () => {
+it("7.5 package.json is updated to version 3.0.1", () => {
   const pkgPath = path.join(rootDir, "package.json")
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"))
-  assert.strictEqual(pkg.version, "3.0.0", "package.json version must be 3.0.0")
+  assert.strictEqual(pkg.version, "3.0.1", "package.json version must be 3.0.1")
+})
+
+it("7.6 rustCore implements Wasm SIMD 128 feature detection and 3D floor vector projection", async () => {
+  const { rustCore } = await import("../src/utils/rustCore.ts")
+  assert(typeof rustCore.detectWasmSimdSupport === "function", "Must provide detectWasmSimdSupport")
+  const vertices = [
+    { x: 10, y: 20, z: 5, floor: 1 },
+    { x: 100, y: 50, z: 10, floor: 2 },
+  ]
+  const projected = rustCore.projectFloorVectorsSIMD128(vertices)
+  assert.strictEqual(projected.length, 2, "Must project 2 vertices")
+  assert(projected[0].screenX > 0, "screenX must be computed")
+  assert(projected[0].screenY > 0, "screenY must be computed")
+})
+
+it("7.7 rustCore & bridge.ts provide CSP v3 validation for student mini-app manifests", async () => {
+  const { rustCore } = await import("../src/utils/rustCore.ts")
+  const { validateManifestCspV3, COMMUNITY_STUDENT_MINI_APPS } = await import("../src/features/micro-runtime/bridge.ts")
+
+  assert(Array.isArray(COMMUNITY_STUDENT_MINI_APPS), "Must export COMMUNITY_STUDENT_MINI_APPS")
+  assert(COMMUNITY_STUDENT_MINI_APPS.length >= 3, "Must include student community apps")
+
+  // Valid manifest test
+  const validApp = COMMUNITY_STUDENT_MINI_APPS[0]
+  const report = validateManifestCspV3(validApp)
+  assert.strictEqual(report.isValid, true, "Community app manifest must be valid under CSP v3")
+  assert.strictEqual(report.securityScore, 100, "Valid app must have 100 security score")
+
+  // Insecure manifest test
+  const badApp = {
+    id: "insecure",
+    name: "Bad App",
+    csp: {
+      defaultSrc: ["*"],
+      scriptSrc: ["'unsafe-eval'"],
+      connectSrc: ["*"],
+      sandbox: [],
+    },
+    integrityHash: "invalid",
+  }
+  const badReport = rustCore.validateManifestCspV3(badApp)
+  assert.strictEqual(badReport.isValid, false, "Insecure app must fail CSP v3 validation")
+  assert(badReport.errors.length >= 2, "Must report CSP errors")
+})
+
+it("7.8 findCampusTransitionSIMD128 flags 35-min transit warning for 1-й Корпус <-> Спорткомплекс", async () => {
+  const { rustCore } = await import("../src/utils/rustCore.ts")
+  const route = rustCore.findCampusTransitionSIMD128("1-й корпус", 2, "Спорткомплекс", 1, 15)
+  assert.strictEqual(route.totalMinutes, 35, "Transit time between 1-й Корпус and СК must be 35 min")
+  assert.strictEqual(route.totalMeters, 1450, "Transit distance must be 1450 meters")
+  assert.strictEqual(route.isUrgent, true, "Transit must be urgent when break < 40 min")
+  assert(route.warningMessage && route.warningMessage.includes("35 мин"), "Warning must mention 35 мин")
 })
 
 console.log("\n==================================================================")

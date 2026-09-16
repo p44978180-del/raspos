@@ -80,7 +80,8 @@ export default function DynamicIsland({
       {/* ── Floating Dynamic Island (iOS & Android) ───────────────────────── */}
       <aside 
         aria-label="Dynamic Island - Текущая или следующая пара"
-        className="fixed top-2.5 left-0 right-0 z-50 flex justify-center px-3 pointer-events-none"
+        className="fixed left-0 right-0 z-50 flex justify-center px-3 pointer-events-none"
+        style={{ top: "calc(env(safe-area-inset-top, 0px) + 6px)" }}
       >
         <div
           onClick={handleToggleExpand}

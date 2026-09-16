@@ -1,4 +1,4 @@
-﻿# Set default behavior to automatically normalize line endings
+# Set default behavior to automatically normalize line endings
 * text=auto eol=lf
 
 # Explicit text file formats
@@ -16,6 +16,11 @@
 *.xml text eol=lf
 *.properties text eol=lf
 *.gradle text eol=lf
+*.kt text eol=lf
+*.kts text eol=lf
+*.rs text eol=lf
+*.go text eol=lf
+*.swift text eol=lf
 gradlew text eol=lf
 gradlew.bat text eol=crlf
 
@@ -32,3 +37,26 @@ gradlew.bat text eol=crlf
 *.apk binary
 *.keystore binary
 *.jks binary
+
+# GitHub Linguist: Exclude vendored assets, large JSON datasets, and binary caches
+public/vendor/** linguist-vendored=true
+public/data/** linguist-vendored=true
+src/data/** linguist-vendored=true
+downloads/** linguist-vendored=true
+cache_pdfs/** linguist-vendored=true
+scripts/pdf* linguist-vendored=true
+scripts/*.txt linguist-documentation=true
+sample_schedule.pdf linguist-vendored=true
+*.json linguist-generated=true
+*.pdf linguist-vendored=true
+*.zip linguist-vendored=true
+*.apk linguist-vendored=true
+*.png linguist-vendored=true
+*.ico linguist-vendored=true
+
+# GitHub Linguist: Ensure high visibility for Kotlin, Rust, Go, Swift
+*.kt linguist-detectable=true
+*.kts linguist-detectable=true
+*.rs linguist-detectable=true
+*.go linguist-detectable=true
+*.swift linguist-detectable=true

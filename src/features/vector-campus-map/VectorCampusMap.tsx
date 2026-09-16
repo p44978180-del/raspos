@@ -8,6 +8,7 @@ import {
   type BuildingNode,
   type DijkstraResult,
 } from "./campusGraph"
+import { rustCore } from "@/utils/rustCore"
 
 interface Props {
   isOpen: boolean
@@ -47,6 +48,11 @@ export default function VectorCampusMap({ isOpen, onClose, initialFrom, initialT
   function computeRoute() {
     if (fromId && toId) {
       const result = dijkstra(fromId, toId)
+      // Wasm SIMD 128 accelerated transit solver check
+      const simdTransit = rustCore.findCampusTransitionSIMD128(fromId, 1, toId, 1, 15)
+      if (simdTransit.warningMessage && result) {
+        result.instructions = [simdTransit.warningMessage, ...(result.instructions || [])]
+      }
       setRoute(result)
     } else {
       setRoute(null)

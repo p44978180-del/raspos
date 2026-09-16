@@ -86,6 +86,8 @@ export interface DijkstraResult {
   path: string[]       // building IDs in order
   totalMinutes: number
   edges: GraphEdge[]   // edges on path for rendering
+  warning?: string
+  instructions?: string[]
 }
 
 function buildAdjacency(): Map<string, { to: string; weight: number; edge: GraphEdge }[]> {

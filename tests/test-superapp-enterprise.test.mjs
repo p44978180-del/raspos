@@ -627,7 +627,7 @@ it("8.6 src/widgets/schedule-grid/ui/DayView.tsx forwards SuperApp actions to ca
 it("8.7 scripts/publish-release.mjs targets release", () => {
   const prPath = path.join(rootDir, "scripts", "publish-release.mjs")
   const content = fs.readFileSync(prPath, "utf-8")
-  assert(content.includes("v2.0.0") || content.includes("v3.0.0"), "publish-release.mjs must target release")
+  assert(content.includes("v2.0.0") || content.includes("v3.0.0") || content.includes("v3.0.1"), "publish-release.mjs must target release")
   assert(content.includes("Enterprise SuperApp"), "publish-release.mjs must describe Enterprise SuperApp")
 })
 
@@ -685,7 +685,7 @@ it("8.12 CrowdsourceChangeModal wires onRoleUpgrade to interactive role pills", 
 it("8.13 package.json declares version matching release tag", () => {
   const pkgPath = path.join(rootDir, "package.json")
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"))
-  assert(["2.0.0", "3.0.0"].includes(pkg.version), "package.json version must be 2.0.0 or 3.0.0")
+  assert(["2.0.0", "3.0.0", "3.0.1"].includes(pkg.version), "package.json version must be 2.0.0, 3.0.0 or 3.0.1")
 })
 
 console.log("\n==================================================================")

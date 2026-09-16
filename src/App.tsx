@@ -9098,10 +9098,10 @@ export default function App() {
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.documentElement.classList.toggle("dark", dark)
-      const metaTheme = document.querySelector('meta[name="theme-color"]:not([media])')
-      if (metaTheme) {
-        metaTheme.setAttribute("content", dark ? "#090D0B" : "#F8F9FA")
-      }
+      const metaThemes = document.querySelectorAll('meta[name="theme-color"]')
+      metaThemes.forEach((el) => {
+        el.setAttribute("content", dark ? "#090D0B" : "#F8F9FA")
+      })
     }
   }, [dark])
 

@@ -24,7 +24,7 @@ export interface AppHeaderProps {
 }
 
 function StatusBar() {
-  return <div className="h-[env(safe-area-inset-top,0px)] flex-shrink-0" />
+  return <div className="h-[env(safe-area-inset-top,0px)] w-full flex-shrink-0 bg-background" style={{ background: "var(--color-bg)" }} />
 }
 
 export function AppHeader({

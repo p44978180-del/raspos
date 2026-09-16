@@ -1,8 +1,27 @@
-//! Timacad RasPOS v3.0 — High Performance Rust Core
-//! Zero-alloc binary operations, CRDT vector clock merging, snapshot diff hashing, and Dijkstra graph routing.
+//! Timacad RasPOS v3.0.1 — High Performance Rust Core
+//!
+//! Enterprise Rust shared core providing:
+//! 1. Wasm SIMD 128-bit vector graph acceleration (`core::arch::wasm32::*` / `v128`) for 3D floor projections.
+//! 2. Multi-floor campus routing with 35-min transit penalties (1-й Корпус <-> СК).
+//! 3. Local-First CRDT engine (Vector Clocks, Lamport Timestamps, LWW-Registers, OR-Sets).
+//! 4. Content Security Policy Level 3 (CSP v3) validator for student mini-apps.
+//! 5. Zero-alloc binary operations, FNV-1a checksums, varint diff payloads, and Dijkstra routing.
+
+pub mod simd_projection;
+pub mod campus_graph_simd;
+pub mod crdt_engine;
+pub mod csp_validator;
+pub mod ffi;
 
 use std::collections::{BinaryHeap, HashMap, HashSet};
 use std::cmp::Ordering;
+
+// Re-export FFI and SIMD symbols
+pub use ffi::*;
+pub use simd_projection::{Mat4, Vec4, CampusFloorVertex, ProjectedPoint2D, project_floor_graph_vertices};
+pub use campus_graph_simd::{compute_campus_transit_route, CAMPUS_BUILDINGS, CampusRouteResult};
+pub use crdt_engine::{LWWRegister, ORSet, StateVector, LamportTimestamp};
+pub use csp_validator::{validate_manifest_csp_v3, StudentAppManifest, ManifestCSPv3, CSPValidationResult};
 
 #[derive(Clone, Eq, PartialEq)]
 struct State {
@@ -173,7 +192,7 @@ mod tests {
 
     #[test]
     fn test_fnv1a_hash() {
-        let data = b"timacad-rgau-2026";
+        let data = b"timacad-rgau-2026-v3.0.1";
         let h1 = rust_fnv1a_hash(data.as_ptr(), data.len());
         let h2 = rust_fnv1a_hash(data.as_ptr(), data.len());
         assert_eq!(h1, h2);
@@ -192,5 +211,24 @@ mod tests {
         let (cost, path) = res.unwrap();
         assert_eq!(cost, 13);
         assert_eq!(path, vec!["corp1", "corp2", "corp3", "sport"]);
+    }
+
+    #[test]
+    fn test_crdt_vector_merge() {
+        let k_a = [1, 2];
+        let v_a = [10, 20];
+        let k_b = [2, 3];
+        let v_b = [15, 30];
+
+        let mut out_k = [0u32; 10];
+        let mut out_v = [0u32; 10];
+
+        let count = rust_crdt_vector_merge(
+            k_a.as_ptr(), v_a.as_ptr(), 2,
+            k_b.as_ptr(), v_b.as_ptr(), 2,
+            out_k.as_mut_ptr(), out_v.as_mut_ptr(), 10,
+        );
+
+        assert_eq!(count, 3);
     }
 }
