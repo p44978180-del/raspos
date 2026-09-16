@@ -55,7 +55,6 @@ export function WeekToggle({ mode, onChange, currentIsOdd }: WeekToggleProps) {
                       ? "text-muted-fg hover:text-amber-600 dark:hover:text-amber-400"
                       : "text-muted-fg hover:text-fg"
               }`}
-              title={opt.title}
             >
               {isSelected && (
                 <motion.div
@@ -67,8 +66,12 @@ export function WeekToggle({ mode, onChange, currentIsOdd }: WeekToggleProps) {
                         ? "bg-amber-500"
                         : "bg-card border border-border/60"
                   }`}
+                  initial={{ scaleX: 0.82, opacity: 0 }}
+                  animate={{ scaleX: [0.82, 1.08, 1.0], opacity: 1 }}
                   transition={{
-                    ...springPhysics.snappy,
+                    layout: springPhysics.snappy,
+                    scaleX: { duration: 0.2, times: [0, 0.55, 1], ease: "easeOut" },
+                    opacity: { duration: 0.12 },
                   }}
                 />
               )}

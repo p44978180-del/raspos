@@ -114,7 +114,7 @@ export function DaySlider({
           initial={{ x: direction > 0 ? 40 : direction < 0 ? -40 : 0, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: direction > 0 ? -40 : 40, opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
         >
           <button
             onClick={() => shiftWeek(-1)}
