@@ -1,6 +1,4 @@
 import React, { useState } from "react"
-import { motion } from "framer-motion"
-import { springPhysics } from "@/shared/lib/spring-physics"
 import { I } from "@/shared/ui/Icons"
 import { DormCard } from "./DormCard"
 import { MovedAwayCard } from "./MovedAwayCard"
@@ -235,19 +233,9 @@ export function DayView({
           Ничего не найдено
         </p>
       ) : (
-        <motion.div
+        <div
           key={`${dateStr}-${effectiveFilter}`}
-          initial="hidden"
-          animate="show"
-          variants={{
-            hidden: {},
-            show: {
-              transition: {
-                staggerChildren: 0.04,
-              },
-            },
-          }}
-          className="space-y-2.5"
+          className="space-y-2.5 gpu-accelerated"
         >
           {entries.map((entry, idx) => {
             const prevEntry = entries[idx - 1]
@@ -291,25 +279,16 @@ export function DayView({
             if (entry.type === "movedaway") {
               const tgt = classEdits[curCls.id]
               return (
-                <motion.div
+                <div
                   key={`movedaway-${curCls.id}`}
-                  variants={{
-                    hidden: { opacity: 0, y: 16, scale: 0.98 },
-                    show: {
-                      opacity: 1,
-                      y: 0,
-                      scale: 1.0,
-                      transition: springPhysics.snappy,
-                    },
-                  }}
-                  className="mx-4"
+                  className="mx-4 gpu-accelerated"
                 >
                   <MovedAwayCard
                     cls={curCls}
                     toDay={tgt?.dayOverride ?? "?"}
                     toNum={tgt?.numOverride ?? curCls.num}
                   />
-                </motion.div>
+                </div>
               )
             }
 
@@ -323,22 +302,13 @@ export function DayView({
             const hasWindow = windowGap !== null || gapMin > 40
 
             return (
-              <motion.div
+              <div
                 key={
                   entry.type === "movedin"
                     ? `movedin-${curCls.id}`
                     : `native-${curCls.id}`
                 }
-                variants={{
-                  hidden: { opacity: 0, y: 16, scale: 0.98 },
-                  show: {
-                    opacity: 1,
-                    y: 0,
-                    scale: 1.0,
-                    transition: springPhysics.snappy,
-                  },
-                }}
-                className="space-y-1.5"
+                className="space-y-1.5 gpu-accelerated"
               >
               {prevBuilding &&
                 prevBuilding !== curBuilding &&
@@ -395,11 +365,13 @@ export function DayView({
                   weekFilter={effectiveFilter === "all" ? "all" : "current"}
                 />
               </div>
-            </motion.div>
+            </div>
           )
         })}
-        </motion.div>
+        </div>
       )}
     </div>
   )
 }
+
+export default DayView

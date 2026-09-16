@@ -103,3 +103,124 @@ type SyncStatusResponse struct {
 	LastStatus   string     `json:"last_status"`
 	Message      string     `json:"message"`
 }
+
+// --- SuperApp Radar: Empty Classroom Models ---
+
+type EmptyClassroom struct {
+	ClassroomID     int    `json:"classroom_id"`
+	Building        string `json:"building"`
+	Room            string `json:"room"`
+	Floor           int    `json:"floor"`
+	Capacity        int    `json:"capacity"`
+	HasPowerSockets bool   `json:"has_power_sockets"`
+	IsQuietZone     bool   `json:"is_quiet_zone"`
+	Status          string `json:"status"` // "free_now", "free_until_next_slot"
+}
+
+type EmptyClassroomsResponse struct {
+	Building   string           `json:"building"`
+	DayOfWeek  int              `json:"day_of_week"`
+	SlotNumber int              `json:"slot_number"`
+	Classrooms []EmptyClassroom `json:"classrooms"`
+	TotalEmpty int              `json:"total_empty"`
+}
+
+// --- SuperApp Matchmaking: Windows Synchronization Models ---
+
+type MatchWindowsQuery struct {
+	GroupIDs  []int  `json:"group_ids"`
+	DayOfWeek int    `json:"day_of_week"`
+	WeekType  string `json:"week_type"`
+}
+
+type SharedWindowSlot struct {
+	DayOfWeek               int      `json:"day_of_week"`
+	Weekday                 string   `json:"weekday"`
+	SlotNumber              int      `json:"slot_number"`
+	StartTime               string   `json:"start_time"`
+	EndTime                 string   `json:"end_time"`
+	DurationMinutes         int      `json:"duration_minutes"`
+	ParticipatingGroupNames []string `json:"participating_group_names"`
+	SuggestedMeetupSpot     string   `json:"suggested_meetup_spot"`
+	WalkMinutesToSpot       int      `json:"walk_minutes_to_spot"`
+}
+
+type MatchWindowsResponse struct {
+	SharedWindows      []SharedWindowSlot `json:"shared_windows"`
+	TotalSharedWindows int                `json:"total_shared_windows"`
+}
+
+// --- SuperApp Navigation: Campus Transit Graph Models ---
+
+type CampusTransitRoute struct {
+	FromBuilding           string   `json:"from_building"`
+	ToBuilding             string   `json:"to_building"`
+	WalkingDurationMinutes int      `json:"walking_duration_minutes"`
+	DistanceMeters         int      `json:"distance_meters"`
+	PathWaypoints          []string `json:"path_waypoints"`
+	IsTightWindow          bool     `json:"is_tight_window"`
+	UrgentWarning          string   `json:"urgent_warning,omitempty"`
+	WeatherAdvisory        string   `json:"weather_advisory,omitempty"`
+}
+
+// --- SuperApp Crowdsourcing: Peer & Deputy Headstudent Confirmation ---
+
+type CrowdsourceProposal struct {
+	ID                         int64     `json:"id"`
+	LessonID                   int       `json:"lesson_id"`
+	GroupID                    int       `json:"group_id"`
+	StudentName                string    `json:"student_name"`
+	StudentRole                string    `json:"student_role"` // "student", "deputy_headstudent", "headstudent"
+	ChangeType                 string    `json:"change_type"`  // "cancellation", "transfer", "room_change"
+	TargetDayOfWeek            *int      `json:"target_day_of_week,omitempty"`
+	TargetSlotNumber           *int      `json:"target_slot_number,omitempty"`
+	TargetBuilding             *string   `json:"target_building,omitempty"`
+	TargetRoom                 *string   `json:"target_room,omitempty"`
+	Reason                     string    `json:"reason"`
+	PeerVotes                  int       `json:"peer_votes"`
+	HasDeputyConfirmation      bool      `json:"has_deputy_confirmation"`
+	HasHeadstudentConfirmation bool      `json:"has_headstudent_confirmation"`
+	Status                     string    `json:"status"` // "pending", "peer_confirmed", "officially_confirmed", "rejected"
+	DisplayBadge               string    `json:"display_badge"`
+	CreatedAt                  time.Time `json:"created_at"`
+	UpdatedAt                  time.Time `json:"updated_at"`
+}
+
+type CrowdsourceVote struct {
+	ProposalID  int64     `json:"proposal_id"`
+	StudentName string    `json:"student_name"`
+	StudentRole string    `json:"student_role"`
+	VoteConfirm bool      `json:"vote_confirm"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+// --- Pipeline: S3 Snapshot & Diff Engine Models ---
+
+type ScheduleSnapshot struct {
+	ID           int64     `json:"id"`
+	SnapshotHash string    `json:"snapshot_hash"`
+	SourceURL    string    `json:"source_url"`
+	DataFormat   string    `json:"data_format"`
+	ByteSize     int64     `json:"byte_size"`
+	StoragePath  string    `json:"storage_path"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+type ScheduleDelta struct {
+	DetectedAt   time.Time `json:"detected_at"`
+	GroupID      int       `json:"group_id"`
+	ChangeType   string    `json:"change_type"`
+	PreviousHash string    `json:"previous_hash"`
+	CurrentHash  string    `json:"current_hash"`
+	DetailsJSON  string    `json:"details_json"`
+}
+
+// Realtime SSE / WebSocket Event
+type RealtimeScheduleEvent struct {
+	EventID     string `json:"event_id"`
+	EventType   string `json:"event_type"` // "PROPOSAL_CREATED", "PEER_VOTE_ADDED", "TRANSFER_CONFIRMED", "SYNC_COMPLETED"
+	GroupID     int    `json:"group_id"`
+	PayloadJSON string `json:"payload_json"`
+	Timestamp   string `json:"timestamp"`
+}
+

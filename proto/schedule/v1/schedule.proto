@@ -1,0 +1,251 @@
+syntax = "proto3";
+
+package schedule.v1;
+
+option go_package = "timacad-backend/pkg/proto/schedule/v1;schedulev1";
+
+// ScheduleService defines enterprise-grade RPC endpoints for schedule operations.
+service ScheduleService {
+  // Queries schedule for a group, week, and semester
+  rpc GetSchedule(GetScheduleRequest) returns (GetScheduleResponse);
+
+  // Lists all university institutes with their courses
+  rpc ListInstitutes(ListInstitutesRequest) returns (ListInstitutesResponse);
+
+  // Lists groups filtered by institute and course
+  rpc ListGroups(ListGroupsRequest) returns (ListGroupsResponse);
+
+  // Radar: Inverted query of unoccupied classrooms by building and time slot
+  rpc GetEmptyClassrooms(EmptyClassroomsRequest) returns (EmptyClassroomsResponse);
+
+  // Matchmaking: Find overlapping free slots (windows) across two or more student groups
+  rpc MatchWindows(MatchWindowsRequest) returns (MatchWindowsResponse);
+
+  // Smart Campus Navigation: Calculates transit route with walking time between buildings
+  rpc GetCampusRoute(CampusRouteRequest) returns (CampusRouteResponse);
+
+  // Crowdsourcing: Propose a class transfer or cancellation
+  rpc ProposeScheduleChange(ProposeScheduleChangeRequest) returns (ScheduleChangeProposal);
+
+  // Crowdsourcing: Vote / confirm a proposed change (3+ peers or headstudent / deputy)
+  rpc VoteScheduleChange(VoteScheduleChangeRequest) returns (ScheduleChangeProposal);
+
+  // Lists active crowdsourced change proposals for a group
+  rpc ListScheduleProposals(ListScheduleProposalsRequest) returns (ListScheduleProposalsResponse);
+
+  // Realtime stream of schedule updates, peer confirmations and sync events
+  rpc StreamScheduleEvents(StreamScheduleEventsRequest) returns (stream ScheduleEvent);
+}
+
+message Institute {
+  int32 id = 1;
+  string name = 2;
+  repeated int32 courses = 3;
+}
+
+message Group {
+  int32 id = 1;
+  int32 institute_id = 2;
+  string name = 3;
+  int32 course = 4;
+  string degree = 5;
+}
+
+message SubgroupDetail {
+  int32 subgroup = 1;
+  string teacher = 2;
+  string building = 3;
+  string room = 4;
+}
+
+message ScheduleItem {
+  int32 id = 1;
+  int32 num = 2;
+  string start = 3;
+  string end = 4;
+  string subject = 5;
+  string type = 6;
+  string week_type = 7;
+  string teacher = 8;
+  string building = 9;
+  string room = 10;
+  optional int32 subgroup_number = 11;
+  repeated int32 subgroups = 12;
+  repeated SubgroupDetail subgroup_details = 13;
+}
+
+message DaySchedule {
+  int32 day_of_week = 1;
+  string weekday = 2;
+  repeated ScheduleItem classes = 3;
+}
+
+message GetScheduleRequest {
+  int32 group_id = 1;
+  string week = 2; // "odd", "even", or "all"
+  int32 semester = 3;
+}
+
+message GetScheduleResponse {
+  int32 group_id = 1;
+  string group_name = 2;
+  string institute_name = 3;
+  int32 course = 4;
+  string degree = 5;
+  string week = 6;
+  int32 semester = 7;
+  repeated DaySchedule schedule = 8;
+  bool is_cache_hit = 9;
+}
+
+message ListInstitutesRequest {}
+
+message ListInstitutesResponse {
+  repeated Institute institutes = 1;
+}
+
+message ListGroupsRequest {
+  optional int32 institute_id = 1;
+  optional int32 course = 2;
+}
+
+message ListGroupsResponse {
+  repeated Group groups = 1;
+}
+
+message EmptyClassroomsRequest {
+  string building = 1;
+  int32 day_of_week = 2;
+  int32 slot_number = 3;
+  string week_type = 4;
+  bool require_power_sockets = 5;
+  bool require_quiet_zone = 6;
+}
+
+message EmptyClassroomItem {
+  int32 classroom_id = 1;
+  string building = 2;
+  string room = 3;
+  int32 floor = 4;
+  int32 capacity = 5;
+  bool has_power_sockets = 6;
+  bool is_quiet_zone = 7;
+  string status = 8; // "free_now", "free_until_next_slot"
+}
+
+message EmptyClassroomsResponse {
+  string building = 1;
+  int32 day_of_week = 2;
+  int32 slot_number = 3;
+  repeated EmptyClassroomItem classrooms = 4;
+  int32 total_empty = 5;
+}
+
+message MatchWindowsRequest {
+  repeated int32 group_ids = 1;
+  int32 day_of_week = 2;
+  string week_type = 3;
+}
+
+message SharedWindowSlot {
+  int32 day_of_week = 1;
+  string weekday = 2;
+  int32 slot_number = 3;
+  string start_time = 4;
+  string end_time = 5;
+  int32 duration_minutes = 6;
+  repeated string participating_group_names = 7;
+  string suggested_meetup_spot = 8;
+  int32 walk_minutes_to_spot = 9;
+}
+
+message MatchWindowsResponse {
+  repeated SharedWindowSlot shared_windows = 1;
+  int32 total_shared_windows = 2;
+}
+
+message CampusRouteRequest {
+  string from_building = 1;
+  string to_building = 2;
+  int32 available_window_minutes = 3;
+  bool consider_weather_protection = 4;
+}
+
+message CampusRouteResponse {
+  string from_building = 1;
+  string to_building = 2;
+  int32 walking_duration_minutes = 3;
+  int32 distance_meters = 4;
+  repeated string path_waypoints = 5;
+  bool is_tight_window = 6;
+  string urgent_warning = 7;
+  string weather_advisory = 8;
+}
+
+enum RoleInGroup {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_STUDENT = 1;
+  ROLE_DEPUTY_HEADSTUDENT = 2;
+  ROLE_HEADSTUDENT = 3;
+}
+
+message ProposeScheduleChangeRequest {
+  int32 lesson_id = 1;
+  int32 group_id = 2;
+  string student_name = 3;
+  RoleInGroup student_role = 4;
+  string change_type = 5; // "cancellation", "transfer", "room_change"
+  int32 target_day_of_week = 6;
+  int32 target_slot_number = 7;
+  string target_building = 8;
+  string target_room = 9;
+  string reason = 10;
+}
+
+message VoteScheduleChangeRequest {
+  int64 proposal_id = 1;
+  int32 group_id = 2;
+  string student_name = 3;
+  RoleInGroup student_role = 4;
+  bool vote_confirm = 5;
+}
+
+message ScheduleChangeProposal {
+  int64 id = 1;
+  int32 lesson_id = 2;
+  int32 group_id = 3;
+  string student_name = 4;
+  RoleInGroup student_role = 5;
+  string change_type = 6;
+  int32 target_day_of_week = 7;
+  int32 target_slot_number = 8;
+  string target_building = 9;
+  string target_room = 10;
+  string reason = 11;
+  int32 peer_votes = 12;
+  bool has_deputy_confirmation = 13;
+  bool has_headstudent_confirmation = 14;
+  string status = 15; // "pending", "peer_confirmed", "officially_confirmed", "rejected"
+  string display_badge = 16;
+  string created_at = 17;
+}
+
+message ListScheduleProposalsRequest {
+  int32 group_id = 1;
+}
+
+message ListScheduleProposalsResponse {
+  repeated ScheduleChangeProposal proposals = 1;
+}
+
+message StreamScheduleEventsRequest {
+  repeated int32 subscribed_group_ids = 1;
+}
+
+message ScheduleEvent {
+  string event_id = 1;
+  string event_type = 2; // "PROPOSAL_CREATED", "PEER_VOTE_ADDED", "TRANSFER_CONFIRMED", "SYNC_COMPLETED"
+  int32 group_id = 3;
+  string payload_json = 4;
+  string timestamp = 5;
+}

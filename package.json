@@ -14,17 +14,23 @@
     "sync:schedule": "node scripts/sync-schedule.mjs",
     "package:release": "node scripts/publish-release.mjs --package-only",
     "release": "node scripts/publish-release.mjs",
-    "test": "node tests/manifest-stress.test.mjs && node tests/m2-capacitor-stress.test.mjs && node tests/m3-cartography-spring-stress.test.mjs && node tests/m3-theme-wave-stress.test.mjs && node tests/m4-deploy-stress.test.mjs && node tests/m4-build-verification-stress.test.mjs && node tests/test-ios-prompt.mjs && node tests/test-timacad-autosync.mjs && node tests/test-cache-retention.test.mjs"
+    "test": "node tests/manifest-stress.test.mjs && node tests/m2-capacitor-stress.test.mjs && node tests/m3-cartography-spring-stress.test.mjs && node tests/m3-theme-wave-stress.test.mjs && node tests/m4-deploy-stress.test.mjs && node tests/m4-build-verification-stress.test.mjs && node tests/test-ios-prompt.mjs && node tests/test-timacad-autosync.mjs && node tests/test-cache-retention.test.mjs && node tests/test-superapp-enterprise.test.mjs"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.15.0",
     "@capacitor/core": "^8.5.1",
+    "@connectrpc/connect": "^2.2.0",
+    "@connectrpc/connect-web": "^2.2.0",
     "@tanstack/query-persist-client-core": "^5.102.8",
     "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-query-persist-client": "^5.102.8",
+    "@tanstack/react-virtual": "^3.14.13",
+    "@types/sql.js": "^1.4.11",
     "framer-motion": "^13.2.0",
     "idb-keyval": "^6.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "sql.js": "^1.14.2",
     "zustand": "^5.0.15"
   },
   "devDependencies": {

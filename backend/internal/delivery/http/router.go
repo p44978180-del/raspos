@@ -37,11 +37,42 @@ func NewRouter(handler *Handler) http.Handler {
 		r.Get("/groups", handler.GetGroups)
 		r.Get("/schedule", handler.GetSchedule)
 
+		// SuperApp: Empty Classroom Radar
+		r.Get("/radar/empty-classrooms", handler.GetEmptyClassrooms)
+
+		// SuperApp: Window Matchmaking
+		r.Post("/matchmaking/windows", handler.MatchWindows)
+
+		// SuperApp: Smart Campus Navigation
+		r.Get("/navigation/route", handler.GetCampusRoute)
+
+		// SuperApp: Peer Crowdsourcing & Deputy Headstudent Confirmation
+		r.Post("/crowdsource/propose", handler.ProposeCrowdsourceChange)
+		r.Post("/crowdsource/vote", handler.VoteCrowdsourceChange)
+		r.Get("/crowdsource/proposals", handler.ListCrowdsourceProposals)
+
+		// Realtime Server-Sent Events (SSE) stream
+		r.Get("/events", handler.EventsSSE)
+
 		r.Route("/admin", func(r chi.Router) {
 			r.Post("/sync-schedule", handler.TriggerSync)
 			r.Get("/sync-schedule/status", handler.GetSyncStatus)
 		})
 	})
+
+	// Connect-RPC Protocol Endpoints (schedule.v1.ScheduleService)
+	r.Route("/schedule.v1.ScheduleService", func(r chi.Router) {
+		r.Post("/GetSchedule", handler.GetSchedule)
+		r.Get("/ListInstitutes", handler.GetInstitutes)
+		r.Get("/ListGroups", handler.GetGroups)
+		r.Get("/GetEmptyClassrooms", handler.GetEmptyClassrooms)
+		r.Post("/MatchWindows", handler.MatchWindows)
+		r.Get("/GetCampusRoute", handler.GetCampusRoute)
+		r.Post("/ProposeScheduleChange", handler.ProposeCrowdsourceChange)
+		r.Post("/VoteScheduleChange", handler.VoteCrowdsourceChange)
+		r.Get("/StreamScheduleEvents", handler.EventsSSE)
+	})
+
 
 	return r
 }

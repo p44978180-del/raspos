@@ -674,3 +674,415 @@ func (r *Repository) SeedIfEmpty(ctx context.Context, dataPath string) error {
 	log.Printf("[Postgres] Seeding successful! Ingested %d groups and %d classes.", groups, classes)
 	return nil
 }
+
+// GetEmptyClassrooms performs an inverted relational lookup to find rooms with no lessons assigned
+func (r *Repository) GetEmptyClassrooms(
+	ctx context.Context,
+	building string,
+	dayOfWeek int,
+	slotNumber int,
+	weekType string,
+	sockets bool,
+	quiet bool,
+) ([]domain.EmptyClassroom, error) {
+	query := `
+		SELECT c.id, c.building, c.room
+		FROM classrooms c
+		WHERE ($1 = '' OR c.building ILIKE '%' || $1 || '%')
+		  AND c.id NOT IN (
+		    SELECT DISTINCT la.classroom_id
+		    FROM lesson_assignments la
+		    JOIN lessons l ON la.lesson_id = l.id
+		    WHERE l.day_of_week = $2
+		      AND l.slot_number = $3
+		      AND ($4 = 'all' OR l.week_type = 'all' OR l.week_type = $4)
+		  )
+		ORDER BY c.room ASC
+		LIMIT 40;
+	`
+	rows, err := r.pool.Query(ctx, query, building, dayOfWeek, slotNumber, weekType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query empty classrooms: %w", err)
+	}
+	defer rows.Close()
+
+	var results []domain.EmptyClassroom
+	for rows.Next() {
+		var item domain.EmptyClassroom
+		if err := rows.Scan(&item.ClassroomID, &item.Building, &item.Room); err != nil {
+			continue
+		}
+
+		// Calculate floor from room digits
+		item.Floor = 1
+		for _, rChar := range item.Room {
+			if rChar >= '1' && rChar <= '9' {
+				item.Floor = int(rChar - '0')
+				break
+			}
+		}
+
+		// Classroom attributes heuristics
+		item.Capacity = 30 + (item.ClassroomID%5)*15
+		item.HasPowerSockets = (item.Floor >= 2) || (item.ClassroomID%2 == 0)
+		item.IsQuietZone = (item.Floor >= 3) || strings.Contains(item.Room, "чит")
+		item.Status = "free_now"
+
+		if sockets && !item.HasPowerSockets {
+			continue
+		}
+		if quiet && !item.IsQuietZone {
+			continue
+		}
+
+		results = append(results, item)
+	}
+
+	if results == nil {
+		results = []domain.EmptyClassroom{}
+	}
+	return results, nil
+}
+
+// MatchWindows finds overlapping free slots across two or more groups
+func (r *Repository) MatchWindows(
+	ctx context.Context,
+	groupIDs []int,
+	dayOfWeek int,
+	weekType string,
+) ([]domain.SharedWindowSlot, error) {
+	if len(groupIDs) == 0 {
+		return []domain.SharedWindowSlot{}, nil
+	}
+
+	bells := map[int][2]string{
+		1: {"08:30", "10:05"},
+		2: {"10:20", "11:55"},
+		3: {"12:25", "14:00"},
+		4: {"14:15", "15:50"},
+		5: {"16:05", "17:40"},
+		6: {"17:55", "19:30"},
+		7: {"19:45", "21:20"},
+	}
+
+	weekdays := map[int]string{
+		1: "Понедельник", 2: "Вторник", 3: "Среда",
+		4: "Четверг", 5: "Пятница", 6: "Суббота", 7: "Воскресенье",
+	}
+
+	// Fetch group names
+	groupNames := make(map[int]string)
+	for _, gid := range groupIDs {
+		g, _, _ := r.GetGroupByID(ctx, gid)
+		if g != nil {
+			groupNames[gid] = g.Name
+		} else {
+			groupNames[gid] = fmt.Sprintf("Группа #%d", gid)
+		}
+	}
+
+	// Query busy slots for each group
+	busyMap := make(map[int]map[int]bool) // groupID -> slotNumber -> isBusy
+	for _, gid := range groupIDs {
+		busyMap[gid] = make(map[int]bool)
+		q := `
+			SELECT slot_number
+			FROM lessons
+			WHERE group_id = $1 AND day_of_week = $2
+			  AND ($3 = 'all' OR week_type = 'all' OR week_type = $3);
+		`
+		rows, err := r.pool.Query(ctx, q, gid, dayOfWeek, weekType)
+		if err == nil {
+			for rows.Next() {
+				var s int
+				if err := rows.Scan(&s); err == nil {
+					busyMap[gid][s] = true
+				}
+			}
+			rows.Close()
+		}
+	}
+
+	spots := []string{
+		"Столовая №2 (12-й корпус, 1 этаж)",
+		"Студенческое кафе «Колос» (Лиственничная аллея)",
+		"Коворкинг и кофейня (28-й Инженерный корпус)",
+		"Центральная научная библиотека им. Железнова",
+		"Зона отдыха у фонтана (Верхняя аллея)",
+	}
+
+	var shared []domain.SharedWindowSlot
+	for slot := 1; slot <= 7; slot++ {
+		allFree := true
+		for _, gid := range groupIDs {
+			if busyMap[gid][slot] {
+				allFree = false
+				break
+			}
+		}
+
+		if allFree {
+			bTimes := bells[slot]
+			var names []string
+			for _, gid := range groupIDs {
+				names = append(names, groupNames[gid])
+			}
+
+			spotIdx := (dayOfWeek + slot) % len(spots)
+			shared = append(shared, domain.SharedWindowSlot{
+				DayOfWeek:               dayOfWeek,
+				Weekday:                 weekdays[dayOfWeek],
+				SlotNumber:              slot,
+				StartTime:               bTimes[0],
+				EndTime:                 bTimes[1],
+				DurationMinutes:         95,
+				ParticipatingGroupNames: names,
+				SuggestedMeetupSpot:     spots[spotIdx],
+				WalkMinutesToSpot:       3 + (slot % 4),
+			})
+		}
+	}
+
+	if shared == nil {
+		shared = []domain.SharedWindowSlot{}
+	}
+	return shared, nil
+}
+
+// GetCampusRoute computes shortest path walking time between campus buildings
+func (r *Repository) GetCampusRoute(fromBuilding, toBuilding string, windowMinutes int) domain.CampusTransitRoute {
+	cleanFrom := strings.TrimSpace(fromBuilding)
+	cleanTo := strings.TrimSpace(toBuilding)
+
+	if cleanFrom == "" {
+		cleanFrom = "1-й учебный корпус"
+	}
+	if cleanTo == "" {
+		cleanTo = "28-й Инженерный корпус"
+	}
+
+	// Matrix of walk distances in meters between Timiryazevka campus sectors
+	distanceMatrix := map[string]map[string]int{
+		"1":  {"1": 0, "2": 250, "4": 400, "6": 650, "12": 800, "16": 900, "17": 1100, "28": 1400, "29": 1200, "СК": 1600},
+		"2":  {"1": 250, "2": 0, "4": 200, "6": 450, "12": 600, "16": 700, "17": 900, "28": 1200, "29": 1000, "СК": 1400},
+		"12": {"1": 800, "2": 600, "4": 500, "6": 300, "12": 0, "16": 350, "17": 450, "28": 750, "29": 650, "СК": 1000},
+		"17": {"1": 1100, "2": 900, "4": 800, "6": 600, "12": 450, "16": 300, "17": 0, "28": 600, "29": 500, "СК": 850},
+		"28": {"1": 1400, "2": 1200, "4": 1100, "6": 950, "12": 750, "16": 600, "17": 600, "28": 0, "29": 250, "СК": 500},
+		"СК": {"1": 1600, "2": 1400, "4": 1300, "6": 1200, "12": 1000, "16": 850, "17": 850, "28": 500, "29": 450, "СК": 0},
+	}
+
+	extractNum := func(b string) string {
+		if strings.Contains(b, "СК") || strings.Contains(b, "Спорт") {
+			return "СК"
+		}
+		for _, token := range []string{"1", "2", "4", "6", "12", "16", "17", "28", "29"} {
+			if strings.Contains(b, token) {
+				return token
+			}
+		}
+		return "1"
+	}
+
+	codeA := extractNum(cleanFrom)
+	codeB := extractNum(cleanTo)
+
+	meters := 600
+	if m, ok := distanceMatrix[codeA][codeB]; ok && m > 0 {
+		meters = m
+	} else if codeA == codeB {
+		meters = 50
+	}
+
+	// Average student walking speed: 80 meters/min (approx 4.8 km/h)
+	walkMinutes := (meters + 79) / 80
+	if walkMinutes < 2 {
+		walkMinutes = 2
+	}
+
+	waypoints := []string{
+		cleanFrom,
+		"Лиственничная аллея",
+		"Центральный сквер",
+		cleanTo,
+	}
+
+	isTight := false
+	var warning string
+	if windowMinutes > 0 && walkMinutes > (windowMinutes-5) {
+		isTight = true
+		warning = fmt.Sprintf("Внимание: У вас окно %d мин, а переход между корпусами займет ~%d мин! Рекомендуем поторопиться.", windowMinutes, walkMinutes)
+	}
+
+	return domain.CampusTransitRoute{
+		FromBuilding:           cleanFrom,
+		ToBuilding:             cleanTo,
+		WalkingDurationMinutes: walkMinutes,
+		DistanceMeters:         meters,
+		PathWaypoints:          waypoints,
+		IsTightWindow:          isTight,
+		UrgentWarning:          warning,
+		WeatherAdvisory:        "Маршрут проходит по освещенным пешеходным дорожкам кампуса.",
+	}
+}
+
+// ProposeCrowdsourceChange creates a peer proposal for a lesson transfer or cancellation
+func (r *Repository) ProposeCrowdsourceChange(ctx context.Context, p *domain.CrowdsourceProposal) (*domain.CrowdsourceProposal, error) {
+	p.CreatedAt = time.Now().UTC()
+	p.UpdatedAt = p.CreatedAt
+	p.PeerVotes = 1
+
+	if p.StudentRole == "headstudent" {
+		p.HasHeadstudentConfirmation = true
+		p.Status = "officially_confirmed"
+		p.DisplayBadge = "Официально подтверждено старостой"
+	} else if p.StudentRole == "deputy_headstudent" {
+		p.HasDeputyConfirmation = true
+		p.Status = "peer_confirmed"
+		p.DisplayBadge = "Подтверждено зам. старосты"
+	} else {
+		p.Status = "pending"
+		p.DisplayBadge = "Проверяется одногруппниками (1/3)"
+	}
+
+	query := `
+		INSERT INTO crowdsource_proposals (
+			lesson_id, group_id, student_name, student_role, change_type,
+			target_day_of_week, target_slot_number, target_building, target_room,
+			reason, peer_votes, has_deputy_confirmation, has_headstudent_confirmation,
+			status, display_badge, created_at, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+		RETURNING id;
+	`
+	err := r.pool.QueryRow(ctx, query,
+		p.LessonID, p.GroupID, p.StudentName, p.StudentRole, p.ChangeType,
+		p.TargetDayOfWeek, p.TargetSlotNumber, p.TargetBuilding, p.TargetRoom,
+		p.Reason, p.PeerVotes, p.HasDeputyConfirmation, p.HasHeadstudentConfirmation,
+		p.Status, p.DisplayBadge, p.CreatedAt, p.UpdatedAt,
+	).Scan(&p.ID)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to insert crowdsource proposal: %w", err)
+	}
+
+	// Register the author's initial vote
+	_, _ = r.pool.Exec(ctx, `
+		INSERT INTO crowdsource_votes (proposal_id, student_name, student_role, vote_confirm, created_at)
+		VALUES ($1, $2, $3, TRUE, $4) ON CONFLICT DO NOTHING;
+	`, p.ID, p.StudentName, p.StudentRole, p.CreatedAt)
+
+	return p, nil
+}
+
+// VoteCrowdsourceChange records peer confirmation and handles the 3+ peer badge transition
+func (r *Repository) VoteCrowdsourceChange(
+	ctx context.Context,
+	proposalID int64,
+	studentName string,
+	role string,
+	confirm bool,
+) (*domain.CrowdsourceProposal, error) {
+	// 1. Insert vote
+	_, err := r.pool.Exec(ctx, `
+		INSERT INTO crowdsource_votes (proposal_id, student_name, student_role, vote_confirm, created_at)
+		VALUES ($1, $2, $3, $4, NOW())
+		ON CONFLICT (proposal_id, student_name) DO UPDATE
+		SET vote_confirm = EXCLUDED.vote_confirm;
+	`, proposalID, studentName, role, confirm)
+	if err != nil {
+		return nil, fmt.Errorf("failed to record vote: %w", err)
+	}
+
+	// 2. Count confirmations
+	var confirmCount int
+	_ = r.pool.QueryRow(ctx, `
+		SELECT COUNT(*) FROM crowdsource_votes
+		WHERE proposal_id = $1 AND vote_confirm = TRUE;
+	`, proposalID).Scan(&confirmCount)
+
+	// 3. Load proposal
+	var p domain.CrowdsourceProposal
+	err = r.pool.QueryRow(ctx, `
+		SELECT id, lesson_id, group_id, student_name, student_role, change_type,
+		       target_day_of_week, target_slot_number, target_building, target_room,
+		       reason, peer_votes, has_deputy_confirmation, has_headstudent_confirmation,
+		       status, display_badge, created_at, updated_at
+		FROM crowdsource_proposals WHERE id = $1;
+	`, proposalID).Scan(
+		&p.ID, &p.LessonID, &p.GroupID, &p.StudentName, &p.StudentRole, &p.ChangeType,
+		&p.TargetDayOfWeek, &p.TargetSlotNumber, &p.TargetBuilding, &p.TargetRoom,
+		&p.Reason, &p.PeerVotes, &p.HasDeputyConfirmation, &p.HasHeadstudentConfirmation,
+		&p.Status, &p.DisplayBadge, &p.CreatedAt, &p.UpdatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch proposal: %w", err)
+	}
+
+	p.PeerVotes = confirmCount
+
+	// Business rule: Role effects
+	if role == "headstudent" && confirm {
+		p.HasHeadstudentConfirmation = true
+		p.Status = "officially_confirmed"
+		p.DisplayBadge = "Официально подтверждено старостой"
+	} else if role == "deputy_headstudent" && confirm {
+		p.HasDeputyConfirmation = true
+		p.Status = "peer_confirmed"
+	} else if p.PeerVotes >= 3 && p.Status != "officially_confirmed" && !p.HasDeputyConfirmation {
+		// 3+ peer confirmation triggers "Возможен перенос" badge
+		p.Status = "peer_confirmed"
+		p.DisplayBadge = "Возможен перенос (подтверждено 3+ студентами)"
+	} else if p.Status != "officially_confirmed" && !p.HasDeputyConfirmation {
+		p.DisplayBadge = fmt.Sprintf("Проверяется одногруппниками (%d/3)", p.PeerVotes)
+	}
+
+	p.UpdatedAt = time.Now().UTC()
+
+	_, err = r.pool.Exec(ctx, `
+		UPDATE crowdsource_proposals
+		SET peer_votes = $1, has_deputy_confirmation = $2, has_headstudent_confirmation = $3,
+		    status = $4, display_badge = $5, updated_at = $6
+		WHERE id = $7;
+	`, p.PeerVotes, p.HasDeputyConfirmation, p.HasHeadstudentConfirmation, p.Status, p.DisplayBadge, p.UpdatedAt, p.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update proposal: %w", err)
+	}
+
+	return &p, nil
+}
+
+// ListCrowdsourceProposals retrieves active proposals for a student group
+func (r *Repository) ListCrowdsourceProposals(ctx context.Context, groupID int) ([]domain.CrowdsourceProposal, error) {
+	query := `
+		SELECT id, lesson_id, group_id, student_name, student_role, change_type,
+		       target_day_of_week, target_slot_number, target_building, target_room,
+		       reason, peer_votes, has_deputy_confirmation, has_headstudent_confirmation,
+		       status, display_badge, created_at, updated_at
+		FROM crowdsource_proposals
+		WHERE group_id = $1
+		ORDER BY created_at DESC;
+	`
+	rows, err := r.pool.Query(ctx, query, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query proposals: %w", err)
+	}
+	defer rows.Close()
+
+	var proposals []domain.CrowdsourceProposal
+	for rows.Next() {
+		var p domain.CrowdsourceProposal
+		if err := rows.Scan(
+			&p.ID, &p.LessonID, &p.GroupID, &p.StudentName, &p.StudentRole, &p.ChangeType,
+			&p.TargetDayOfWeek, &p.TargetSlotNumber, &p.TargetBuilding, &p.TargetRoom,
+			&p.Reason, &p.PeerVotes, &p.HasDeputyConfirmation, &p.HasHeadstudentConfirmation,
+			&p.Status, &p.DisplayBadge, &p.CreatedAt, &p.UpdatedAt,
+		); err == nil {
+			proposals = append(proposals, p)
+		}
+	}
+
+	if proposals == nil {
+		proposals = []domain.CrowdsourceProposal{}
+	}
+	return proposals, nil
+}
+

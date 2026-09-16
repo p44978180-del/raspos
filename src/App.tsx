@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import IosInstallPrompt, {
   isStandaloneMode,
   isRealMobileOrStandalone,
@@ -38,11 +38,19 @@ import {
   CACHE_CLEARED_EVENT,
   type StorageUsageInfo,
 } from "./utils/cacheManager"
+import EmptyClassroomRadar from "./features/radar-classrooms/EmptyClassroomRadar"
+import WindowMatchmakingModal from "./features/window-matchmaking/WindowMatchmakingModal"
+import CampusNavigationModal from "./features/campus-navigation/CampusNavigationModal"
+import CrowdsourceChangeModal from "./features/crowdsource-changes/CrowdsourceChangeModal"
+import VirtualizedScheduleList from "./components/VirtualizedScheduleList"
+import { localDb } from "./utils/localDatabase"
+import { initRealtimeScheduleEvents } from "./utils/realtimeClient"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ClassType = "lecture" | "practice" | "lab" | "elective"
-type UserRole = "student" | "headstudent"
+type UserRole = "student" | "headstudent" | "deputy_headstudent"
+
 type FoodFilter = "all" | "canteen" | "cafe" | "supermarket" | "open"
 type EventCat = "all" | "news" | "announcement" | "faculty" | "science" | "sport" | "profcom" | "career"
 type SubgroupPref = "1" | "2" | "all"
@@ -2829,10 +2837,12 @@ function TravelBanner({
   from,
   to,
   breakMin,
+  onNavigate,
 }: {
   from: string
   to: string
   breakMin: number
+  onNavigate?: (from: string, to: string) => void
 }) {
   const walkInfo = calculateWalkBetween(from, to)
   if (!walkInfo) return null
@@ -2846,11 +2856,13 @@ function TravelBanner({
   const tight = walkInfo.mins >= breakMin - 3
   return (
     <div
-      className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl text-xs font-medium mx-4 ${
+      onClick={() => onNavigate?.(from, to)}
+      className={`flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl text-xs font-medium mx-4 cursor-pointer hover:opacity-90 transition-all ${
         tight
           ? "bg-amber-bg text-amber border border-amber/20"
           : "bg-muted text-muted-fg"
       }`}
+      title={tight ? "Внимание: переход займет большую часть перемены!" : "Открыть подробный маршрут"}
     >
       <div className="flex items-center gap-2 min-w-0">
         {I.route(13, "flex-shrink-0")}
@@ -2858,17 +2870,16 @@ function TravelBanner({
           {walkInfo.text}
         </span>
       </div>
-      {walkInfo.routeUrl && (
-        <a
-          href={walkInfo.routeUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-[11px] font-semibold text-primary underline flex-shrink-0 hover:opacity-80"
-          title="Открыть пешеходный маршрут на Яндекс.Картах"
-        >
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {tight && (
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber/20 text-amber">
+            Срочно
+          </span>
+        )}
+        <span className="text-[11px] font-semibold text-primary underline">
           Маршрут →
-        </a>
-      )}
+        </span>
+      </div>
     </div>
   )
 }
@@ -2881,12 +2892,16 @@ function OknoCard({
   gapMin,
   onEat,
   onRest,
+  onRadar,
+  onMatchmaking,
 }: {
   from: string
   to: string
   gapMin: number
   onEat: () => void
   onRest: () => void
+  onRadar?: () => void
+  onMatchmaking?: () => void
 }) {
   const h = Math.floor(gapMin / 60)
   const m = gapMin % 60
@@ -2903,21 +2918,38 @@ function OknoCard({
           </p>
         </div>
       </div>
-      <div className="flex gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <button
           onClick={onEat}
-          className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold bg-muted text-fg hover:bg-border rounded-xl py-2 transition-colors"
+          className="flex items-center justify-center gap-1.5 text-xs font-semibold bg-muted text-fg hover:bg-border rounded-xl py-2 transition-colors cursor-pointer"
         >
           {I.fork(14, "flex-shrink-0")} Где поесть
         </button>
         <button
           onClick={onRest}
-          className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold bg-muted text-fg hover:bg-border rounded-xl py-2 transition-colors"
+          className="flex items-center justify-center gap-1.5 text-xs font-semibold bg-muted text-fg hover:bg-border rounded-xl py-2 transition-colors cursor-pointer"
         >
           {I.book(14, "flex-shrink-0")} Где переждать
         </button>
-
-</div>
+        {onRadar && (
+          <button
+            onClick={onRadar}
+            className="flex items-center justify-center gap-1.5 text-xs font-bold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 rounded-xl py-2 transition-colors cursor-pointer"
+            title="Инвертированный поиск пустых аудиторий с розетками"
+          >
+            <span>📡</span> Свободные ауд.
+          </button>
+        )}
+        {onMatchmaking && (
+          <button
+            onClick={onMatchmaking}
+            className="flex items-center justify-center gap-1.5 text-xs font-bold bg-purple-500/10 text-purple-800 dark:text-purple-300 border border-purple-500/20 hover:bg-purple-500/20 rounded-xl py-2 transition-colors cursor-pointer"
+            title="Найти общие окна с друзьями для обеда и подготовки"
+          >
+            <span>🤝</span> Общие окна
+          </button>
+        )}
+      </div>
     </div>
   )
 }
@@ -4541,6 +4573,8 @@ function ClassCard({
   onBuildingClick,
   onManage,
   onSubjectClick,
+  onCrowdsourceClick,
+  onRouteClick,
   isOddWeek = true,
   weekFilter = "current",
 }: {
@@ -4559,9 +4593,12 @@ function ClassCard({
   onBuildingClick?: (b: string) => void
   onManage?: () => void
   onSubjectClick?: () => void
+  onCrowdsourceClick?: () => void
+  onRouteClick?: () => void
   isOddWeek?: boolean
   weekFilter?: "current" | "all"
 }) {
+
   const cfg = TYPE_CFG[cls.type]
   const cancelled = edit?.cancelled ?? false
   const displayBuilding = edit?.building ?? cls.building
@@ -4856,18 +4893,46 @@ function ClassCard({
             Слот: {edit.displacedNote}
           </p>
         )}
-        {onNotesClick && (
-          <button
-            onClick={onNotesClick}
-            className="mt-2.5 flex items-center gap-1.5 text-xs text-muted-fg hover:text-primary transition-colors"
-          >
-            {I.book(12)}
-            <span>{homework ? "ДЗ и заметки" : "Заметки"}</span>
-            {I.chev("right", 11)}
-          </button>
-        )}
+        <div className="mt-2.5 pt-2 border-t border-border/50 flex items-center justify-between gap-2 flex-wrap">
+          {onNotesClick && (
+            <button
+              onClick={onNotesClick}
+              className="flex items-center gap-1.5 text-xs text-muted-fg hover:text-primary transition-colors cursor-pointer"
+            >
+              {I.book(12)}
+              <span>{homework ? "ДЗ и заметки" : "Заметки"}</span>
+              {I.chev("right", 11)}
+            </button>
+          )}
 
-</div>
+          <div className="flex items-center gap-1.5 ml-auto">
+            {onRouteClick && (
+              <button
+                type="button"
+                onClick={onRouteClick}
+                className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20 hover:bg-blue-500/15 transition-all flex items-center gap-1 cursor-pointer"
+                title="Построить пеший маршрут до аудитории"
+              >
+                <span>🚶</span>
+                <span>Путь</span>
+              </button>
+            )}
+
+            {onCrowdsourceClick && (
+              <button
+                type="button"
+                onClick={onCrowdsourceClick}
+                className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 hover:bg-amber-500/15 transition-all flex items-center gap-1 cursor-pointer"
+                title="Краудсорсинг: Сообщить об отмене или переносе пары"
+              >
+                <span>📣</span>
+                <span>Перенос</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
     </div>
   )
 }
@@ -4939,6 +5004,10 @@ function DayView({
   onSubgroupTap,
   onSubjectClick,
   onEat,
+  onOpenCrowdsource,
+  onOpenNavigation,
+  onOpenRadar,
+  onOpenMatchmaking,
   allDays,
   weekFilterMode,
 }: {
@@ -4966,6 +5035,10 @@ function DayView({
   onSubgroupTap: (cls: ClassItem) => void
   onSubjectClick: (cls: ClassItem) => void
   onEat: () => void
+  onOpenCrowdsource?: (cls: ClassItem) => void
+  onOpenNavigation?: (b: string) => void
+  onOpenRadar?: () => void
+  onOpenMatchmaking?: () => void
   weekFilterMode?: WeekFilterMode
 }) {
   const [restOpen, setRestOpen] = useState(false)
@@ -5215,6 +5288,7 @@ function DayView({
                     from={prevBuilding}
                     to={curBuilding}
                     breakMin={breakMin}
+                    onNavigate={(f, t) => onOpenNavigation?.(t)}
                   />
                 )}
               {gapMin > 40 && entry.type === "native" && (
@@ -5224,6 +5298,8 @@ function DayView({
                   gapMin={gapMin}
                   onEat={onEat}
                   onRest={() => setRestOpen(true)}
+                  onRadar={onOpenRadar}
+                  onMatchmaking={onOpenMatchmaking}
                 />
               )}
               <div className="mx-4">
@@ -5259,6 +5335,8 @@ function DayView({
                       : undefined
                   }
                   onSubjectClick={() => onSubjectClick(curCls)}
+                  onCrowdsourceClick={() => onOpenCrowdsource?.(curCls)}
+                  onRouteClick={() => onOpenNavigation?.(curBuilding)}
                   isOddWeek={isOddWeek}
                   weekFilter={effectiveFilter === "all" ? "all" : "current"}
                 />
@@ -5298,6 +5376,10 @@ function PageSchedule({
   onSubgroupTap,
   onSubjectClick,
   onEat,
+  onOpenRadar,
+  onOpenMatchmaking,
+  onOpenNavigation,
+  onOpenCrowdsource,
   selDate: propsSelDate,
   onDateChange: propsOnDateChange,
 }: {
@@ -5324,6 +5406,10 @@ function PageSchedule({
   onSubgroupTap: (cls: ClassItem) => void
   onSubjectClick: (cls: ClassItem) => void
   onEat: () => void
+  onOpenRadar?: () => void
+  onOpenMatchmaking?: () => void
+  onOpenNavigation?: (from?: string, to?: string) => void
+  onOpenCrowdsource?: (cls: ClassItem) => void
   selDate?: string
   onDateChange?: (d: string) => void
 }) {
@@ -5335,6 +5421,7 @@ function PageSchedule({
   }
   const [weekFilterMode, setWeekFilterMode] = useState<WeekFilterMode>("current")
   const [showWeek, setShowWeek] = useState(false)
+  const [scheduleViewMode, setScheduleViewMode] = useState<"day" | "week" | "virtualized">("day")
   const [bellOpen, setBellOpen] = useState(false)
   const [nowMin, setNowMin] = useState(() => {
     const d = new Date()
@@ -5349,6 +5436,27 @@ function PageSchedule({
   }, [])
 
   const activeDays = allDays ?? ALL_DAYS
+
+  const semesterVirtualItems = useMemo<import("./proto/schedule").ScheduleItem[]>(() => {
+    const list: import("./proto/schedule").ScheduleItem[] = []
+    activeDays.forEach((d) => {
+      d.classes.forEach((c) => {
+        list.push({
+          id: c.id,
+          num: c.num,
+          start: c.start,
+          end: c.end,
+          subject: `${c.subject} (${d.weekday})`,
+          type: c.type,
+          teacher: c.teacher,
+          building: c.building,
+          room: c.room,
+          weekType: c.weekType || "all",
+        })
+      })
+    })
+    return list
+  }, [activeDays])
   const ws = getWeekStart(selDate)
   const weekDays: string[] = []
   for (let i = 0; i < 7; i++) {
@@ -5520,18 +5628,54 @@ function PageSchedule({
         />
       )}
       <div className="px-4 mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 p-0.5 rounded-xl bg-muted/60 border border-border/60 text-xs">
           <button
-            onClick={() => setShowWeek((w) => !w)}
-            className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-xl border transition-all cursor-pointer ${
-              showWeek
-                ? "bg-primary text-white border-primary"
-                : "border-border text-muted-fg bg-card hover:border-accent/50"
+            type="button"
+            onClick={() => {
+              setScheduleViewMode("day")
+              setShowWeek(false)
+            }}
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+              scheduleViewMode === "day" && !showWeek
+                ? "bg-card text-fg shadow-xs"
+                : "text-muted-fg hover:text-fg"
             }`}
           >
-            Неделя {I.chev(showWeek ? "up" : "down", 11)}
+            День
           </button>
-          {!isCurrentWeek && (
+          <button
+            type="button"
+            onClick={() => {
+              setScheduleViewMode("week")
+              setShowWeek(true)
+            }}
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+              scheduleViewMode === "week" || showWeek
+                ? "bg-card text-fg shadow-xs"
+                : "text-muted-fg hover:text-fg"
+            }`}
+          >
+            Неделя
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setScheduleViewMode("virtualized")
+              setShowWeek(false)
+            }}
+            className={`px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+              scheduleViewMode === "virtualized"
+                ? "bg-primary text-white shadow-xs"
+                : "text-muted-fg hover:text-fg"
+            }`}
+            title="Семестровое расписание с виртуализацией (@tanstack/react-virtual)"
+          >
+            Семестр ⚡
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {!isCurrentWeek && scheduleViewMode !== "virtualized" && (
             <button
               onClick={() => setSelDate(TODAY)}
               className="text-xs font-semibold text-primary hover:text-accent transition-colors cursor-pointer"
@@ -5539,98 +5683,32 @@ function PageSchedule({
               {I.chev("left", 12)} Сегодня
             </button>
           )}
+          <button
+            onClick={() => setBellOpen(true)}
+            className="text-xs font-semibold text-muted-fg hover:text-fg flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border/60 bg-card hover:border-primary/40 transition-all cursor-pointer"
+            title="Официальный график звонков РГАУ-МСХА"
+          >
+            <span>🔔</span> Звонки
+          </button>
         </div>
-        <button
-          onClick={() => setBellOpen(true)}
-          className="text-xs font-semibold text-muted-fg hover:text-fg flex items-center gap-1 px-2.5 py-1 rounded-xl border border-border/60 bg-card hover:border-primary/40 transition-all cursor-pointer"
-          title="Официальный график звонков РГАУ-МСХА"
-        >
-          <span>🔔</span> Звонки
-        </button>
       </div>
-      <div
-        className="flex gap-1.5 overflow-x-auto px-4 pb-2"
-        style={{ scrollbarWidth: "none" }}
-      >
-        <button
-          onClick={() => shiftWeek(-1)}
-          className="flex-shrink-0 flex items-center justify-center w-9 h-12 rounded-xl border border-border bg-card text-muted-fg hover:text-fg hover:border-accent/40 transition-all cursor-pointer"
+      {scheduleViewMode !== "virtualized" && (
+        <div
+          className="flex gap-1.5 overflow-x-auto px-4 pb-2"
+          style={{ scrollbarWidth: "none" }}
         >
-          {I.chev("left", 16)}
-        </button>
-        {weekDays.map((d) => {
-          const dd = new Date(d + "T00:00:00")
-          const dayData = activeDays.find((x) => x.date === d)
-          const dayWeekNum = getStudyWeek(d)
-          const dayIsOdd = dayWeekNum % 2 !== 0
-          const activeClasses = (dayData?.classes ?? []).filter(
-            (c) =>
-              !c.weekType ||
-              c.weekType === "all" ||
-              (weekFilterMode === "odd" && c.weekType === "odd") ||
-              (weekFilterMode === "even" && c.weekType === "even") ||
-              weekFilterMode === "all" ||
-              (weekFilterMode === "current" &&
-                (dayIsOdd ? c.weekType === "odd" : c.weekType === "even")),
-          )
-          const clsCount = activeClasses.length
-          const isSel = d === selDate
-          const isTod = d === TODAY
-          const dayIdx = dd.getDay() === 0 ? 6 : dd.getDay() - 1
-          const isWeekend = dayIdx >= 5
-          return (
-            <button
-              key={d}
-              onClick={() => setSelDate(d)}
-              className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-xl border transition-all duration-150 min-w-[2.8rem] active:scale-95 cursor-pointer ${
-                isSel
-                  ? "bg-primary border-primary text-white shadow-md"
-                  : isTod
-                    ? "border-accent bg-muted text-primary"
-                    : isWeekend
-                      ? "border-border bg-muted/50 text-muted-fg hover:border-accent/40"
-                      : "border-border bg-card text-fg hover:border-accent/40 hover:shadow-sm"
-              }`}
-            >
-              <span className="text-[10px] font-semibold opacity-70">
-                {WDAY[dayIdx]}
-              </span>
-              <span
-                className="text-base font-bold leading-none"
-                style={{ fontFamily: "var(--font-mono)" }}
-              >
-                {dd.getDate()}
-              </span>
-              {clsCount > 0 ? (
-                <span
-                  className={`text-[9px] font-bold ${
-                    isSel ? "text-white/70" : "text-accent"
-                  }`}
-                >
-                  {clsCount}п
-                </span>
-              ) : (
-                <span className="h-3" />
-              )}
-            </button>
-          )
-        })}
-        <button
-          onClick={() => shiftWeek(1)}
-          className="flex-shrink-0 flex items-center justify-center w-9 h-12 rounded-xl border border-border bg-card text-muted-fg hover:text-fg hover:border-accent/40 transition-all cursor-pointer"
-        >
-          {I.chev("right", 16)}
-        </button>
-      </div>
-      {showWeek && (
-        <div className="px-4 mb-2 space-y-1">
+          <button
+            onClick={() => shiftWeek(-1)}
+            className="flex-shrink-0 flex items-center justify-center w-9 h-12 rounded-xl border border-border bg-card text-muted-fg hover:text-fg hover:border-accent/40 transition-all cursor-pointer"
+          >
+            {I.chev("left", 16)}
+          </button>
           {weekDays.map((d) => {
-            const data = activeDays.find((x) => x.date === d)
             const dd = new Date(d + "T00:00:00")
-            const isTod = d === TODAY
+            const dayData = activeDays.find((x) => x.date === d)
             const dayWeekNum = getStudyWeek(d)
             const dayIsOdd = dayWeekNum % 2 !== 0
-            const dayClasses = (data?.classes ?? []).filter(
+            const activeClasses = (dayData?.classes ?? []).filter(
               (c) =>
                 !c.weekType ||
                 c.weekType === "all" ||
@@ -5640,101 +5718,239 @@ function PageSchedule({
                 (weekFilterMode === "current" &&
                   (dayIsOdd ? c.weekType === "odd" : c.weekType === "even")),
             )
-            if (!data || !dayClasses.length)
-              return (
-                <div
-                  key={d}
-                  className="bg-card border border-border rounded-xl p-2.5 flex items-center gap-3"
-                >
-                  <div className="text-center w-10 flex-shrink-0">
-                    <p className="text-[10px] text-muted-fg font-semibold">
-                      {WDAY[dd.getDay() === 0 ? 6 : dd.getDay() - 1]}
-                    </p>
-                    <p
-                      className="text-sm font-bold text-muted-fg"
-                      style={{ fontFamily: "var(--font-mono)" }}
-                    >
-                      {dd.getDate()}
-                    </p>
-                  </div>
-                  <p className="text-xs text-muted-fg">Занятий нет</p>
-                </div>
-              )
+            const clsCount = activeClasses.length
+            const isSel = d === selDate
+            const isTod = d === TODAY
+            const dayIdx = dd.getDay() === 0 ? 6 : dd.getDay() - 1
+            const isWeekend = dayIdx >= 5
             return (
               <button
                 key={d}
                 onClick={() => setSelDate(d)}
-                className={`w-full bg-card border rounded-xl overflow-hidden text-left cursor-pointer transition-colors ${
-                  isTod ? "border-accent bg-accent/5" : "border-border hover:border-primary/40"
+                className={`flex-shrink-0 flex flex-col items-center gap-0.5 px-2.5 py-2 rounded-xl border transition-all duration-150 min-w-[2.8rem] active:scale-95 cursor-pointer ${
+                  isSel
+                    ? "bg-primary border-primary text-white shadow-md"
+                    : isTod
+                      ? "border-accent bg-muted text-primary"
+                      : isWeekend
+                        ? "border-border bg-muted/50 text-muted-fg hover:border-accent/40"
+                        : "border-border bg-card text-fg hover:border-accent/40 hover:shadow-sm"
                 }`}
               >
-                <div className="flex items-center gap-2 px-3 py-2 bg-muted/60">
-                  <div className="text-center w-10 flex-shrink-0">
-                    <p className="text-[10px] text-muted-fg font-semibold">
-                      {WDAY[dd.getDay() === 0 ? 6 : dd.getDay() - 1]}
-                    </p>
-                    <p
-                      className="text-sm font-bold text-fg"
-                      style={{ fontFamily: "var(--font-mono)" }}
-                    >
-                      {dd.getDate()}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap gap-1 items-center flex-1 min-w-0">
-                    {dayClasses.slice(0, 4).map((c) => (
-                      <span
-                        key={c.id}
-                        className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${TYPE_CFG[c.type].chip}`}
-                      >
-                        {c.start}–{c.end}
-                      </span>
-                    ))}
-                    {dayClasses.length > 4 && (
-                      <span className="text-[10px] text-muted-fg font-medium">
-                        +{dayClasses.length - 4}
-                      </span>
-                    )}
-                  </div>
-                  {isTod && (
-                    <span className="ml-auto text-[10px] font-bold text-primary flex-shrink-0">
-                      Сегодня
-                    </span>
-                  )}
-                </div>
+                <span className="text-[10px] font-semibold opacity-70">
+                  {WDAY[dayIdx]}
+                </span>
+                <span
+                  className="text-base font-bold leading-none"
+                  style={{ fontFamily: "var(--font-mono)" }}
+                >
+                  {dd.getDate()}
+                </span>
+                {clsCount > 0 ? (
+                  <span
+                    className={`text-[9px] font-bold ${
+                      isSel ? "text-white/70" : "text-accent"
+                    }`}
+                  >
+                    {clsCount}п
+                  </span>
+                ) : (
+                  <span className="h-3" />
+                )}
               </button>
             )
           })}
+          <button
+            onClick={() => shiftWeek(1)}
+            className="flex-shrink-0 flex items-center justify-center w-9 h-12 rounded-xl border border-border bg-card text-muted-fg hover:text-fg hover:border-accent/40 transition-all cursor-pointer"
+          >
+            {I.chev("right", 16)}
+          </button>
         </div>
       )}
-      <div key={selDate} className="animate-fade-in">
-        <DayView
-          allDays={activeDays}
-          dateStr={selDate}
-          search={search}
-          homework={homework}
-          personal={personal}
-          role={role}
-          classEdits={classEdits}
-          subgroupPrefs={subgroupPrefs}
-          dorm={dorm}
-          konspekts={konspekts}
-          dormDismissed={dormDismissed}
-          dismissedEvents={dismissedEvents}
-          showDormBanner={showDormBanner}
-          showEventBanners={showEventBanners}
-          movedInEntries={uniqueMovedIn}
-          nowMin={nowMin}
-          onDismissDorm={onDismissDorm}
-          onDismissEvent={onDismissEvent}
-          onBuildingClick={onBuildingClick}
-          onNotesClick={onNotesClick}
-          onManageClass={onManageClass}
-          onSubgroupTap={onSubgroupTap}
-          onSubjectClick={onSubjectClick}
-          onEat={onEat}
-          weekFilterMode={weekFilterMode}
-        />
+
+      {/* SuperApp Quick Features Toolbar */}
+      <div className="flex items-center gap-2 overflow-x-auto px-4 pb-2 pt-0.5" style={{ scrollbarWidth: "none" }}>
+        <button
+          type="button"
+          onClick={onOpenRadar}
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 dark:text-emerald-300 text-xs font-bold hover:bg-emerald-500/20 transition-all cursor-pointer shadow-xs active:scale-95"
+          title="Инвертированный поиск свободных аудиторий по текущему времени и корпусу"
+        >
+          <span>📡</span>
+          <span>Радар аудиторий</span>
+        </button>
+        <button
+          type="button"
+          onClick={onOpenMatchmaking}
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/25 text-purple-800 dark:text-purple-300 text-xs font-bold hover:bg-purple-500/20 transition-all cursor-pointer shadow-xs active:scale-95"
+          title="Пересечение свободных окон с друзьями для обеда и подготовки"
+        >
+          <span>🤝</span>
+          <span>Общие окна</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onOpenNavigation?.("1-й учебный корпус", "Инженерный корпус (28-й)")}
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/25 text-blue-800 dark:text-blue-300 text-xs font-bold hover:bg-blue-500/20 transition-all cursor-pointer shadow-xs active:scale-95"
+          title="Граф переходов между корпусами с учетом перемен"
+        >
+          <span>🧭</span>
+          <span>Навигация</span>
+        </button>
       </div>
+
+      {scheduleViewMode === "virtualized" ? (
+        <div className="pb-4 animate-fade-in">
+          <div className="mx-4 mb-2 flex items-center justify-between text-xs text-muted-fg bg-muted/40 p-2.5 rounded-2xl border border-border/60">
+            <span className="font-semibold text-fg flex items-center gap-1.5">
+              <span>⚡</span>
+              <span>Семестровое расписание (@tanstack/react-virtual)</span>
+            </span>
+            <span className="font-bold text-primary">{semesterVirtualItems.length} занятий</span>
+          </div>
+          <VirtualizedScheduleList
+            items={semesterVirtualItems}
+            onSubjectClick={(item) => {
+              const matchingCls = activeDays.flatMap((d) => d.classes).find((c) => c.id === item.id)
+              if (matchingCls) onSubjectClick(matchingCls)
+            }}
+            onNotesClick={onNotesClick}
+            onManageClick={onManageClass}
+            onBuildingClick={onBuildingClick}
+            onRouteClick={(from, to) => onOpenNavigation?.(from, to)}
+            onCrowdsourceClick={(item) => {
+              const matchingCls = activeDays.flatMap((d) => d.classes).find((c) => c.id === item.id)
+              if (matchingCls) onOpenCrowdsource?.(matchingCls)
+            }}
+            role={role}
+          />
+        </div>
+      ) : (
+        <>
+          {showWeek && (
+            <div className="px-4 mb-2 space-y-1">
+              {weekDays.map((d) => {
+                const data = activeDays.find((x) => x.date === d)
+                const dd = new Date(d + "T00:00:00")
+                const isTod = d === TODAY
+                const dayWeekNum = getStudyWeek(d)
+                const dayIsOdd = dayWeekNum % 2 !== 0
+                const dayClasses = (data?.classes ?? []).filter(
+                  (c) =>
+                    !c.weekType ||
+                    c.weekType === "all" ||
+                    (weekFilterMode === "odd" && c.weekType === "odd") ||
+                    (weekFilterMode === "even" && c.weekType === "even") ||
+                    weekFilterMode === "all" ||
+                    (weekFilterMode === "current" &&
+                      (dayIsOdd ? c.weekType === "odd" : c.weekType === "even")),
+                )
+                if (!data || !dayClasses.length)
+                  return (
+                    <div
+                      key={d}
+                      className="bg-card border border-border rounded-xl p-2.5 flex items-center gap-3"
+                    >
+                      <div className="text-center w-10 flex-shrink-0">
+                        <p className="text-[10px] text-muted-fg font-semibold">
+                          {WDAY[dd.getDay() === 0 ? 6 : dd.getDay() - 1]}
+                        </p>
+                        <p
+                          className="text-sm font-bold text-muted-fg"
+                          style={{ fontFamily: "var(--font-mono)" }}
+                        >
+                          {dd.getDate()}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-fg">Занятий нет</p>
+                    </div>
+                  )
+                return (
+                  <button
+                    key={d}
+                    onClick={() => {
+                      setSelDate(d)
+                      setShowWeek(false)
+                      setScheduleViewMode("day")
+                    }}
+                    className={`w-full bg-card border rounded-xl overflow-hidden text-left cursor-pointer transition-colors ${
+                      isTod ? "border-accent bg-accent/5" : "border-border hover:border-primary/40"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 px-3 py-2 bg-muted/60">
+                      <div className="text-center w-10 flex-shrink-0">
+                        <p className="text-[10px] text-muted-fg font-semibold">
+                          {WDAY[dd.getDay() === 0 ? 6 : dd.getDay() - 1]}
+                        </p>
+                        <p
+                          className="text-sm font-bold text-fg"
+                          style={{ fontFamily: "var(--font-mono)" }}
+                        >
+                          {dd.getDate()}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-1 items-center flex-1 min-w-0">
+                        {dayClasses.slice(0, 4).map((c) => (
+                          <span
+                            key={c.id}
+                            className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${TYPE_CFG[c.type].chip}`}
+                          >
+                            {c.start}–{c.end}
+                          </span>
+                        ))}
+                        {dayClasses.length > 4 && (
+                          <span className="text-[10px] text-muted-fg font-medium">
+                            +{dayClasses.length - 4}
+                          </span>
+                        )}
+                      </div>
+                      {isTod && (
+                        <span className="ml-auto text-[10px] font-bold text-primary flex-shrink-0">
+                          Сегодня
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+          <div key={selDate} className="animate-fade-in">
+            <DayView
+              allDays={activeDays}
+              dateStr={selDate}
+              search={search}
+              homework={homework}
+              personal={personal}
+              role={role}
+              classEdits={classEdits}
+              subgroupPrefs={subgroupPrefs}
+              dorm={dorm}
+              konspekts={konspekts}
+              dormDismissed={dormDismissed}
+              dismissedEvents={dismissedEvents}
+              showDormBanner={showDormBanner}
+              showEventBanners={showEventBanners}
+              movedInEntries={uniqueMovedIn}
+              nowMin={nowMin}
+              onDismissDorm={onDismissDorm}
+              onDismissEvent={onDismissEvent}
+              onBuildingClick={onBuildingClick}
+              onNotesClick={onNotesClick}
+              onManageClass={onManageClass}
+              onSubgroupTap={onSubgroupTap}
+              onSubjectClick={onSubjectClick}
+              onEat={onEat}
+              onOpenCrowdsource={onOpenCrowdsource}
+              onOpenNavigation={(b) => onOpenNavigation?.(b, undefined)}
+              onOpenRadar={onOpenRadar}
+              onOpenMatchmaking={onOpenMatchmaking}
+              weekFilterMode={weekFilterMode}
+            />
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -8678,6 +8894,15 @@ export default function App() {
 
   const [timacadFeed, setTimacadFeed] = useState<TimacadFeedItem[]>(() => getCachedTimacadFeed())
 
+  // SuperApp Killer Features State
+  const [radarOpen, setRadarOpen] = useState(false)
+  const [matchmakingOpen, setMatchmakingOpen] = useState(false)
+  const [navigationOpen, setNavigationOpen] = useState(false)
+  const [navFromBuilding, setNavFromBuilding] = useState<string | undefined>()
+  const [navToBuilding, setNavToBuilding] = useState<string | undefined>()
+  const [crowdsourceOpen, setCrowdsourceOpen] = useState(false)
+  const [crowdsourceClass, setCrowdsourceClass] = useState<ClassItem | null>(null)
+
   // Start client-side daily sync watcher on boot (schedules next 04:00 AM MSK auto-sync)
   useEffect(() => {
     const handleSync = (e: any) => {
@@ -8825,6 +9050,26 @@ export default function App() {
       localStorage.setItem("rgau_saved_groups", JSON.stringify(savedGroups))
     } catch {}
   }, [savedGroups])
+
+  // Initialize Local-First SQLite WebAssembly OPFS relational database
+  useEffect(() => {
+    localDb.getDatabase().catch((err) => {
+      console.warn("[LocalDatabase] Cold-boot OPFS initialization:", err)
+    })
+  }, [])
+
+  // Realtime Server-Sent Events (SSE) listener for live schedule updates
+  useEffect(() => {
+    const numGroupId = parseInt(groupId.replace(/\D/g, "") || "1", 10)
+    const cleanup = initRealtimeScheduleEvents(numGroupId, (evt) => {
+      if (evt.event_type === "PROPOSAL_CREATED" || evt.event_type === "PEER_VOTE_ADDED") {
+        addToast("Получено обновление расписания от одногруппников!", "info")
+      } else if (evt.event_type === "SYNC_COMPLETED") {
+        addToast("Расписание синхронизировано с сервером Тимирязевки", "success")
+      }
+    })
+    return cleanup
+  }, [groupId])
   const [allDays, setAllDays] = useState<DaySchedule[]>(() => {
     const initial = buildSchedule(groupId)
     ALL_DAYS = initial
@@ -9114,6 +9359,17 @@ export default function App() {
                 setCampusFood(true)
                 setTab("campus")
               }}
+              onOpenRadar={() => setRadarOpen(true)}
+              onOpenMatchmaking={() => setMatchmakingOpen(true)}
+              onOpenNavigation={(from, to) => {
+                setNavFromBuilding(from)
+                setNavToBuilding(to)
+                setNavigationOpen(true)
+              }}
+              onOpenCrowdsource={(cls) => {
+                setCrowdsourceClass(cls)
+                setCrowdsourceOpen(true)
+              }}
               selDate={scheduleDate}
               onDateChange={setScheduleDate}
             />
@@ -9257,6 +9513,45 @@ export default function App() {
           }
         }}
       />
+
+      <EmptyClassroomRadar
+        isOpen={radarOpen}
+        onClose={() => setRadarOpen(false)}
+        onNavigateToBuilding={(b) => {
+          setNavToBuilding(b)
+          setNavigationOpen(true)
+        }}
+      />
+
+      <WindowMatchmakingModal
+        isOpen={matchmakingOpen}
+        onClose={() => setMatchmakingOpen(false)}
+        myGroup={groupId}
+      />
+
+      <CampusNavigationModal
+        isOpen={navigationOpen}
+        onClose={() => setNavigationOpen(false)}
+        initialFrom={navFromBuilding}
+        initialTo={navToBuilding}
+        windowMinutes={15}
+      />
+
+      {crowdsourceClass && (
+        <CrowdsourceChangeModal
+          isOpen={crowdsourceOpen}
+          onClose={() => {
+            setCrowdsourceOpen(false)
+            setCrowdsourceClass(null)
+          }}
+          lessonId={crowdsourceClass.id}
+          groupId={parseInt(groupId.replace(/\D/g, "") || "1", 10)}
+          subjectName={crowdsourceClass.subject}
+          currentRole={role as any}
+          onRoleUpgrade={(r) => handleRoleChange(r as any)}
+          onToast={addToast}
+        />
+      )}
     </div>
   )
 }
