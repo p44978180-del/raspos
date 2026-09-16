@@ -207,6 +207,16 @@ html, body, #root { transition: background-color 0.35s ease, color 0.2s ease; }
   animation: radial-wave-expand 0.48s cubic-bezier(0.32, 0.72, 0, 1) forwards;
 }
 
+/* ── Dark Wave Overlay (JS-triggered fallback) ── */
+@keyframes dark-wave {
+  from { clip-path: circle(0% at var(--wave-x, 50%) var(--wave-y, 50%)); }
+  to   { clip-path: circle(150% at var(--wave-x, 50%) var(--wave-y, 50%)); }
+}
+.dark-wave-overlay {
+  position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  animation: dark-wave 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 /* ── Default hover transitions across all interactive elements ── */
 button, a, [role="button"] {
   transition-property: all;
