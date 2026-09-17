@@ -1,5 +1,5 @@
 export type ClassType = "lecture" | "practice" | "lab" | "elective"
-export type UserRole = "student" | "headstudent"
+export type UserRole = "student" | "headstudent" | "deputy_headstudent" | "teacher"
 export type SubgroupPref = "1" | "2" | "all"
 export type WeekFilterMode = "current" | "odd" | "even" | "all"
 

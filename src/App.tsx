@@ -52,11 +52,14 @@ import NextClassBanner from "./features/next-class-widget/NextClassBanner"
 import DynamicIsland from "./features/dynamic-island/DynamicIsland"
 import MiniAppRuntime from "./features/micro-runtime/MiniAppRuntime"
 import { crdtEngine } from "./utils/crdtSync"
+import ModularDashboard from "./widgets/dashboard/ui/ModularDashboard"
+import ClassDetailModal from "./features/shared-element/ClassDetailModal"
+import MorphingButton from "./shared/ui/MorphingButton"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type ClassType = "lecture" | "practice" | "lab" | "elective"
-type UserRole = "student" | "headstudent" | "deputy_headstudent"
+type UserRole = "student" | "headstudent" | "deputy_headstudent" | "teacher"
 
 type FoodFilter = "all" | "canteen" | "cafe" | "supermarket" | "open"
 type EventCat = "all" | "news" | "announcement" | "faculty" | "science" | "sport" | "profcom" | "career"
@@ -2701,6 +2704,7 @@ function AppHeader({
   onGoHome,
   activeDate,
   onOpenIcal,
+  hasDynamicIsland,
 }: {
   tab: string
   dark: boolean
@@ -2715,6 +2719,7 @@ function AppHeader({
   onGoHome?: () => void
   activeDate?: string
   onOpenIcal?: () => void
+  hasDynamicIsland?: boolean
 }) {
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -2725,7 +2730,9 @@ function AppHeader({
 
   return (
     <div
-      className={`sticky top-0 z-40 flex-shrink-0 bg-background transition-shadow ${scrolled ? 'shadow-sm' : ''}`}
+      className={`sticky top-0 z-40 flex-shrink-0 bg-background transition-all ${
+        scrolled ? "shadow-sm" : ""
+      } ${hasDynamicIsland && tab === "schedule" ? "pt-7 sm:pt-8" : "pt-0"}`}
       style={{ background: "var(--color-bg)" }}
     >
       <StatusBar />
@@ -5598,6 +5605,15 @@ function PageSchedule({
         allDays={activeDays}
         weekFilter={weekFilterMode}
       />
+
+      {/* Modular SuperApp Dashboard with customizable widgets & animated progress bars */}
+      <ModularDashboard
+        onOpenRadar={() => onOpenRadar && onOpenRadar()}
+        onOpenMatchmaking={() => onOpenMatchmaking && onOpenMatchmaking()}
+        onOpenBells={() => setBellOpen(true)}
+        onOpenNavigation={() => onOpenNavigation && onOpenNavigation()}
+        role={role}
+      />
       <div className="px-4 pt-1 pb-2 flex items-end justify-between">
         <div>
           <p className="text-xs text-muted-fg font-semibold uppercase tracking-widest">
@@ -6714,6 +6730,7 @@ function PageCampus({
           <VectorCampusMap
             embedded={true}
             initialTo={vectorTargetTo}
+            selectedBuildingId={selectedQuickPlace?.id}
           />
         </div>
       )}
@@ -9103,9 +9120,13 @@ const TAB_ORDER: Tab[] = ["schedule", "campus", "events", "profile"]
 function BottomNav({
   active,
   onChange,
+  role,
+  onRoleChange,
 }: {
   active: Tab
   onChange: (t: Tab) => void
+  role?: UserRole
+  onRoleChange?: (r: UserRole) => void
 }) {
   const items: [Tab, (a: boolean) => React.ReactNode][] = [
     ["schedule", (a) => I.cal(22, a ? "text-primary" : "text-[#7C7C7C]")],
@@ -9114,15 +9135,51 @@ function BottomNav({
     ["profile", (a) => I.user(22, a ? "text-primary" : "text-[#7C7C7C]")],
   ]
   const activeIndex = TAB_ORDER.indexOf(active)
+
+  const handleCycleRole = () => {
+    if (!role || !onRoleChange) return
+    const roles: UserRole[] = ["student", "headstudent", "teacher"]
+    const curIdx = roles.indexOf(role)
+    const nextRole = roles[(curIdx + 1) % roles.length]
+    onRoleChange(nextRole)
+    try {
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate(10)
+      }
+    } catch {}
+  }
+
   return (
     <nav
-      className="flex-shrink-0 relative flex items-stretch justify-around border-t border-border px-1 pt-2"
+      className="flex-shrink-0 relative flex flex-col border-t border-border"
       style={{
         backdropFilter: "blur(12px)",
         background: "color-mix(in srgb,var(--color-card) 80%,transparent)",
         paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 14px)",
       }}
     >
+      {role && onRoleChange && (
+        <div className="flex items-center justify-between px-4 py-1 border-b border-border/30 text-[10px]">
+          <span className="text-muted-fg font-medium">Роль:</span>
+          <button
+            onClick={handleCycleRole}
+            className="flex items-center gap-1.5 font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-all cursor-pointer active:scale-95"
+            title="Нажмите для переключения роли"
+          >
+            <span>
+              {role === "headstudent"
+                ? "⭐ Староста"
+                : role === "teacher"
+                  ? "👨‍🏫 Преподаватель"
+                  : role === "deputy_headstudent"
+                    ? "🌟 Зам. старосты"
+                    : "🎓 Студент"}
+            </span>
+            <span className="text-muted-fg text-[9px]">⇄</span>
+          </button>
+        </div>
+      )}
+      <div className="relative flex items-stretch justify-around px-1 pt-2">
       {/* sliding pill indicator */}
       <div
         className="absolute top-1.5 left-0 right-0 flex px-1 pointer-events-none"
@@ -9161,6 +9218,7 @@ function BottomNav({
           )}
         </button>
       ))}
+      </div>
     </nav>
   )
 }
@@ -9647,6 +9705,7 @@ export default function App() {
         onGoHome={() => setTab("schedule")}
         activeDate={tab === "schedule" ? scheduleDate : TODAY}
         onOpenIcal={tab === "schedule" ? () => setIcalOpen(true) : undefined}
+        hasDynamicIsland={Boolean(dynamicIslandInfo.current || (dynamicIslandInfo.next && dynamicIslandInfo.untilNext !== null && dynamicIslandInfo.untilNext <= 45))}
       />
       <Toast toasts={toasts} onDismiss={dismissToast} />
       <main ref={mainScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden relative min-h-0">
@@ -9770,6 +9829,8 @@ export default function App() {
           setTab(t)
           if (t !== "campus") setCampusFood(false)
         }}
+        role={role}
+        onRoleChange={handleRoleChange}
       />
       </div>
 
@@ -9827,13 +9888,19 @@ export default function App() {
         />
       )}
       {disciplineCls && (
-        <DisciplineSheet
-          subject={disciplineCls.subject}
-          teacher={
-            classEdits[disciplineCls.id]?.teacher ?? disciplineCls.teacher
-          }
-          role={role}
+        <ClassDetailModal
+          cls={disciplineCls}
+          isOpen={Boolean(disciplineCls)}
           onClose={() => setDisciplineCls(null)}
+          homework={homework.find((h) => h.classId === disciplineCls.id)}
+          personal={personal.find((n) => n.classId === disciplineCls.id)}
+          role={role}
+          onSaveHomework={hwChange}
+          onSavePersonal={pnChange}
+          onOpenNavigation={(bldg) => {
+            setNavToBuilding(bldg)
+            setNavigationOpen(true)
+          }}
         />
       )}
 

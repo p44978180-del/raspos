@@ -59,9 +59,11 @@
           if (isDark) {
             document.documentElement.classList.add("dark");
             document.documentElement.style.backgroundColor = "#090D0B";
+            if (document.body) document.body.style.backgroundColor = "#090D0B";
           } else {
             document.documentElement.classList.remove("dark");
             document.documentElement.style.backgroundColor = "#F8F9FA";
+            if (document.body) document.body.style.backgroundColor = "#F8F9FA";
           }
         } catch(e) {}
       })();

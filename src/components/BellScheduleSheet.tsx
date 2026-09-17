@@ -93,6 +93,43 @@ export default function BellScheduleSheet({
   onEat,
 }: BellScheduleSheetProps) {
   const currentStatus = getCurrentBellStatus(nowMin)
+  const [dragY, setDragY] = React.useState(0)
+  const [isClosing, setIsClosing] = React.useState(false)
+  const touchStartY = React.useRef<number | null>(null)
+
+  const handleStartClose = () => {
+    if (isClosing) return
+    setIsClosing(true)
+    try {
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate(10)
+      }
+    } catch {}
+    setTimeout(() => {
+      onClose()
+    }, 260)
+  }
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (touchStartY.current === null) return
+    const delta = e.touches[0].clientY - touchStartY.current
+    if (delta > 0) {
+      setDragY(delta)
+    }
+  }
+
+  const onTouchEnd = () => {
+    if (dragY > 75) {
+      handleStartClose()
+    } else {
+      setDragY(0)
+    }
+    touchStartY.current = null
+  }
 
   const BELLS = [
     { num: 1, time: "09:00 – 10:35", breakAfter: "10 мин перерыв" },
@@ -106,15 +143,33 @@ export default function BellScheduleSheet({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center p-0 sm:p-4 animate-fade-in"
-      onClick={onClose}
+      className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end justify-center p-0 sm:p-4 transition-opacity duration-200 ${
+        isClosing ? "opacity-0 pointer-events-none" : "animate-fade-in"
+      }`}
+      onClick={handleStartClose}
     >
       <div
-        className="bg-card w-full max-w-lg rounded-t-3xl sm:rounded-3xl border border-border shadow-2xl overflow-hidden sheet-spring-enter max-h-[85vh] flex flex-col"
+        className={`bg-card w-full max-w-lg rounded-t-3xl sm:rounded-3xl border border-border shadow-2xl overflow-hidden max-h-[85vh] flex flex-col ${
+          isClosing ? "sheet-spring-exit" : "sheet-spring-enter"
+        }`}
+        style={{
+          transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
+          transition: dragY === 0 ? "transform 0.32s cubic-bezier(0.175, 0.885, 0.32, 1.15)" : "none",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Drag handle for swipe down gesture */}
+        <div
+          className="touch-none select-none flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing flex-shrink-0"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+        >
+          <div className="w-12 h-1.5 rounded-full bg-border hover:bg-muted-fg/40 transition-colors" />
+        </div>
+
         {/* Header */}
-        <div className="px-5 pt-5 pb-3 border-b border-border flex items-center justify-between">
+        <div className="px-5 pt-2 pb-3 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
               🔔
@@ -125,8 +180,8 @@ export default function BellScheduleSheet({
             </div>
           </div>
           <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-muted hover:bg-border text-muted-fg hover:text-fg flex items-center justify-center transition-colors text-sm"
+            onClick={handleStartClose}
+            className="w-8 h-8 rounded-full bg-muted hover:bg-border text-muted-fg hover:text-fg flex items-center justify-center transition-colors text-sm cursor-pointer"
           >
             ✕
           </button>

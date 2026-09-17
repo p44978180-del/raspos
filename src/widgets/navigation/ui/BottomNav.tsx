@@ -15,9 +15,11 @@ export const TAB_ORDER: Tab[] = ["schedule", "campus", "events", "profile"]
 export interface BottomNavProps {
   active: Tab
   onChange: (t: Tab) => void
+  role?: "student" | "headstudent" | "deputy_headstudent" | "teacher"
+  onRoleChange?: (r: "student" | "headstudent" | "deputy_headstudent" | "teacher") => void
 }
 
-export function BottomNav({ active, onChange }: BottomNavProps) {
+export function BottomNav({ active, onChange, role, onRoleChange }: BottomNavProps) {
   const items: [Tab, (a: boolean) => React.ReactNode][] = [
     ["schedule", (a) => I.cal(22, a ? "text-primary" : "text-[#9CA3AF]")],
     ["campus",   (a) => I.map(22, a ? "text-primary" : "text-[#9CA3AF]")],
@@ -25,14 +27,49 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
     ["profile",  (a) => I.user(22, a ? "text-primary" : "text-[#9CA3AF]")],
   ]
 
+  const handleCycleRole = () => {
+    if (!role || !onRoleChange) return
+    const roles: ("student" | "headstudent" | "teacher")[] = ["student", "headstudent", "teacher"]
+    const curIdx = roles.indexOf(role as any)
+    const nextRole = roles[(curIdx + 1) % roles.length]
+    onRoleChange(nextRole)
+    try {
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        navigator.vibrate(10)
+      }
+    } catch {}
+  }
+
   return (
     <nav
-      className="flex-shrink-0 flex items-stretch justify-around border-t border-border/60 px-1 pt-1.5"
+      className="flex-shrink-0 flex flex-col border-t border-border/60"
       style={{
         background: "var(--color-card)",
         paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 14px)",
       }}
     >
+      {role && onRoleChange && (
+        <div className="flex items-center justify-between px-4 py-1 border-b border-border/30 text-[10px]">
+          <span className="text-muted-fg font-medium">Роль:</span>
+          <button
+            onClick={handleCycleRole}
+            className="flex items-center gap-1.5 font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-all cursor-pointer active:scale-95"
+            title="Нажмите для переключения роли"
+          >
+            <span>
+              {role === "headstudent"
+                ? "⭐ Староста"
+                : role === "teacher"
+                  ? "👨‍🏫 Преподаватель"
+                  : role === "deputy_headstudent"
+                    ? "🌟 Зам. старосты"
+                    : "🎓 Студент"}
+            </span>
+            <span className="text-muted-fg text-[9px]">⇄</span>
+          </button>
+        </div>
+      )}
+      <div className="flex items-stretch justify-around px-1 pt-1.5">
       {items.map(([id, icon]) => (
         <button
           key={id}
@@ -52,6 +89,7 @@ export function BottomNav({ active, onChange }: BottomNavProps) {
           )}
         </button>
       ))}
+      </div>
     </nav>
   )
 }

@@ -1,4 +1,4 @@
-import { useState, useRef, useMemo } from "react"
+import { useState, useRef, useMemo, useEffect } from "react"
 import {
   CAMPUS_BUILDINGS,
   CAMPUS_EDGES,
@@ -16,6 +16,7 @@ interface Props {
   initialFrom?: string
   initialTo?: string
   embedded?: boolean
+  selectedBuildingId?: string
 }
 
 type FilterCategory = "all" | "academic" | "dorm" | "sport" | "service"
@@ -39,7 +40,14 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 const SVG_VB = "0 0 100 100"
 
-export default function VectorCampusMap({ isOpen = true, onClose, initialFrom, initialTo, embedded = false }: Props) {
+export default function VectorCampusMap({
+  isOpen = true,
+  onClose,
+  initialFrom,
+  initialTo,
+  embedded = false,
+  selectedBuildingId,
+}: Props) {
   const [fromId, setFromId] = useState<string>(initialFrom || "")
   const [toId, setToId] = useState<string>(initialTo || "")
   const [route, setRoute] = useState<DijkstraResult | null>(null)
@@ -53,6 +61,40 @@ export default function VectorCampusMap({ isOpen = true, onClose, initialFrom, i
   const svgRef = useRef<SVGSVGElement>(null)
   const isDragging = useRef(false)
   const lastPos = useRef({ x: 0, y: 0 })
+
+  useEffect(() => {
+    if (selectedBuildingId) {
+      const b = CAMPUS_BUILDINGS.find(
+        (x) =>
+          x.id === selectedBuildingId ||
+          x.id === selectedBuildingId.replace("bldg-", "corp") ||
+          x.shortName.toLowerCase() === selectedBuildingId.toLowerCase()
+      )
+      if (b) {
+        setSelectedBuilding(b)
+        setPan({ x: (50 - b.x) * 1.2, y: (50 - b.y) * 1.2 })
+        setZoom(1.3)
+      }
+    }
+  }, [selectedBuildingId])
+
+  useEffect(() => {
+    if (initialTo) {
+      const b = CAMPUS_BUILDINGS.find(
+        (x) =>
+          x.shortName.toLowerCase().includes(initialTo.toLowerCase()) ||
+          x.name.toLowerCase().includes(initialTo.toLowerCase()) ||
+          x.id === initialTo
+      )
+      if (b) {
+        setToId(b.id)
+        setToSearch(b.shortName)
+        setSelectedBuilding(b)
+        setPan({ x: (50 - b.x) * 1.2, y: (50 - b.y) * 1.2 })
+        setZoom(1.3)
+      }
+    }
+  }, [initialTo])
 
   if (!embedded && !isOpen) return null
 
@@ -370,24 +412,57 @@ export default function VectorCampusMap({ isOpen = true, onClose, initialFrom, i
 
             {/* 🌲 Historical Park & Arboretum (Тимирязевский лес / Дендросад - Западная сторона) ── */}
             <path
-              d="M 4 24 Q 18 18 22 34 Q 16 52 4 56 Z"
+              d="M 4 20 Q 20 18 20 38 Q 18 56 4 58 Z"
               fill="#D1FAE5"
               className="dark:fill-emerald-950/40"
-              opacity="0.8"
+              opacity="0.7"
             />
             <text x="10" y="38" fontSize="2.0" fill="#059669" fontWeight="700" opacity="0.7" className="select-none pointer-events-none">
               Тимирязевский лес
             </text>
 
-            {/* 🌾 Experimental Agricultural Fields (Опытные поля РГАУ - Северный сектор) ── */}
-            <polygon
-              points="28,8 54,8 50,28 24,28"
+            {/* 🎓 Academic Quarter Lawn (Зона учебных корпусов вокруг УК-1, УК-2, УК-26, ЦНБ) ── */}
+            <rect x="34" y="52" width="35" height="26" rx="4" fill="#15803D" opacity="0.06" />
+            <text x="49" y="76" fontSize="1.4" fill="#15803D" fontWeight="700" opacity="0.4" className="select-none pointer-events-none">
+              Учебный городок
+            </text>
+
+            {/* 🏠 Dormitory Quarter Quad (Студенческий городок по Лиственничной аллее) ── */}
+            <rect x="44" y="34" width="30" height="18" rx="4" fill="#EA580C" opacity="0.05" />
+            <text x="56" y="37" fontSize="1.3" fill="#EA580C" fontWeight="700" opacity="0.4" className="select-none pointer-events-none">
+              Студгородок
+            </text>
+
+            {/* ⚽ Sports Cluster: Stadium Timiryazevets with Running Track & Pitch ── */}
+            <g transform="translate(54, 48)">
+              {/* Red running track oval */}
+              <rect x="0" y="0" width="9" height="6.5" rx="3.2" fill="#DC2626" opacity="0.18" stroke="#DC2626" strokeWidth="0.3" />
+              {/* Green soccer field inside */}
+              <rect x="1.5" y="1" width="6" height="4.5" rx="0.8" fill="#16A34A" opacity="0.35" stroke="#FFFFFF" strokeWidth="0.15" />
+              <line x1="4.5" y1="1" x2="4.5" y2="5.5" stroke="#FFFFFF" strokeWidth="0.15" opacity="0.8" />
+              <circle cx="4.5" cy="3.25" r="0.9" fill="none" stroke="#FFFFFF" strokeWidth="0.15" opacity="0.8" />
+              <text x="4.5" y="7.5" fontSize="1.0" fill="#DC2626" fontWeight="700" textAnchor="middle" opacity="0.7" className="select-none pointer-events-none">
+                Стадион
+              </text>
+            </g>
+
+            {/* 🌾 Experimental Agricultural Fields (Опытные поля РГАУ и Мичуринский сад - Северо-восток) ── */}
+            <rect
+              x="72"
+              y="6"
+              width="22"
+              height="25"
+              rx="3"
               fill="url(#cropFieldPattern)"
-              stroke="#D1FAE5"
+              stroke="#10B981"
               strokeWidth="0.4"
+              opacity="0.7"
             />
-            <text x="32" y="20" fontSize="1.9" fill="#D97706" fontWeight="700" opacity="0.6" className="select-none pointer-events-none">
+            <text x="83" y="18" fontSize="1.7" fill="#D97706" fontWeight="700" textAnchor="middle" opacity="0.75" className="select-none pointer-events-none">
               Опытные поля РГАУ
+            </text>
+            <text x="83" y="21" fontSize="1.2" fill="#059669" fontWeight="600" textAnchor="middle" opacity="0.7" className="select-none pointer-events-none">
+              Мичуринский сад
             </text>
 
             {/* 💧 Ponds (Большой Садовый пруд на юго-западе) ── */}
@@ -405,7 +480,7 @@ export default function VectorCampusMap({ isOpen = true, onClose, initialFrom, i
             {/* 🛣 Main Arteries & Avenues matching building network ── */}
             {/* Timiryazevskaya street (Север-Юг сквозь кампус мимо Корпусов 1, 2, 8, 10 и общежитий) */}
             <path
-              d="M 68 10 L 64 36 Q 60 48 58 56 Q 57 66 61 72 L 67 94"
+              d="M 68 8 L 64 36 Q 60 48 58 56 Q 57 66 61 72 L 67 94"
               stroke="#CBD5E1"
               strokeWidth="2.8"
               strokeLinecap="round"
@@ -414,7 +489,7 @@ export default function VectorCampusMap({ isOpen = true, onClose, initialFrom, i
               className="dark:stroke-slate-700"
             />
             <path
-              d="M 68 10 L 64 36 Q 60 48 58 56 Q 57 66 61 72 L 67 94"
+              d="M 68 8 L 64 36 Q 60 48 58 56 Q 57 66 61 72 L 67 94"
               stroke="#FFFFFF"
               strokeWidth="0.4"
               strokeDasharray="2,2"
@@ -424,19 +499,27 @@ export default function VectorCampusMap({ isOpen = true, onClose, initialFrom, i
 
             {/* Listvennichnaya alley (Главный бульвар кампуса и студгородка: СОК, Столовая, ОЖ 1..13) */}
             <path
-              d="M 36 56 Q 48 52 60 48 Q 72 44 92 40"
+              d="M 32 58 Q 48 54 60 50 Q 72 46 92 42"
               stroke="#A7F3D0"
-              strokeWidth="2.4"
+              strokeWidth="2.8"
               strokeLinecap="round"
               fill="none"
               className="dark:stroke-emerald-900/60"
+            />
+            <path
+              d="M 32 58 Q 48 54 60 50 Q 72 46 92 42"
+              stroke="#059669"
+              strokeWidth="0.5"
+              strokeDasharray="1.5,2"
+              fill="none"
+              opacity="0.4"
             />
 
             {/* Pryanishnikova street (Южная артерия кампуса: Агрохимия, Инженерия Горячкина) */}
             <path
               d="M 22 78 Q 44 74 62 73 Q 76 76 94 86"
               stroke="#CBD5E1"
-              strokeWidth="2.0"
+              strokeWidth="2.2"
               strokeLinecap="round"
               fill="none"
               className="dark:stroke-slate-700"
@@ -450,6 +533,16 @@ export default function VectorCampusMap({ isOpen = true, onClose, initialFrom, i
               strokeLinecap="round"
               fill="none"
               className="dark:stroke-slate-800"
+            />
+
+            {/* Pedestrian Campus Walkway Links to Roads */}
+            <path
+              d="M 61.3 66.8 L 60 62 M 56.5 58.6 L 57 54 M 48.4 71.7 L 46 64 M 43.5 56.2 L 44 54 M 50 65.9 L 52 58 M 62.9 51.4 L 62 50 M 64.5 41.8 L 66 46"
+              stroke="#CBD5E1"
+              strokeWidth="0.7"
+              strokeDasharray="1,1"
+              fill="none"
+              opacity="0.6"
             />
 
             {/* Street Names */}
@@ -480,7 +573,7 @@ export default function VectorCampusMap({ isOpen = true, onClose, initialFrom, i
                   x2={to.x}
                   y2={to.y}
                   stroke={onRoute ? "#15803D" : "#94A3B8"}
-                  strokeWidth={onRoute ? 1.6 : 0.4}
+                  strokeWidth={onRoute ? 1.8 : 0.5}
                   strokeDasharray={onRoute ? "none" : "1,1.5"}
                   opacity={onRoute ? 1 : 0.35}
                 />
@@ -507,7 +600,7 @@ export default function VectorCampusMap({ isOpen = true, onClose, initialFrom, i
               </polyline>
             )}
 
-            {/* All Campus Buildings & POIs */}
+            {/* All Campus Buildings & POIs with Architectural Footprints */}
             {filteredBuildings.map((b) => {
               const isFrom = b.id === fromId
               const isTo = b.id === toId
@@ -527,42 +620,50 @@ export default function VectorCampusMap({ isOpen = true, onClose, initialFrom, i
                     <circle
                       cx={b.x}
                       cy={b.y}
-                      r={b.category === "dorm" ? 3.8 : 4.5}
+                      r={b.category === "dorm" ? 4.2 : 5.0}
                       fill={isFrom ? "#15803D" : isTo ? "#DC2626" : b.color}
-                      opacity="0.25"
+                      opacity="0.3"
                       className="animate-pulse"
                     />
                   )}
 
-                  {/* Node Badge Body */}
+                  {/* Architectural Building Footprint */}
                   {b.category === "dorm" ? (
-                    <rect
-                      x={b.x - 2.0}
-                      y={b.y - 2.0}
-                      width={4.0}
-                      height={4.0}
-                      rx={1.0}
-                      fill={isFrom ? "#15803D" : isTo ? "#DC2626" : isSelected ? "#C2410C" : "#EA580C"}
-                      stroke="#FFFFFF"
-                      strokeWidth="0.4"
-                    />
+                    <g>
+                      <rect
+                        x={b.x - 2.2}
+                        y={b.y - 1.8}
+                        width={4.4}
+                        height={3.6}
+                        rx={0.8}
+                        fill={isFrom ? "#15803D" : isTo ? "#DC2626" : isSelected ? "#C2410C" : "#EA580C"}
+                        stroke="#FFFFFF"
+                        strokeWidth="0.4"
+                        className="drop-shadow-xs"
+                      />
+                    </g>
                   ) : (
-                    <circle
-                      cx={b.x}
-                      cy={b.y}
-                      r={isFrom || isTo ? 3.4 : isSelected ? 3.2 : 2.5}
-                      fill={isFrom ? "#15803D" : isTo ? "#DC2626" : isSelected ? "#047857" : b.color}
-                      stroke="#FFFFFF"
-                      strokeWidth={isFrom || isTo ? 0.7 : 0.4}
-                    />
+                    <g>
+                      <rect
+                        x={b.x - 2.5}
+                        y={b.y - 2.0}
+                        width={5.0}
+                        height={4.0}
+                        rx={1.0}
+                        fill={isFrom ? "#15803D" : isTo ? "#DC2626" : isSelected ? "#047857" : b.color}
+                        stroke="#FFFFFF"
+                        strokeWidth={isFrom || isTo ? 0.7 : 0.4}
+                        className="drop-shadow-xs"
+                      />
+                    </g>
                   )}
 
                   {/* Node Label */}
                   <text
                     x={b.x}
-                    y={b.y + (b.category === "dorm" ? 4.2 : 4.6)}
+                    y={b.y + (b.category === "dorm" ? 3.8 : 4.4)}
                     textAnchor="middle"
-                    fontSize="2.1"
+                    fontSize="1.9"
                     fill={isFrom ? "#15803D" : isTo ? "#DC2626" : isSelected ? "#0F172A" : "currentColor"}
                     fontWeight={isHighlighted ? "800" : "600"}
                     className="select-none pointer-events-none text-slate-800 dark:text-slate-200"

@@ -36,6 +36,11 @@ export function Sheet({ onClose, children, title }: SheetProps) {
 
   const onTouchEnd = () => {
     if (dragY > 75) {
+      try {
+        if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+          navigator.vibrate(10)
+        }
+      } catch {}
       startClose()
     } else {
       setDragY(0)

@@ -22,6 +22,27 @@
 
   --font-body: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+
+  /* Motion Tokens (100% system coverage) */
+  --motion-micro-duration: 140ms;
+  --motion-micro-ease: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --motion-screen-duration: 280ms;
+  --motion-screen-ease: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --motion-shared-duration: 350ms;
+  --motion-shared-ease: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --motion-spring-stiffness: 300;
+  --motion-spring-damping: 30;
+}
+
+:root {
+  --motion-micro-duration: 140ms;
+  --motion-micro-ease: cubic-bezier(0.0, 0.0, 0.2, 1);
+  --motion-screen-duration: 280ms;
+  --motion-screen-ease: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --motion-shared-duration: 350ms;
+  --motion-shared-ease: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --motion-spring-stiffness: 300;
+  --motion-spring-damping: 30;
 }
 
 /* ── Dark mode overrides ── */
@@ -70,7 +91,7 @@ html, body, #root {
 ::-webkit-scrollbar { width: 0; height: 0; }
 
 @keyframes slide-in-up {
-  from { transform: translate3d(0, 4px, 0); opacity: 0.5; }
+  from { transform: translate3d(0, 3px, 0); opacity: 0.7; }
   to   { transform: translate3d(0, 0, 0);    opacity: 1; }
 }
 @keyframes fade-in {
@@ -124,24 +145,62 @@ html, body, #root {
 .live-dot           { animation: live-pulse  1.8s ease-in-out infinite; }
 
 
-/* ── Tab Page Isolation & Animation (Zero tearing, 120 FPS) ── */
+/* ── Tab Page Isolation & Screen Motion Tokens (120 FPS, 280ms) ── */
 .tab-page,
 .animate-slide-from-right,
 .animate-slide-from-left {
-  will-change: opacity;
+  will-change: opacity, transform;
+  contain: layout style paint;
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  animation: tab-enter 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: tab-enter var(--motion-screen-duration) var(--motion-screen-ease) both;
 }
 
 @keyframes tab-enter {
   0% {
     opacity: 0;
+    transform: translate3d(0, 3px, 0);
   }
   100% {
     opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
+}
+
+/* Motion Tokens Utility Classes */
+.motion-micro {
+  transition: all var(--motion-micro-duration) var(--motion-micro-ease);
+}
+.motion-screen {
+  transition: all var(--motion-screen-duration) var(--motion-screen-ease);
+}
+.motion-shared {
+  transition: all var(--motion-shared-duration) var(--motion-shared-ease);
+}
+
+@keyframes progress-fill {
+  from { width: 0%; }
+}
+.animate-progress-fill {
+  animation: progress-fill 0.75s cubic-bezier(0.4, 0.0, 0.2, 1) forwards;
+}
+
+@keyframes shimmer-synced {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.shimmer-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--color-muted) 80%, transparent);
+}
+.shimmer-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  animation: shimmer-synced 1.6s ease-in-out infinite;
 }
 
 .animate-shake { animation: shake .35s cubic-bezier(.22,1,.36,1) both; }
