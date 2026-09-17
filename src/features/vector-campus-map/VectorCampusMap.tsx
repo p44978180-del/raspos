@@ -360,96 +360,105 @@ export default function VectorCampusMap({ isOpen, onClose, initialFrom, initialT
               </pattern>
             </defs>
 
-            {/* ── Geographic Boundaries: Campus Campus Base ── */}
+            {/* ── Geographic Boundaries: Campus Base ── */}
             <rect x="4" y="4" width="92" height="92" rx="8" fill="currentColor" className="text-emerald-500/5 dark:text-emerald-500/10" />
 
-            {/* 🌲 Historical Park & Arboretum (Тимирязевский лес и Дендросад) ── */}
+            {/* 🌲 Historical Park & Arboretum (Тимирязевский лес / Дендросад - Западная сторона) ── */}
             <path
-              d="M 6 15 Q 18 10 32 16 Q 42 22 45 42 Q 38 60 22 62 Q 8 58 6 35 Z"
+              d="M 4 24 Q 18 18 22 34 Q 16 52 4 56 Z"
               fill="#D1FAE5"
               className="dark:fill-emerald-950/40"
               opacity="0.8"
             />
-            <text x="18" y="32" fontSize="2.2" fill="#059669" fontWeight="700" opacity="0.6" className="select-none pointer-events-none">
-              Исторический парк
+            <text x="10" y="38" fontSize="2.0" fill="#059669" fontWeight="700" opacity="0.7" className="select-none pointer-events-none">
+              Тимирязевский лес
             </text>
 
-            {/* 🌾 Experimental Agricultural Fields (Опытные поля АПК) ── */}
+            {/* 🌾 Experimental Agricultural Fields (Опытные поля РГАУ - Северный сектор) ── */}
             <polygon
-              points="6,65 30,65 26,92 6,92"
+              points="28,8 54,8 50,28 24,28"
               fill="url(#cropFieldPattern)"
               stroke="#D1FAE5"
               strokeWidth="0.4"
             />
-            <text x="12" y="78" fontSize="2" fill="#D97706" fontWeight="700" opacity="0.5" className="select-none pointer-events-none">
+            <text x="32" y="20" fontSize="1.9" fill="#D97706" fontWeight="700" opacity="0.6" className="select-none pointer-events-none">
               Опытные поля РГАУ
             </text>
 
-            {/* 💧 Ponds (Большой Садовый пруд & Фермские пруды) ── */}
+            {/* 💧 Ponds (Большой Садовый пруд на юго-западе) ── */}
             <path
-              d="M 12 48 Q 20 42 28 46 Q 30 54 22 60 Q 14 58 12 48 Z"
+              d="M 4 64 Q 14 62 16 70 Q 12 78 4 76 Z"
               fill="#E0F2FE"
               stroke="#BAE6FD"
               strokeWidth="0.5"
               className="dark:fill-sky-950/50 dark:stroke-sky-800"
             />
-            <text x="16" y="53" fontSize="1.8" fill="#0284C7" fontWeight="600" opacity="0.8" className="select-none pointer-events-none">
+            <text x="7" y="70" fontSize="1.8" fill="#0284C7" fontWeight="600" opacity="0.8" className="select-none pointer-events-none">
               Пруд
             </text>
 
-            {/* 🛣 Main Arteries & Avenues ── */}
-            {/* Timiryazevskaya street (North-South arterial road) */}
+            {/* 🛣 Main Arteries & Avenues matching building network ── */}
+            {/* Timiryazevskaya street (Север-Юг сквозь кампус мимо Корпусов 1, 2, 8, 10 и общежитий) */}
             <path
-              d="M 62 8 L 60 92"
+              d="M 68 10 L 64 36 Q 60 48 58 56 Q 57 66 61 72 L 67 94"
               stroke="#CBD5E1"
               strokeWidth="2.8"
               strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
               className="dark:stroke-slate-700"
             />
             <path
-              d="M 62 8 L 60 92"
+              d="M 68 10 L 64 36 Q 60 48 58 56 Q 57 66 61 72 L 67 94"
               stroke="#FFFFFF"
               strokeWidth="0.4"
               strokeDasharray="2,2"
+              fill="none"
               className="dark:stroke-slate-500"
             />
 
-            {/* Listvennichnaya alley (Heart of campus boulevard) */}
+            {/* Listvennichnaya alley (Главный бульвар кампуса и студгородка: СОК, Столовая, ОЖ 1..13) */}
             <path
-              d="M 14 42 Q 38 48 61 48 L 88 52"
+              d="M 36 56 Q 48 52 60 48 Q 72 44 92 40"
               stroke="#A7F3D0"
-              strokeWidth="2.2"
+              strokeWidth="2.4"
               strokeLinecap="round"
+              fill="none"
               className="dark:stroke-emerald-900/60"
             />
 
-            {/* Pryanishnikova street */}
+            {/* Pryanishnikova street (Южная артерия кампуса: Агрохимия, Инженерия Горячкина) */}
             <path
-              d="M 58 35 L 92 40"
+              d="M 22 78 Q 44 74 62 73 Q 76 76 94 86"
               stroke="#CBD5E1"
               strokeWidth="2.0"
               strokeLinecap="round"
+              fill="none"
               className="dark:stroke-slate-700"
             />
 
-            {/* Pasechnaya street & Verkhnyaya alley */}
+            {/* Pasechnaya street & Verkhnyaya alley (Северо-запад: Теплицы 12к, Цифровой центр 29к) */}
             <path
-              d="M 28 14 Q 38 28 58 35"
+              d="M 10 12 Q 22 36 38 52 L 48 54"
               stroke="#E2E8F0"
-              strokeWidth="1.6"
+              strokeWidth="1.8"
               strokeLinecap="round"
+              fill="none"
               className="dark:stroke-slate-800"
             />
 
             {/* Street Names */}
-            <text x="63" y="24" fontSize="1.7" fill="#64748B" fontWeight="600" className="select-none pointer-events-none" transform="rotate(88 63 24)">
+            <text x="64" y="24" fontSize="1.7" fill="#64748B" fontWeight="600" className="select-none pointer-events-none" transform="rotate(82 64 24)">
               Тимирязевская ул.
             </text>
-            <text x="35" y="45" fontSize="1.7" fill="#059669" fontWeight="700" className="select-none pointer-events-none" transform="rotate(7 35 45)">
+            <text x="66" y="44" fontSize="1.7" fill="#059669" fontWeight="700" className="select-none pointer-events-none" transform="rotate(-7 66 44)">
               Лиственничная аллея
             </text>
-            <text x="74" y="37" fontSize="1.6" fill="#64748B" fontWeight="600" className="select-none pointer-events-none" transform="rotate(7 74 37)">
+            <text x="66" y="77" fontSize="1.6" fill="#64748B" fontWeight="600" className="select-none pointer-events-none" transform="rotate(2 66 77)">
               ул. Прянишникова
+            </text>
+            <text x="24" y="32" fontSize="1.5" fill="#64748B" fontWeight="600" className="select-none pointer-events-none" transform="rotate(45 24 32)">
+              Пасечная ул.
             </text>
 
             {/* All Campus Graph Edges */}

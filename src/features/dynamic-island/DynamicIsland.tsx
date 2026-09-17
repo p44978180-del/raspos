@@ -88,12 +88,12 @@ export default function DynamicIsland({
           onClick={handleToggleExpand}
           className={`pointer-events-auto cursor-pointer select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden ${
             expanded
-              ? "w-[94vw] max-w-md rounded-3xl bg-card/95 dark:bg-[#111813]/95 backdrop-blur-2xl text-fg dark:text-white border border-border dark:border-emerald-500/30 p-4 ring-1 ring-black/5 dark:ring-emerald-500/20 shadow-2xl"
-              : "rounded-full bg-card/90 dark:bg-[#111813]/90 backdrop-blur-2xl text-fg dark:text-white border border-border/80 dark:border-emerald-500/25 px-3.5 py-1.5 shadow-md dark:shadow-xl hover:border-emerald-500/50 hover:scale-[1.02] active:scale-[0.97]"
+              ? "w-[94vw] max-w-md rounded-3xl bg-card/95 dark:bg-[#131A15]/95 backdrop-blur-2xl text-fg dark:text-white border border-border/80 dark:border-emerald-500/30 p-4 shadow-xl dark:shadow-2xl"
+              : "rounded-full bg-card/85 dark:bg-[#131A15]/90 backdrop-blur-xl text-fg dark:text-white border border-border/80 dark:border-emerald-500/25 px-3.5 py-1.5 shadow-sm dark:shadow-lg hover:border-emerald-500/40 hover:scale-[1.01] active:scale-[0.98]"
           }`}
           style={{
-            backdropFilter: "blur(24px)",
-            WebkitBackdropFilter: "blur(24px)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
           }}
         >
           {!expanded ? (

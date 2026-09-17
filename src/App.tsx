@@ -2340,8 +2340,17 @@ function Sheet({
 // ─── Status Bar ───────────────────────────────────────────────────────────────
 
 function StatusBar() {
-  // Uses bg-background to match the header backdrop — eliminates the black bar on iOS/Android
-  return <div className="h-[env(safe-area-inset-top,0px)] flex-shrink-0 bg-background" style={{ background: "var(--color-bg)" }} />
+  // Uses bg-background and inline env(safe-area-inset-top) to seamlessly fill notch area — eliminates top black bar
+  return (
+    <div
+      className="w-full flex-shrink-0 bg-background"
+      style={{
+        height: "env(safe-area-inset-top, 0px)",
+        background: "var(--color-bg)",
+        minHeight: 0,
+      }}
+    />
+  )
 }
 
 // ─── Group Sheet ──────────────────────────────────────────────────────────────
@@ -5321,7 +5330,7 @@ function DayView({
                   ? `movedin-${curCls.id}`
                   : `native-${curCls.id}`
               }
-              className={`space-y-1.5 animate-slide-up stagger-card ${stagger}`}
+              className={`space-y-1.5 stagger-card ${stagger}`}
               style={{ animationDelay: `${idx * 45}ms` }}
             >
               {prevBuilding &&
@@ -6637,32 +6646,31 @@ function PageCampus({
         />
       )}
 
-      {/* Top Hero: Vector Interactive Campus Map */}
+      {/* Top Hero: Vector Interactive Campus Map & Route Finder */}
       <div className="px-4">
         <button
           onClick={() => {
             setVectorTargetTo(undefined)
             setVectorMapOpen(true)
           }}
-          className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-card border border-primary/30 hover:border-primary/60 transition-all cursor-pointer group shadow-xs active:scale-[0.99] relative overflow-hidden"
+          className="w-full flex items-center justify-between p-3 rounded-2xl bg-card border border-border/80 hover:border-primary/50 transition-all cursor-pointer group shadow-xs active:scale-[0.99]"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-primary/5 to-teal-500/10 pointer-events-none" />
-          <div className="flex items-center gap-3 relative z-10">
-            <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform">
-              🗺
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-base group-hover:scale-105 transition-transform">
+              🧭
             </div>
             <div className="text-left">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-fg">Интерактивная карта РГАУ</span>
-                <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-primary/15 text-primary">2D/3D Граф</span>
+                <span className="text-xs font-bold text-fg">Интерактивный навигатор кампуса</span>
+                <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-primary/10 text-primary font-mono">Граф</span>
               </div>
               <p className="text-[11px] text-muted-fg mt-0.5">
-                19 учебных корпусов, 13 общежитий, парки, пруды и расчёт времени пути
+                19 корпусов, 13 общежитий и быстрый расчёт времени пешком
               </p>
             </div>
           </div>
-          <div className="relative z-10 flex items-center gap-1 text-primary font-bold text-xs bg-primary/10 px-2.5 py-1.5 rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
-            <span>Открыть</span>
+          <div className="flex items-center gap-1 text-primary font-bold text-xs bg-primary/10 px-2.5 py-1.5 rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
+            <span>Маршрут</span>
             <span className="group-hover:translate-x-0.5 transition-transform">→</span>
           </div>
         </button>
@@ -9636,6 +9644,12 @@ export default function App() {
     )
 
   const tabAnimClass = "tab-page"
+  const mainScrollRef = useRef<HTMLElement>(null)
+  useEffect(() => {
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTop = 0
+    }
+  }, [tab])
 
   return (
     <div
@@ -9688,7 +9702,7 @@ export default function App() {
         onOpenIcal={tab === "schedule" ? () => setIcalOpen(true) : undefined}
       />
       <Toast toasts={toasts} onDismiss={dismissToast} />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden relative min-h-0">
+      <main ref={mainScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden relative min-h-0">
         {searchOpen && search.length > 0 && (
           <GlobalSearch
             query={search}

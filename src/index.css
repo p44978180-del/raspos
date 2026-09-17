@@ -70,8 +70,8 @@ html, body, #root {
 ::-webkit-scrollbar { width: 0; height: 0; }
 
 @keyframes slide-in-up {
-  from { transform: translateY(24px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from { transform: translate3d(0, 4px, 0); opacity: 0.5; }
+  to   { transform: translate3d(0, 0, 0);    opacity: 1; }
 }
 @keyframes fade-in {
   from { opacity: 0; }
@@ -132,18 +132,18 @@ html, body, #root {
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  contain: paint;
-  animation: tab-enter 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  contain: content;
+  animation: tab-enter 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes tab-enter {
   0% {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translate3d(0, 2px, 0);
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -302,23 +302,26 @@ button, a, [role="button"] {
 
 /* ── Staggered Cascades ── */
 .stagger-card {
-  animation: slide-in-up 0.35s cubic-bezier(0.32, 0.72, 0, 1) both;
+  animation: slide-in-up 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+  will-change: opacity, transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
 /* staggered list items */
 .list-item-0 { animation-delay: 0ms; }
-.list-item-1 { animation-delay: 30ms; }
-.list-item-2 { animation-delay: 60ms; }
-.list-item-3 { animation-delay: 90ms; }
-.list-item-4 { animation-delay: 120ms; }
-.list-item-5 { animation-delay: 150ms; }
-.list-item-6 { animation-delay: 180ms; }
-.list-item-7 { animation-delay: 210ms; }
-.list-item-8 { animation-delay: 240ms; }
-.list-item-9 { animation-delay: 270ms; }
-.list-item-10 { animation-delay: 300ms; }
-.list-item-11 { animation-delay: 330ms; }
-.list-item-12 { animation-delay: 360ms; }
+.list-item-1 { animation-delay: 15ms; }
+.list-item-2 { animation-delay: 30ms; }
+.list-item-3 { animation-delay: 45ms; }
+.list-item-4 { animation-delay: 60ms; }
+.list-item-5 { animation-delay: 75ms; }
+.list-item-6 { animation-delay: 90ms; }
+.list-item-7 { animation-delay: 105ms; }
+.list-item-8 { animation-delay: 120ms; }
+.list-item-9 { animation-delay: 135ms; }
+.list-item-10 { animation-delay: 150ms; }
+.list-item-11 { animation-delay: 165ms; }
+.list-item-12 { animation-delay: 180ms; }
 
 /* ── Accessibility: Reduced Motion ── */
 @media (prefers-reduced-motion: reduce) {
