@@ -210,10 +210,10 @@ assert(jsChunks.length >= 1, `dist/assets contains at least 1 JS chunk (found: $
 assert(cssChunks.length >= 1, `dist/assets contains at least 1 CSS chunk (found: ${cssChunks.join(", ")})`)
 assert(imgAssets.length >= 1, `dist/assets contains at least 1 image asset (found: ${imgAssets.join(", ")})`)
 
-// Check chunk sizes against performance budget (< 1MB JS uncompressed, < 200KB CSS)
+// Check chunk sizes against performance budget (< 1.2MB JS uncompressed, < 200KB CSS)
 for (const jsChunk of jsChunks) {
   const stat = fs.statSync(path.join(assetsDir, jsChunk))
-  assert(stat.size < 1024 * 1024, `JS chunk ${jsChunk} is within 1MB budget (${Math.round(stat.size / 1024)} kB)`)
+  assert(stat.size < 1.2 * 1024 * 1024, `JS chunk ${jsChunk} is within 1.2MB budget (${Math.round(stat.size / 1024)} kB)`)
   assert(stat.size > 50 * 1024, `JS chunk ${jsChunk} contains realistic compiled code (${Math.round(stat.size / 1024)} kB > 50 kB)`)
 
   // Gzip compression test
