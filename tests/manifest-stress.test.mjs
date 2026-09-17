@@ -482,10 +482,10 @@ test("index.html viewport contains cover and zoom constraints", () => {
   assert(html.includes("maximum-scale=1.0"), "Missing maximum-scale=1.0")
 })
 
-test("index.html theme-color matches manifest brand colors", () => {
+test("index.html theme-color matches background theme colors", () => {
   const html = fs.readFileSync(path.join(rootDir, "index.html"), "utf8")
-  assert(html.includes('content="#2D5016"'), "Missing theme-color #2D5016")
-  assert(html.includes('content="#141714"'), "Missing dark theme-color #141714")
+  assert(html.includes('content="#F8F9FA"'), "Missing theme-color #F8F9FA")
+  assert(html.includes('content="#090D0B"'), "Missing dark theme-color #090D0B")
 })
 
 // ─── SUITE 5: BUILD & DISTRIBUTION ARTIFACTS ────────────────────────────────

@@ -82,14 +82,14 @@ export default function DynamicIsland({
       <aside 
         aria-label="Dynamic Island - Текущая или следующая пара"
         className="fixed left-0 right-0 z-50 flex justify-center px-3 pointer-events-none"
-        style={{ top: "calc(env(safe-area-inset-top, 0px) + 6px)" }}
+        style={{ top: "calc(env(safe-area-inset-top, 0px) + 8px)" }}
       >
         <div
           onClick={handleToggleExpand}
-          className={`pointer-events-auto cursor-pointer select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden shadow-xl ${
+          className={`pointer-events-auto cursor-pointer select-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden ${
             expanded
-              ? "w-[94vw] max-w-md rounded-3xl bg-[#0B120E] text-white border border-emerald-500/30 p-4 ring-1 ring-emerald-500/20"
-              : "rounded-full bg-[#0B120E]/95 backdrop-blur-2xl text-white border border-emerald-500/25 px-3 py-1 hover:border-emerald-400/50 hover:scale-[1.02] active:scale-[0.97]"
+              ? "w-[94vw] max-w-md rounded-3xl bg-card/95 dark:bg-[#111813]/95 backdrop-blur-2xl text-fg dark:text-white border border-border dark:border-emerald-500/30 p-4 ring-1 ring-black/5 dark:ring-emerald-500/20 shadow-2xl"
+              : "rounded-full bg-card/90 dark:bg-[#111813]/90 backdrop-blur-2xl text-fg dark:text-white border border-border/80 dark:border-emerald-500/25 px-3.5 py-1.5 shadow-md dark:shadow-xl hover:border-emerald-500/50 hover:scale-[1.02] active:scale-[0.97]"
           }`}
           style={{
             backdropFilter: "blur(24px)",
@@ -108,7 +108,7 @@ export default function DynamicIsland({
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
                 ) : (
-                  <span className="text-[10px] font-mono text-emerald-400 font-extrabold uppercase">
+                  <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-extrabold uppercase">
                     {minutesUntilNext}м
                   </span>
                 )}
@@ -116,21 +116,21 @@ export default function DynamicIsland({
 
               {/* Center Micro Summary */}
               <div className="flex items-center gap-1.5 truncate max-w-[180px] sm:max-w-[240px]">
-                <span className="truncate font-bold text-gray-200 text-[11px]">
+                <span className="truncate font-bold text-fg dark:text-gray-100 text-[11px]">
                   {displayClass.subject}
                 </span>
-                <span className="text-white/30">•</span>
-                <span className="font-mono text-emerald-400 font-bold text-[10px] flex-shrink-0">
+                <span className="text-muted-fg/40">•</span>
+                <span className="font-mono text-primary dark:text-emerald-400 font-bold text-[10px] flex-shrink-0">
                   {displayClass.room || "—"}
                 </span>
               </div>
 
               {/* Right Indicator / Bell Countdown */}
-              <div className="flex items-center gap-1.5 ml-auto text-[10px] font-mono font-bold text-white/70">
+              <div className="flex items-center gap-1.5 ml-auto text-[10px] font-mono font-bold text-muted-fg dark:text-white/70">
                 {isCurrent ? (
-                  <span className="text-emerald-400 font-mono text-[10px]">ещё {minutesLeftCurrent}м</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-mono text-[10px]">ещё {minutesLeftCurrent}м</span>
                 ) : (
-                  <span className="text-amber-300 font-mono text-[10px]">{displayClass.start}</span>
+                  <span className="text-amber-600 dark:text-amber-300 font-mono text-[10px]">{displayClass.start}</span>
                 )}
                 <button
                   type="button"
@@ -138,7 +138,7 @@ export default function DynamicIsland({
                     e.stopPropagation()
                     setDismissed(true)
                   }}
-                  className="p-0.5 rounded-full hover:bg-white/20 text-white/40 hover:text-white transition-colors"
+                  className="p-0.5 rounded-full hover:bg-muted dark:hover:bg-white/20 text-muted-fg dark:text-white/40 hover:text-fg dark:hover:text-white transition-colors"
                   title="Скрыть полосу"
                 >
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -151,14 +151,14 @@ export default function DynamicIsland({
               {/* Header inside pill */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm border border-emerald-500/30">
+                  <div className="w-7 h-7 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-sm border border-emerald-500/30">
                     {emoji}
                   </div>
                   <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                       {isCurrent ? "Пара идёт прямо сейчас" : `Следующая пара через ${minutesUntilNext} мин`}
                     </span>
-                    <h3 className="text-sm font-extrabold text-white leading-tight truncate max-w-[260px]">
+                    <h3 className="text-sm font-extrabold text-fg dark:text-white leading-tight truncate max-w-[260px]">
                       {displayClass.subject}
                     </h3>
                   </div>
@@ -171,7 +171,7 @@ export default function DynamicIsland({
                       setSoundEnabled((v) => !v)
                     }}
                     title={soundEnabled ? "Звуковые напоминания включены" : "Без звука"}
-                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 transition-colors"
+                    className="p-1.5 rounded-lg bg-muted hover:bg-border text-muted-fg hover:text-fg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white/80 transition-colors"
                   >
                     {soundEnabled ? (
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
@@ -184,7 +184,7 @@ export default function DynamicIsland({
                       e.stopPropagation()
                       setExpanded(false)
                     }}
-                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 transition-colors"
+                    className="p-1.5 rounded-lg bg-muted hover:bg-border text-muted-fg hover:text-fg dark:bg-white/10 dark:hover:bg-white/20 dark:text-white/80 transition-colors"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                   </button>
@@ -192,22 +192,22 @@ export default function DynamicIsland({
               </div>
 
               {/* Details Grid */}
-              <div className="grid grid-cols-2 gap-2 bg-white/5 rounded-2xl p-2.5 border border-white/5 text-xs">
+              <div className="grid grid-cols-2 gap-2 bg-muted/50 dark:bg-white/5 rounded-2xl p-2.5 border border-border/50 dark:border-white/5 text-xs">
                 <div>
-                  <span className="text-[10px] text-white/50 block font-semibold">Аудитория & Корпус</span>
-                  <span className="font-mono font-bold text-emerald-300">
+                  <span className="text-[10px] text-muted-fg dark:text-white/50 block font-semibold">Аудитория & Корпус</span>
+                  <span className="font-mono font-bold text-primary dark:text-emerald-300">
                     ауд. {displayClass.room || "—"}
                   </span>
-                  <span className="text-white/70 block truncate text-[11px]">
+                  <span className="text-fg/80 dark:text-white/70 block truncate text-[11px]">
                     {displayClass.building || "Главный корпус"}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-white/50 block font-semibold">Время звонков</span>
-                  <span className="font-mono font-bold text-white">
+                  <span className="text-[10px] text-muted-fg dark:text-white/50 block font-semibold">Время звонков</span>
+                  <span className="font-mono font-bold text-fg dark:text-white">
                     {displayClass.start} — {displayClass.end}
                   </span>
-                  <span className="text-white/70 block truncate text-[11px]">
+                  <span className="text-fg/80 dark:text-white/70 block truncate text-[11px]">
                     {displayClass.teacher || "Преподаватель"}
                   </span>
                 </div>
@@ -216,12 +216,12 @@ export default function DynamicIsland({
               {/* Live Timeline Bar */}
               {isCurrent && minutesLeftCurrent !== null && (
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] text-white/60 font-mono">
+                  <div className="flex justify-between text-[10px] text-muted-fg dark:text-white/60 font-mono">
                     <span>{displayClass.start}</span>
-                    <span className="text-emerald-400 font-bold">Осталось {minutesLeftCurrent} мин</span>
+                    <span className="text-primary dark:text-emerald-400 font-bold">Осталось {minutesLeftCurrent} мин</span>
                     <span>{displayClass.end}</span>
                   </div>
-                  <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div className="w-full h-1.5 bg-muted dark:bg-white/10 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-all duration-1000"
                       style={{
@@ -253,7 +253,7 @@ export default function DynamicIsland({
                     e.stopPropagation()
                     setLockScreenSimOpen(true)
                   }}
-                  className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-2 rounded-xl bg-muted hover:bg-border text-fg dark:bg-white/10 dark:hover:bg-white/15 dark:text-white font-semibold text-xs flex items-center gap-1.5 transition-colors"
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                   <span>Экран блокировки</span>

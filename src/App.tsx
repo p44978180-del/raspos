@@ -6532,6 +6532,8 @@ function PageCampus({
   const [selFood, setSelFood] = useState<number | null>(null)
   const [mapExpanded, setMapExpanded] = useState(false)
   const [mapKey, setMapKey] = useState(0)
+  const [vectorMapOpen, setVectorMapOpen] = useState(false)
+  const [vectorTargetTo, setVectorTargetTo] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     if (initFood) {
@@ -6623,6 +6625,49 @@ function PageCampus({
 
   return (
     <div className="space-y-3 pb-2">
+      {/* Vector Campus Map Modal */}
+      {vectorMapOpen && (
+        <VectorCampusMap
+          isOpen={vectorMapOpen}
+          onClose={() => {
+            setVectorMapOpen(false)
+            setVectorTargetTo(undefined)
+          }}
+          initialTo={vectorTargetTo}
+        />
+      )}
+
+      {/* Top Hero: Vector Interactive Campus Map */}
+      <div className="px-4">
+        <button
+          onClick={() => {
+            setVectorTargetTo(undefined)
+            setVectorMapOpen(true)
+          }}
+          className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-card border border-primary/30 hover:border-primary/60 transition-all cursor-pointer group shadow-xs active:scale-[0.99] relative overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 via-primary/5 to-teal-500/10 pointer-events-none" />
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="w-10 h-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center font-bold text-lg group-hover:scale-105 transition-transform">
+              🗺
+            </div>
+            <div className="text-left">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-fg">Интерактивная карта РГАУ</span>
+                <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-primary/15 text-primary">2D/3D Граф</span>
+              </div>
+              <p className="text-[11px] text-muted-fg mt-0.5">
+                19 учебных корпусов, 13 общежитий, парки, пруды и расчёт времени пути
+              </p>
+            </div>
+          </div>
+          <div className="relative z-10 flex items-center gap-1 text-primary font-bold text-xs bg-primary/10 px-2.5 py-1.5 rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
+            <span>Открыть</span>
+            <span className="group-hover:translate-x-0.5 transition-transform">→</span>
+          </div>
+        </button>
+      </div>
+
       {/* Top mode switcher: Campus Plan schematic vs Yandex Map vs Food */}
       <div className="px-4">
         <div className="flex items-center gap-2">
@@ -6848,13 +6893,22 @@ function PageCampus({
                         ~{walk.mins} мин пешком
                       </p>
                     )}
+                    <button
+                      onClick={() => {
+                        setVectorTargetTo(selectedQuickPlace.short)
+                        setVectorMapOpen(true)
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
+                    >
+                      {I.map(14)} Маршрут на карте РГАУ (Dijkstra)
+                    </button>
                     <a
                       href={walkUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 shadow-sm transition-all duration-200"
+                      className="w-full flex items-center justify-center gap-1.5 py-2 px-4 rounded-xl bg-card border border-border text-muted-fg hover:text-fg text-xs font-medium hover:bg-muted transition-all duration-200"
                     >
-                      {I.map(14)} Пешеходный маршрут в Яндекс.Картах {I.ext(12)}
+                      Яндекс.Карты {I.ext(10)}
                     </a>
                   </div>
                 )
@@ -9504,7 +9558,6 @@ export default function App() {
   const [customEvents, setCustomEvents] = useState<AppEvent[]>([])
   const [pinnedNote, setPinnedNote] = useState("")
   const [toasts, setToasts] = useState<ToastMsg[]>([])
-  const [tabDir, setTabDir] = useState<"right" | "left" | null>(null)
   const [showIosPrompt, setShowIosPrompt] = useState(false)
 
   const activeDayList = allDays ?? ALL_DAYS
@@ -9558,12 +9611,8 @@ export default function App() {
     if (prevTab.current !== tab) {
       setSearchOpen(false)
       setSearch("")
-      const prevIdx = TAB_ORDER.indexOf(prevTab.current)
-      const curIdx = TAB_ORDER.indexOf(tab)
-      setTabDir(curIdx > prevIdx ? "right" : "left")
-      setTimeout(() => setTabDir(null), 250)
+      prevTab.current = tab
     }
-    prevTab.current = tab
   }, [tab])
 
   if (!myGroup)
@@ -9586,12 +9635,7 @@ export default function App() {
       </div>
     )
 
-  const tabAnimClass =
-    tabDir === "right"
-      ? "animate-slide-from-right"
-      : tabDir === "left"
-        ? "animate-slide-from-left"
-        : "tab-page"
+  const tabAnimClass = "tab-page"
 
   return (
     <div
