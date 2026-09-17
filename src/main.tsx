@@ -12,7 +12,7 @@ if (typeof document !== "undefined") {
       (typeof window !== "undefined" &&
         window.matchMedia("(prefers-color-scheme: dark)").matches)
     const metaStatus = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]')
-    if (metaStatus) metaStatus.setAttribute("content", "black-translucent")
+    if (metaStatus) metaStatus.setAttribute("content", "default")
     const metaThemes = document.querySelectorAll('meta[name="theme-color"]')
     metaThemes.forEach((m) => m.setAttribute("content", isDark ? "#090D0B" : "#F8F9FA"))
   } catch {}

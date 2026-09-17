@@ -24,7 +24,18 @@ export interface AppHeaderProps {
 }
 
 function StatusBar() {
-  return <div className="h-[env(safe-area-inset-top,0px)] w-full flex-shrink-0 bg-background" style={{ background: "var(--color-bg)" }} />
+  // Transparent overlay that extends the header color into the notch / status bar area.
+  // height = env(safe-area-inset-top) so it fills exactly the OS-level bar region.
+  return (
+    <div
+      className="w-full flex-shrink-0"
+      style={{
+        height: "env(safe-area-inset-top, 0px)",
+        background: "var(--color-bg)",
+        minHeight: 0,
+      }}
+    />
+  )
 }
 
 export function AppHeader({

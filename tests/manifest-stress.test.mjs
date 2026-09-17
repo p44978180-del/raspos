@@ -460,7 +460,7 @@ test("index.html contains all iOS Apple Web App tags", () => {
   )
   assert(
     html.includes(
-      '<meta name="apple-mobile-web-app-status-bar-style" content="default" />',
+      '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />',
     ),
     "Missing status bar style",
   )
