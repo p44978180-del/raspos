@@ -11,10 +11,11 @@ import {
 import { rustCore } from "@/utils/rustCore"
 
 interface Props {
-  isOpen: boolean
-  onClose: () => void
+  isOpen?: boolean
+  onClose?: () => void
   initialFrom?: string
   initialTo?: string
+  embedded?: boolean
 }
 
 type FilterCategory = "all" | "academic" | "dorm" | "sport" | "service"
@@ -38,7 +39,7 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 const SVG_VB = "0 0 100 100"
 
-export default function VectorCampusMap({ isOpen, onClose, initialFrom, initialTo }: Props) {
+export default function VectorCampusMap({ isOpen = true, onClose, initialFrom, initialTo, embedded = false }: Props) {
   const [fromId, setFromId] = useState<string>(initialFrom || "")
   const [toId, setToId] = useState<string>(initialTo || "")
   const [route, setRoute] = useState<DijkstraResult | null>(null)
@@ -53,7 +54,7 @@ export default function VectorCampusMap({ isOpen, onClose, initialFrom, initialT
   const isDragging = useRef(false)
   const lastPos = useRef({ x: 0, y: 0 })
 
-  if (!isOpen) return null
+  if (!embedded && !isOpen) return null
 
   function computeRoute() {
     if (fromId && toId) {
@@ -119,26 +120,29 @@ export default function VectorCampusMap({ isOpen, onClose, initialFrom, initialT
     return CAMPUS_BUILDINGS.filter((b) => b.category === activeCategory)
   }, [activeCategory])
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div
-        className="relative sheet-spring-enter bg-card w-full sm:max-w-2xl sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col overflow-hidden border border-border"
-        style={{ height: "92dvh", maxHeight: "840px" }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-border/70 flex-shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-sm">
-              🗺
-            </div>
-            <div>
-              <h2 className="text-sm font-extrabold text-fg leading-tight">Карта кампуса РГАУ-МСХА</h2>
-              <p className="text-[10px] text-muted-fg font-medium">
-                Географическая схема · {CAMPUS_BUILDINGS.length} проверенных объектов
-              </p>
-            </div>
+  const content = (
+    <div
+      className={
+        embedded
+          ? "relative bg-card w-full rounded-2xl shadow-xs flex flex-col overflow-hidden border border-border"
+          : "relative sheet-spring-enter bg-card w-full sm:max-w-2xl sm:rounded-3xl rounded-t-3xl shadow-2xl flex flex-col overflow-hidden border border-border"
+      }
+      style={{ height: embedded ? "520px" : "92dvh", maxHeight: embedded ? "600px" : "840px" }}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-border/70 flex-shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-sm">
+            🗺
           </div>
+          <div>
+            <h2 className="text-sm font-extrabold text-fg leading-tight">Карта кампуса РГАУ-МСХА</h2>
+            <p className="text-[10px] text-muted-fg font-medium">
+              Географическая схема · {CAMPUS_BUILDINGS.length} проверенных объектов
+            </p>
+          </div>
+        </div>
+        {onClose && !embedded && (
           <button
             onClick={onClose}
             className="p-2 rounded-xl hover:bg-muted text-muted-fg hover:text-fg transition-colors cursor-pointer"
@@ -148,7 +152,8 @@ export default function VectorCampusMap({ isOpen, onClose, initialFrom, initialT
               <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           </button>
-        </div>
+        )}
+      </div>
 
         {/* Route Inputs */}
         <div className="px-4 py-2.5 flex gap-2 flex-shrink-0 border-b border-border/50 bg-muted/20">
@@ -643,6 +648,16 @@ export default function VectorCampusMap({ isOpen, onClose, initialFrom, initialT
           </div>
         )}
       </div>
+  )
+
+  if (embedded) {
+    return content
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center p-0 sm:p-4" role="dialog" aria-modal="true">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      {content}
     </div>
   )
 }

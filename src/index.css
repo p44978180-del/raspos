@@ -128,22 +128,19 @@ html, body, #root {
 .tab-page,
 .animate-slide-from-right,
 .animate-slide-from-left {
-  will-change: opacity, transform;
+  will-change: opacity;
   transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  contain: content;
-  animation: tab-enter 140ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: tab-enter 150ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes tab-enter {
   0% {
     opacity: 0;
-    transform: translate3d(0, 2px, 0);
   }
   100% {
     opacity: 1;
-    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -434,16 +431,14 @@ button, [role="button"] {
   cursor: grab;
 }
 
-/* Smooth color transitions for dark/light mode */
-*, *::before, *::after {
-  transition-property: background-color, border-color, color, fill, stroke;
-  transition-duration: 150ms;
-  transition-timing-function: ease;
+/* Smooth scoped surface transitions for dark/light mode (zero layout reflows) */
+html, body, #root, .bg-card, .bg-muted, .border-border, header, nav, footer {
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
 }
 
-/* Override for animations that should not transition */
-.animate-pulse *, .animate-spin *, .live-dot * {
-  transition: none;
+/* Micro-interaction token for buttons and interactive controls */
+button, [role="button"], a {
+  transition: transform 120ms cubic-bezier(0, 0, 0.2, 1), background-color 120ms ease, border-color 120ms ease, opacity 120ms ease;
 }
 
 /* Barcode SVG in wallet card */

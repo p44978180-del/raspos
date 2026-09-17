@@ -685,7 +685,7 @@ it("8.12 CrowdsourceChangeModal wires onRoleUpgrade to interactive role pills", 
 it("8.13 package.json declares version matching release tag", () => {
   const pkgPath = path.join(rootDir, "package.json")
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"))
-  assert(["2.0.0", "3.0.0", "3.0.1", "3.1.0"].includes(pkg.version), "package.json version must be 2.0.0, 3.0.0, 3.0.1 or 3.1.0")
+  assert(["2.0.0", "3.0.0", "3.0.1", "3.1.0", "3.2.0"].includes(pkg.version), "package.json version must be 2.0.0, 3.0.0, 3.0.1, 3.1.0 or 3.2.0")
 })
 
 console.log("\n==================================================================")

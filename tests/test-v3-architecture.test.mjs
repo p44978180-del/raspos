@@ -324,10 +324,10 @@ it("7.4 StatusBar eliminates black bar at top by blending background with var(--
   assert(content.includes('style={{ background: "var(--color-bg)" }}'), "StatusBar must bind background to var(--color-bg)")
 })
 
-it("7.5 package.json is updated to version 3.0.1 or 3.1.0", () => {
+it("7.5 package.json is updated to version 3.0.1, 3.1.0 or 3.2.0", () => {
   const pkgPath = path.join(rootDir, "package.json")
   const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"))
-  assert(["3.0.1", "3.1.0"].includes(pkg.version), "package.json version must be 3.0.1 or 3.1.0")
+  assert(["3.0.1", "3.1.0", "3.2.0"].includes(pkg.version), "package.json version must be 3.0.1, 3.1.0 or 3.2.0")
 })
 
 it("7.6 rustCore implements Wasm SIMD 128 feature detection and 3D floor vector projection", async () => {

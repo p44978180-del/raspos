@@ -15,8 +15,8 @@ export function getCurrentBellStatus(nowMin: number): {
   nextNum?: number
   progressPct?: number
 } {
-  const first = { start: 8 * 60 + 30, end: 10 * 60 + 5 }
-  const last = { start: 19 * 60 + 45, end: 21 * 60 + 20 }
+  const first = { start: 9 * 60, end: 10 * 60 + 35 }
+  const last = { start: 20 * 60, end: 21 * 60 + 35 }
 
   if (nowMin < first.start) {
     const diff = first.start - nowMin
@@ -25,7 +25,7 @@ export function getCurrentBellStatus(nowMin: number): {
     return {
       status: "before",
       text: "До начала занятий",
-      detail: h > 0 ? `${h} ч ${m} мин до 1-й пары (08:30)` : `${m} мин до 1-й пары (08:30)`,
+      detail: h > 0 ? `${h} ч ${m} мин до 1-й пары (09:00)` : `${m} мин до 1-й пары (09:00)`,
     }
   }
 
@@ -37,15 +37,15 @@ export function getCurrentBellStatus(nowMin: number): {
     }
   }
 
-  // Check each official pair
+  // Check each official pair (09:00 start)
   const PAIRS = [
-    { num: 1, start: 8 * 60 + 30, end: 10 * 60 + 5, sStr: "08:30", eStr: "10:05" },
-    { num: 2, start: 10 * 60 + 20, end: 11 * 60 + 55, sStr: "10:20", eStr: "11:55" },
-    { num: 3, start: 12 * 60 + 25, end: 14 * 60, sStr: "12:25", eStr: "14:00" },
-    { num: 4, start: 14 * 60 + 15, end: 15 * 60 + 50, sStr: "14:15", eStr: "15:50" },
-    { num: 5, start: 16 * 60 + 5, end: 17 * 60 + 40, sStr: "16:05", eStr: "17:40" },
-    { num: 6, start: 17 * 60 + 55, end: 19 * 60 + 30, sStr: "17:55", eStr: "19:30" },
-    { num: 7, start: 19 * 60 + 45, end: 21 * 60 + 20, sStr: "19:45", eStr: "21:20" },
+    { num: 1, start: 9 * 60, end: 10 * 60 + 35, sStr: "09:00", eStr: "10:35" },
+    { num: 2, start: 10 * 60 + 45, end: 12 * 60 + 20, sStr: "10:45", eStr: "12:20" },
+    { num: 3, start: 13 * 60, end: 14 * 60 + 35, sStr: "13:00", eStr: "14:35" },
+    { num: 4, start: 14 * 60 + 45, end: 16 * 60 + 20, sStr: "14:45", eStr: "16:20" },
+    { num: 5, start: 16 * 60 + 30, end: 18 * 60 + 5, sStr: "16:30", eStr: "18:05" },
+    { num: 6, start: 18 * 60 + 15, end: 19 * 60 + 50, sStr: "18:15", eStr: "19:50" },
+    { num: 7, start: 20 * 60, end: 21 * 60 + 35, sStr: "20:00", eStr: "21:35" },
   ]
 
   for (const p of PAIRS) {
@@ -70,10 +70,10 @@ export function getCurrentBellStatus(nowMin: number): {
     const next = PAIRS[i + 1]
     if (nowMin >= cur.end && nowMin < next.start) {
       const left = next.start - nowMin
-      const isLunch = cur.num === 2 // 11:55 - 12:25
+      const isLunch = cur.num === 2 // 12:20 - 13:00 (40 мин)
       return {
         status: "break",
-        text: isLunch ? "🍽 Большой обеденный перерыв (30 мин)" : `Перерыв (${next.start - cur.end} мин)`,
+        text: isLunch ? "🍽 Большой обеденный перерыв (40 мин)" : `Перерыв (${next.start - cur.end} мин)`,
         detail: `Следующая пара (${next.num}-я) начнётся через ${left} мин в ${next.sStr}`,
         nextNum: next.num,
       }
@@ -95,13 +95,13 @@ export default function BellScheduleSheet({
   const currentStatus = getCurrentBellStatus(nowMin)
 
   const BELLS = [
-    { num: 1, time: "08:30 – 10:05", breakAfter: "15 мин перерыв" },
-    { num: 2, time: "10:20 – 11:55", breakAfter: "🍽 30 мин большой обеденный перерыв" },
-    { num: 3, time: "12:25 – 14:00", breakAfter: "15 мин перерыв" },
-    { num: 4, time: "14:15 – 15:50", breakAfter: "15 мин перерыв" },
-    { num: 5, time: "16:05 – 17:40", breakAfter: "15 мин перерыв" },
-    { num: 6, time: "17:55 – 19:30", breakAfter: "15 мин перерыв" },
-    { num: 7, time: "19:45 – 21:20", breakAfter: "Завершение занятий" },
+    { num: 1, time: "09:00 – 10:35", breakAfter: "10 мин перерыв" },
+    { num: 2, time: "10:45 – 12:20", breakAfter: "🍽 40 мин большой обеденный перерыв" },
+    { num: 3, time: "13:00 – 14:35", breakAfter: "10 мин перерыв" },
+    { num: 4, time: "14:45 – 16:20", breakAfter: "10 мин перерыв" },
+    { num: 5, time: "16:30 – 18:05", breakAfter: "10 мин перерыв" },
+    { num: 6, time: "18:15 – 19:50", breakAfter: "10 мин перерыв" },
+    { num: 7, time: "20:00 – 21:35", breakAfter: "Завершение занятий" },
   ]
 
   return (

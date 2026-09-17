@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState, useRef } from "react"
 import { I } from "@/shared/ui/Icons"
 import { TYPE_CFG } from "@/entities/lesson/lib/typeConfig"
 import { cleanRoomNumber, formatLocationDisplay } from "@/entities/lesson/lib/location"
@@ -69,6 +69,44 @@ export function ClassCard({
     !movedFrom
   )
 
+  // Tactile swipe gesture handling
+  const [swipeOffset, setSwipeOffset] = useState(0)
+  const [swipedAttended, setSwipedAttended] = useState(false)
+  const touchStartX = useRef(0)
+  const isSwiping = useRef(false)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+    isSwiping.current = true
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isSwiping.current) return
+    const diff = e.touches[0].clientX - touchStartX.current
+    const clamped = Math.max(-80, Math.min(80, diff))
+    setSwipeOffset(clamped)
+    if (Math.abs(clamped) > 50 && typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try { navigator.vibrate(8) } catch {}
+    }
+  }
+
+  const handleTouchEnd = () => {
+    if (!isSwiping.current) return
+    isSwiping.current = false
+    if (swipeOffset > 50) {
+      setSwipedAttended((prev) => !prev)
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        try { navigator.vibrate([12, 30, 15]) } catch {}
+      }
+    } else if (swipeOffset < -50 && onNotesClick) {
+      onNotesClick()
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        try { navigator.vibrate(15) } catch {}
+      }
+    }
+    setSwipeOffset(0)
+  }
+
   // Progress for current class
   const startMin = toMin(displayStart)
   const endMin = toMin(displayEnd)
@@ -86,32 +124,52 @@ export function ClassCard({
   const barGrad = cancelled ? "bg-red" : movedFrom ? "bg-amber-500" : cfg.bar
 
   return (
-    <div
-      className={`relative flex rounded-2xl overflow-hidden border transition-all duration-200 tactile-card cursor-pointer ${
-        cancelled
-          ? "opacity-60 border-red-bg bg-card"
-          : isNow && !cancelled
-            ? "border-primary/50 ring-2 ring-primary/20 shadow-md shadow-primary/5 bg-card"
-            : "border-border/80 bg-card hover:border-primary/40 hover:shadow-xs active:scale-[0.985]"
-      }`}
-    >
+    <div className="relative overflow-hidden rounded-2xl">
+      {/* Swipe Actions Background Layer */}
+      <div className="absolute inset-0 flex items-center justify-between px-4 rounded-2xl bg-muted text-xs font-bold pointer-events-none">
+        <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+          <span>✓</span>
+          <span>{swipedAttended ? "Отменить" : "Присутствую"}</span>
+        </div>
+        <div className="flex items-center gap-1.5 text-sky-600 dark:text-sky-400">
+          <span>📝</span>
+          <span>Заметки</span>
+        </div>
+      </div>
+
       <div
-        className={`w-[6px] flex-shrink-0 ${barGrad}`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{
-          background: movedFrom
-            ? "linear-gradient(180deg,#f59e0b,#d97706)"
-            : cancelled
-              ? "var(--color-red)"
-              : cls.type === "lecture"
-                ? "linear-gradient(180deg,var(--color-primary),var(--color-primary-light))"
-                : cls.type === "practice"
-                  ? "linear-gradient(180deg,#f59e0b,#d97706)"
-                  : cls.type === "elective"
-                    ? "linear-gradient(180deg,#a855f7,#7e22ce)"
-                    : "linear-gradient(180deg,var(--color-blue),#5ba3e0)",
+          transform: `translateX(${swipeOffset}px)`,
+          transition: isSwiping.current ? "none" : "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
         }}
-      />
-      <div className="flex-1 p-3.5 min-w-0">
+        className={`relative flex rounded-2xl overflow-hidden border transition-all duration-200 tactile-card cursor-pointer ${
+          cancelled
+            ? "opacity-60 border-red-bg bg-card"
+            : isNow && !cancelled
+              ? "border-primary/50 ring-2 ring-primary/20 shadow-md shadow-primary/5 bg-card"
+              : "border-border/80 bg-card hover:border-primary/40 hover:shadow-xs active:scale-[0.99]"
+        }`}
+      >
+        <div
+          className={`w-[6px] flex-shrink-0 ${barGrad}`}
+          style={{
+            background: movedFrom
+              ? "linear-gradient(180deg,#f59e0b,#d97706)"
+              : cancelled
+                ? "var(--color-red)"
+                : cls.type === "lecture"
+                  ? "linear-gradient(180deg,var(--color-primary),var(--color-primary-light))"
+                  : cls.type === "practice"
+                    ? "linear-gradient(180deg,#f59e0b,#d97706)"
+                    : cls.type === "elective"
+                      ? "linear-gradient(180deg,#a855f7,#7e22ce)"
+                      : "linear-gradient(180deg,var(--color-blue),#5ba3e0)",
+          }}
+        />
+        <div className="flex-1 p-3.5 min-w-0">
         {movedFrom && (
           <div className="flex items-center gap-1.5 mb-2 text-[11px] font-semibold text-amber bg-amber-bg border border-amber/20 rounded-lg px-2.5 py-1.5">
             {I.arrowRight(11)} Перенесена с {movedFrom}
@@ -239,8 +297,13 @@ export function ClassCard({
                 {edit.cancelReason}
               </span>
             )}
+            {swipedAttended && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex-shrink-0">
+                ✓ Присутствую
+              </span>
+            )}
             {homework && (
-              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-semibold bg-amber-bg text-amber border border-amber/20 flex-shrink-0 animate-bounce-in">
+              <span className="text-[11px] px-1.5 py-0.5 rounded-md font-semibold bg-amber-bg text-amber border border-amber/20 flex-shrink-0">
                 ДЗ
               </span>
             )}
@@ -322,7 +385,7 @@ export function ClassCard({
           hasTeacherChange) && (
           <div className="flex gap-1 flex-wrap mt-1.5">
             {hasMoved && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-bg text-amber font-bold border border-amber/20 flex-shrink-0 animate-slide-right">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-amber-bg text-amber font-bold border border-amber/20 flex-shrink-0">
                 →{" "}
                 {({
                   Понедельник: "Пн",
@@ -337,17 +400,17 @@ export function ClassCard({
               </span>
             )}
             {hasTimeChange && !hasMoved && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-bg text-blue font-bold border border-blue/20 flex-shrink-0 animate-slide-right">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-bg text-blue font-bold border border-blue/20 flex-shrink-0">
                 ⏱ {edit?.startOverride}–{edit?.endOverride}
               </span>
             )}
             {hasBuildingChange && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-fg font-semibold flex-shrink-0 animate-slide-right">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-fg font-semibold flex-shrink-0">
                 📍 {edit?.building?.slice(0, 10)}
               </span>
             )}
             {hasTeacherChange && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-fg font-semibold flex-shrink-0 animate-slide-right">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-muted text-muted-fg font-semibold flex-shrink-0">
                 👤 Замена
               </span>
             )}
@@ -392,6 +455,7 @@ export function ClassCard({
           </div>
         )}
       </div>
+    </div>
     </div>
   )
 }

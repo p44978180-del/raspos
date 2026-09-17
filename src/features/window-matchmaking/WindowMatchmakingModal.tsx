@@ -18,12 +18,13 @@ const DINING_SPOTS = [
 ]
 
 const BELL_PAIRS = [
-  { slot: 1, start: "08:30", end: "10:05" },
-  { slot: 2, start: "10:20", end: "11:55" },
-  { slot: 3, start: "12:25", end: "14:00" },
-  { slot: 4, start: "14:15", end: "15:50" },
-  { slot: 5, start: "16:05", end: "17:40" },
-  { slot: 6, start: "17:55", end: "19:30" },
+  { slot: 1, start: "09:00", end: "10:35" },
+  { slot: 2, start: "10:45", end: "12:20" },
+  { slot: 3, start: "13:00", end: "14:35" },
+  { slot: 4, start: "14:45", end: "16:20" },
+  { slot: 5, start: "16:30", end: "18:05" },
+  { slot: 6, start: "18:15", end: "19:50" },
+  { slot: 7, start: "20:00", end: "21:35" },
 ]
 
 const WEEKDAYS = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"]

@@ -30,6 +30,42 @@
     <meta name="theme-color" content="#F8F9FA" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#090D0B" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#F8F9FA" />
+
+    <style>
+      :root {
+        --color-bg: #F8F9FA;
+        --color-fg: #0F172A;
+      }
+      html.dark {
+        --color-bg: #090D0B;
+        --color-fg: #F1F5F9;
+      }
+      html, body, #root {
+        height: 100%;
+        min-height: 100dvh;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: var(--color-bg);
+        color: var(--color-fg);
+        overscroll-behavior-y: none;
+      }
+    </style>
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem("rgau_theme");
+          var isDark = saved ? saved === "dark" : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (isDark) {
+            document.documentElement.classList.add("dark");
+            document.documentElement.style.backgroundColor = "#090D0B";
+          } else {
+            document.documentElement.classList.remove("dark");
+            document.documentElement.style.backgroundColor = "#F8F9FA";
+          }
+        } catch(e) {}
+      })();
+    </script>
     <!-- figma:head-end -->
   </head>
   <body class="h-full w-full bg-background overflow-x-hidden antialiased">

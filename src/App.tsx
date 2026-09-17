@@ -262,11 +262,27 @@ function haptic(style: 'light' | 'medium' | 'heavy' = 'light') {
 }
 
 function PullIndicator({ pulling, progress }: { pulling: boolean; progress: number }) {
-  if (!pulling && progress <= 0) return null;
+  if (!pulling && progress <= 0) return null
+  const scale = Math.min(1.15, Math.max(0.6, progress / 50))
   return (
-    <div className="flex justify-center py-3 transition-all" style={{ opacity: Math.min(1, progress / 60) }}>
-      <div className={`w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full ${pulling ? 'animate-spin' : ''}`} 
-           style={{ transform: `rotate(${progress * 3}deg)` }} />
+    <div
+      className="flex flex-col items-center justify-center py-2 transition-all overflow-hidden animate-fade-in"
+      style={{ opacity: Math.min(1, progress / 40) }}
+    >
+      <div
+        className={`w-9 h-9 rounded-2xl bg-card border border-border shadow-xs flex items-center justify-center text-primary transition-transform ${
+          pulling ? "animate-spin" : ""
+        }`}
+        style={{ transform: `scale(${scale}) rotate(${progress * 3.5}deg)` }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.85.83 6.72 2.24" />
+          <polyline points="21 3 21 9 15 9" />
+        </svg>
+      </div>
+      <span className="text-[10px] font-bold text-primary mt-1">
+        {pulling ? "Обновление расписания..." : "Потяните для синхронизации"}
+      </span>
     </div>
   )
 }
@@ -787,7 +803,7 @@ const INIT_HOMEWORK: Homework[] = [
   {
     classId: 1,
     text: "Законспектировать §4–5 учебника Минеева В.Г. Вопросы по ионообменным свойствам выписать отдельно.",
-    deadline: "14 сентября, 08:30",
+    deadline: "14 сентября, 09:00",
     link: "https://disk.yandex.ru/",
     linkLabel: "Методичка на Яндекс.Диске",
     author: "Анна К. (Староста)",
@@ -927,8 +943,8 @@ function buildSchedule(
         {
           id: 1,
           num: 1,
-          start: "08:30",
-          end: "10:05",
+          start: "09:00",
+          end: "10:35",
           subject: "ФТД: Информатика",
           type: "practice",
           teacher: "Мякшин Н.А.",
@@ -940,8 +956,8 @@ function buildSchedule(
         {
           id: 102,
           num: 1,
-          start: "08:30",
-          end: "10:05",
+          start: "09:00",
+          end: "10:35",
           subject: "Основы российской государственности",
           type: "practice",
           teacher: "Темчук Е.И.",
@@ -953,8 +969,8 @@ function buildSchedule(
         {
           id: 2,
           num: 2,
-          start: "10:20",
-          end: "11:55",
+          start: "10:45",
+          end: "12:20",
           subject: "Неорганическая химия",
           type: "lecture",
           teacher: "Елисеева О.В.",
@@ -965,8 +981,8 @@ function buildSchedule(
         {
           id: 3,
           num: 3,
-          start: "12:25",
-          end: "14:00",
+          start: "13:00",
+          end: "14:35",
           subject: "Основы российской государственности",
           type: "lecture",
           teacher: "Темчук Е.И.",
@@ -977,8 +993,8 @@ function buildSchedule(
         {
           id: 4,
           num: 4,
-          start: "14:15",
-          end: "15:50",
+          start: "14:45",
+          end: "16:20",
           subject: "История России",
           type: "practice",
           teacher: "Грачев А.Б.",
@@ -995,8 +1011,8 @@ function buildSchedule(
         {
           id: 5,
           num: 1,
-          start: "08:30",
-          end: "10:05",
+          start: "09:00",
+          end: "10:35",
           subject: "Биология с основами экологии",
           type: "lecture",
           teacher: "Пронина Г.И.",
@@ -1007,8 +1023,8 @@ function buildSchedule(
         {
           id: 6,
           num: 2,
-          start: "10:20",
-          end: "11:55",
+          start: "10:45",
+          end: "12:20",
           subject: "Высшая математика",
           type: "lecture",
           teacher: "Шайтура Н.С.",
@@ -1019,8 +1035,8 @@ function buildSchedule(
         {
           id: 7,
           num: 3,
-          start: "12:25",
-          end: "14:00",
+          start: "13:00",
+          end: "14:35",
           subject: "Агрометеорология",
           type: "lab",
           teacher: "Ильин П.С.",
@@ -1032,8 +1048,8 @@ function buildSchedule(
         {
           id: 702,
           num: 3,
-          start: "12:25",
-          end: "14:00",
+          start: "13:00",
+          end: "14:35",
           subject: "Почвоведение с основами геологии",
           type: "lab",
           teacher: "Лосева К.А.",
@@ -1045,8 +1061,8 @@ function buildSchedule(
         {
           id: 8,
           num: 4,
-          start: "14:15",
-          end: "15:50",
+          start: "14:45",
+          end: "16:20",
           subject: "КпоВ: Базовые виды спорта / Базовая физкультура",
           type: "practice",
           teacher: "Преп. Волков С.Г.",
@@ -1063,8 +1079,8 @@ function buildSchedule(
         {
           id: 9,
           num: 1,
-          start: "08:30",
-          end: "10:05",
+          start: "09:00",
+          end: "10:35",
           subject: "Почвоведение с основами геологии",
           type: "lecture",
           teacher: "Каменных Н.Л.",
@@ -1075,8 +1091,8 @@ function buildSchedule(
         {
           id: 10,
           num: 2,
-          start: "10:20",
-          end: "11:55",
+          start: "10:45",
+          end: "12:20",
           subject: "Неорганическая химия",
           type: "lab",
           teacher: "Елисеева О.В.",
@@ -1088,8 +1104,8 @@ function buildSchedule(
         {
           id: 1002,
           num: 2,
-          start: "10:20",
-          end: "11:55",
+          start: "10:45",
+          end: "12:20",
           subject: "Введение в биотехнологию",
           type: "practice",
           teacher: "Упадышев М.Т.",
@@ -1101,8 +1117,8 @@ function buildSchedule(
         {
           id: 11,
           num: 3,
-          start: "12:25",
-          end: "14:00",
+          start: "13:00",
+          end: "14:35",
           subject: "Высшая математика",
           type: "practice",
           teacher: "Шайтура Н.С.",
@@ -1119,8 +1135,8 @@ function buildSchedule(
         {
           id: 12,
           num: 1,
-          start: "08:30",
-          end: "10:05",
+          start: "09:00",
+          end: "10:35",
           subject: "Иностранный язык",
           type: "practice",
           teacher: "Миронова Е.Е. / Синицына И.А.",
@@ -1132,8 +1148,8 @@ function buildSchedule(
         {
           id: 13,
           num: 2,
-          start: "10:20",
-          end: "11:55",
+          start: "10:45",
+          end: "12:20",
           subject: "Геология с основами геоморфологии",
           type: "lecture",
           teacher: "Арешин А.В.",
@@ -1144,8 +1160,8 @@ function buildSchedule(
         {
           id: 14,
           num: 3,
-          start: "12:25",
-          end: "14:00",
+          start: "13:00",
+          end: "14:35",
           subject: "Биохимия растений",
           type: "lecture",
           teacher: "Глазунова О.А.",
@@ -1156,8 +1172,8 @@ function buildSchedule(
         {
           id: 1402,
           num: 3,
-          start: "12:25",
-          end: "14:00",
+          start: "13:00",
+          end: "14:35",
           subject: "Почвоведение с основами геологии",
           type: "lab",
           teacher: "Борисов Б.А.",
@@ -1169,8 +1185,8 @@ function buildSchedule(
         {
           id: 15,
           num: 4,
-          start: "14:15",
-          end: "15:50",
+          start: "14:45",
+          end: "16:20",
           subject: "КпоВ: Базовые виды спорта / Базовая физкультура",
           type: "practice",
           teacher: "Преп. Волков С.Г.",
@@ -1187,8 +1203,8 @@ function buildSchedule(
         {
           id: 16,
           num: 1,
-          start: "08:30",
-          end: "10:05",
+          start: "09:00",
+          end: "10:35",
           subject: "ФТД: Информатика",
           type: "lecture",
           teacher: "Стрыгин С.П.",
@@ -1199,8 +1215,8 @@ function buildSchedule(
         {
           id: 17,
           num: 2,
-          start: "10:20",
-          end: "11:55",
+          start: "10:45",
+          end: "12:20",
           subject: "История России",
           type: "lecture",
           teacher: "Грачев А.Б.",
@@ -1211,8 +1227,8 @@ function buildSchedule(
         {
           id: 18,
           num: 3,
-          start: "12:25",
-          end: "14:00",
+          start: "13:00",
+          end: "14:35",
           subject: "Биохимия растений",
           type: "lab",
           teacher: "Терешенков П.В. / Глазунова О.А.",
@@ -1224,8 +1240,8 @@ function buildSchedule(
         {
           id: 1802,
           num: 3,
-          start: "12:25",
-          end: "14:00",
+          start: "13:00",
+          end: "14:35",
           subject: "Биология с основами экологии",
           type: "practice",
           teacher: "Сусова Е.Е.",
@@ -1243,8 +1259,8 @@ function buildSchedule(
         {
           id: 19,
           num: 1,
-          start: "08:30",
-          end: "10:05",
+          start: "09:00",
+          end: "10:35",
           subject: "КпоВ: Базовые виды спорта / Базовая физкультура",
           type: "practice",
           teacher: "Преп. Волков С.Г.",
@@ -6529,8 +6545,8 @@ function PageCampus({
   search: string
   role?: UserRole
 }) {
-  const [campusMode, setCampusMode] = useState<"plan" | "territory" | "food">(
-    initFood ? "food" : "territory",
+  const [campusMode, setCampusMode] = useState<"vector" | "plan" | "food">(
+    initFood ? "food" : "vector",
   )
   const [showFood, setShowFood] = useState(initFood ?? false)
   const [pinLayer, setPinLayer] = useState<CampusPinLayer>("none")
@@ -6646,43 +6662,13 @@ function PageCampus({
         />
       )}
 
-      {/* Top Hero: Vector Interactive Campus Map & Route Finder */}
-      <div className="px-4">
-        <button
-          onClick={() => {
-            setVectorTargetTo(undefined)
-            setVectorMapOpen(true)
-          }}
-          className="w-full flex items-center justify-between p-3 rounded-2xl bg-card border border-border/80 hover:border-primary/50 transition-all cursor-pointer group shadow-xs active:scale-[0.99]"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-base group-hover:scale-105 transition-transform">
-              🧭
-            </div>
-            <div className="text-left">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-fg">Интерактивный навигатор кампуса</span>
-                <span className="px-1.5 py-0.5 text-[9px] font-bold rounded-md bg-primary/10 text-primary font-mono">Граф</span>
-              </div>
-              <p className="text-[11px] text-muted-fg mt-0.5">
-                19 корпусов, 13 общежитий и быстрый расчёт времени пешком
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1 text-primary font-bold text-xs bg-primary/10 px-2.5 py-1.5 rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
-            <span>Маршрут</span>
-            <span className="group-hover:translate-x-0.5 transition-transform">→</span>
-          </div>
-        </button>
-      </div>
-
-      {/* Top mode switcher: Campus Plan schematic vs Yandex Map vs Food */}
+      {/* Mode switcher: Vector Campus Map vs Schematic Plan vs Food */}
       <div className="px-4">
         <div className="flex items-center gap-2">
           <div className="flex-1 flex bg-muted rounded-xl p-0.5 gap-0.5">
             {([
-              ["plan", "Схема кампуса", I.map],
-              ["territory", "Карта онлайн", I.cal],
+              ["vector", "Карта РГАУ", I.map],
+              ["plan", "Схема кампуса", I.cal],
               ["food", "Где поесть", I.fork],
             ] as const).map(([v, l, iconFn]) => (
               <button
@@ -6722,7 +6708,17 @@ function PageCampus({
         </div>
       </div>
 
-      {/* 1. Official Schematic Plan Viewer */}
+      {/* 1. Embedded Vector Interactive Campus Map */}
+      {campusMode === "vector" && (
+        <div className="px-4">
+          <VectorCampusMap
+            embedded={true}
+            initialTo={vectorTargetTo}
+          />
+        </div>
+      )}
+
+      {/* 2. Official Schematic Plan Viewer */}
       {campusMode === "plan" && (
         <CampusPlanViewer
           selectedMarkerId={selBldg ? `bldg-${selBldg}` : undefined}
@@ -6734,62 +6730,13 @@ function PageCampus({
         />
       )}
 
-      {/* 2. Interactive Yandex Map Widget */}
-      {campusMode === "territory" && (
-        <div
-          className="mx-4 rounded-2xl overflow-hidden border border-border relative"
-          style={{
-            height: mapExpanded ? 420 : 260,
-            transition: "height .3s cubic-bezier(.22,1,.36,1)",
-          }}
-        >
-          <iframe
-            key={mapKey}
-            src={mapSrc}
-            width="100%"
-            height="100%"
-            frameBorder="0"
-            allowFullScreen
-            title="Карта РГАУ-МСХА"
-            style={{ display: "block" }}
-          />
-          <div className="absolute bottom-2 right-2 flex gap-1.5">
-            <a
-              href={`https://yandex.ru/maps/213/moscow/?ll=${mapCenterCoords ? `${mapCenterCoords[0]}%2C${mapCenterCoords[1]}` : "37.5565%2C55.8298"}&z=16`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-card/90 border border-border rounded-xl px-2.5 py-1.5 text-xs font-semibold text-primary shadow hover:bg-card transition-colors backdrop-blur-sm flex items-center gap-1"
-            >
-              {I.map(12)} Яндекс Карты {I.ext(10)}
-            </a>
-            <button
-              onClick={() => {
-                setSelectedQuickPlace(null)
-                setMapCenterCoords(null)
-                setMapKey((k) => k + 1)
-              }}
-              title="Сбросить вид"
-              className="bg-card/90 border border-border rounded-xl p-1.5 text-muted-fg shadow hover:bg-card hover:text-primary transition-colors backdrop-blur-sm cursor-pointer"
-            >
-              {I.refresh(14)}
-            </button>
-            <button
-              onClick={() => setMapExpanded((e) => !e)}
-              className="bg-card/90 border border-border rounded-xl px-2.5 py-1.5 text-xs font-semibold text-fg shadow hover:bg-card transition-colors backdrop-blur-sm cursor-pointer"
-            >
-              {mapExpanded ? "Свернуть" : "Развернуть"}
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* 3. Horizontal scroll/chips of custom badges & Building card */}
-      {campusMode === "territory" && (
+      {campusMode === "vector" && (
         <>
           <div className="px-4 space-y-1.5">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-muted-fg uppercase tracking-wider">
-                Метки корпусов (3D-навигация)
+                Метки объектов кампуса
               </span>
               {selectedQuickPlace && (
                 <button
@@ -6904,11 +6851,11 @@ function PageCampus({
                     <button
                       onClick={() => {
                         setVectorTargetTo(selectedQuickPlace.short)
-                        setVectorMapOpen(true)
+                        window.scrollTo({ top: 0, behavior: "smooth" })
                       }}
                       className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 shadow-sm transition-all duration-200 cursor-pointer active:scale-[0.98]"
                     >
-                      {I.map(14)} Маршрут на карте РГАУ (Dijkstra)
+                      {I.map(14)} Показать маршрут на карте (Dijkstra)
                     </button>
                     <a
                       href={walkUrl}
