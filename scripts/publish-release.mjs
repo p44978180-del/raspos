@@ -224,22 +224,51 @@ async function publishRelease() {
       if (existing) {
         console.log(`Deleting previous version of asset ${asset.name} (Asset ID: ${existing.id})...`)
         await requestGitHub(`/repos/${OWNER}/${REPO}/releases/assets/${existing.id}`, "DELETE")
+        console.log(`Waiting 2000ms for GitHub to release asset name slot...`)
+        await new Promise((resolve) => setTimeout(resolve, 2000))
       }
     }
 
-    const uploadRes = await requestGitHub(
-      `/repos/${OWNER}/${REPO}/releases/${releaseId}/assets?name=${encodeURIComponent(asset.name)}`,
-      "POST",
-      fileContent,
-      true,
-      asset.contentType
-    )
+    let uploaded = false
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      console.log(`Uploading ${asset.name} (attempt ${attempt}/3)...`)
+      const uploadRes = await requestGitHub(
+        `/repos/${OWNER}/${REPO}/releases/${releaseId}/assets?name=${encodeURIComponent(asset.name)}`,
+        "POST",
+        fileContent,
+        true,
+        asset.contentType
+      )
 
-    if (uploadRes.ok) {
-      console.log(`✔ Successfully attached ${asset.name} to release!`)
-    } else {
-      console.error(`❌ Failed to attach ${asset.name}:`, uploadRes.data)
+      if (uploadRes.ok) {
+        console.log(`✔ Successfully attached ${asset.name} to release!`)
+        uploaded = true
+        break
+      } else {
+        console.warn(`⚠ Attempt ${attempt} failed to attach ${asset.name}:`, uploadRes.data)
+        if (attempt < 3) {
+          console.log(`Waiting ${attempt * 2}s before retry...`)
+          await new Promise((resolve) => setTimeout(resolve, attempt * 2000))
+        }
+      }
     }
+
+    if (!uploaded) {
+      console.error(`❌ Failed to attach ${asset.name} after 3 attempts.`)
+      process.exit(1)
+    }
+  }
+
+  // Verify all assets are present
+  const verifyRes = await requestGitHub(`/repos/${OWNER}/${REPO}/releases/${releaseId}`)
+  if (verifyRes.ok && Array.isArray(verifyRes.data?.assets)) {
+    const presentNames = verifyRes.data.assets.map((a) => a.name)
+    const missing = ASSETS.map((a) => a.name).filter((name) => !presentNames.includes(name))
+    if (missing.length > 0) {
+      console.error(`❌ Release verification failed: missing assets [${missing.join(", ")}]`)
+      process.exit(1)
+    }
+    console.log(`✔ Verified all ${ASSETS.length} binary assets attached to release:`, presentNames)
   }
 
   console.log(`\n🎉 Release ${TAG} published successfully!`)
