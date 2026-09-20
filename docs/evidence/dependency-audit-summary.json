@@ -1,0 +1,16 @@
+{
+  "checkedAt": "2026-09-20T23:46:01.861Z",
+  "command": "pnpm 10.34.3 audit --prod --json",
+  "scope": "npm production dependency advisories only",
+  "vulnerabilities": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0
+  },
+  "dependencies": 30,
+  "devDependencies": 0,
+  "optionalDependencies": 0,
+  "totalDependencies": 30
+}

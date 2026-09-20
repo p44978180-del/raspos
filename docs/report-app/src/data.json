@@ -1,12 +1,12 @@
 {
   "surface": "report",
   "title": "ТИМ Кампус 4.0: проверенный бета-выпуск и границы готовности",
-  "generatedAt": "2026-09-20T18:54:33.898Z",
+  "generatedAt": "2026-09-20T23:47:09.440Z",
   "status": "reviewed",
   "buildStatus": "complete",
   "filters": [],
   "report": {
-    "asOf": "2026-09-19"
+    "asOf": "2026-09-21"
   },
   "queries": {
     "coverage": {
@@ -30,8 +30,8 @@
         {
           "institute": "Институт садоводства и ландшафтной архитектуры",
           "groups": 91,
-          "withLessons": 40,
-          "withoutLessons": 51,
+          "withLessons": 43,
+          "withoutLessons": 48,
           "failed": 0,
           "documents": 14
         },
@@ -101,12 +101,12 @@
         ],
         "filters": [
           "Учебный период 2026/2027, семестр 1",
-          "Даты занятий 2026-09-12 — 2026-10-31"
+          "Даты занятий 2026-09-14 — 2026-11-02"
         ],
         "evidenceFlow": [
           {
             "title": "Первоисточник",
-            "detail": "Официальная страница https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuchaiushchikhsia ссылается на https://eg.timacad.ru/schedule/groups/. Проверено 2026-09-19T19:27:48.662Z."
+            "detail": "Официальная страница https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuchaiushchikhsia ссылается на https://eg.timacad.ru/schedule/groups/. Проверено 2026-09-20T23:43:59.123Z."
           },
           {
             "title": "Получение",
@@ -114,7 +114,7 @@
           },
           {
             "title": "Проверка",
-            "detail": "Повторный разбор сохранённых исходных страниц: 805 групп, 45816 занятий, 0 ошибок. Проверка 2026-09-20T07:53:13.847Z; дата актуальности источника не изменялась."
+            "detail": "Повторный разбор сохранённых исходных страниц: 805 групп, 47068 занятий, 0 ошибок. Проверка 2026-09-20T23:46:47.592Z; дата актуальности источника не изменялась."
           }
         ],
         "metricDefinitions": [
@@ -139,16 +139,21 @@
     "summary": {
       "rows": [
         {
+          "checkedAt": "2026-09-20T23:43:59.123Z",
+          "window": {
+            "from": "2026-09-14",
+            "to": "2026-11-02"
+          },
           "groups": 805,
-          "withLessons": 460,
-          "withoutLessons": 345,
-          "lessons": 45816,
+          "withLessons": 463,
+          "withoutLessons": 342,
+          "lessons": 47068,
           "pdfs": 104,
           "failed": 0,
-          "catalogBytes": 436493,
-          "allShardBytes": 21168208,
-          "medianShardBytes": 29933,
-          "maxThreeShardBytes": 201888,
+          "catalogBytes": 436484,
+          "allShardBytes": 21742676,
+          "medianShardBytes": 30417,
+          "maxThreeShardBytes": 208164,
           "revalidatedGroups": 805,
           "parserFailures": 0
         }
@@ -162,12 +167,12 @@
         ],
         "filters": [
           "Учебный период 2026/2027, семестр 1",
-          "Даты занятий 2026-09-12 — 2026-10-31"
+          "Даты занятий 2026-09-14 — 2026-11-02"
         ],
         "evidenceFlow": [
           {
             "title": "Первоисточник",
-            "detail": "Официальная страница https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuchaiushchikhsia ссылается на https://eg.timacad.ru/schedule/groups/. Проверено 2026-09-19T19:27:48.662Z."
+            "detail": "Официальная страница https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuchaiushchikhsia ссылается на https://eg.timacad.ru/schedule/groups/. Проверено 2026-09-20T23:43:59.123Z."
           },
           {
             "title": "Получение",
@@ -175,7 +180,7 @@
           },
           {
             "title": "Проверка",
-            "detail": "Повторный разбор сохранённых исходных страниц: 805 групп, 45816 занятий, 0 ошибок. Проверка 2026-09-20T07:53:13.847Z; дата актуальности источника не изменялась."
+            "detail": "Повторный разбор сохранённых исходных страниц: 805 групп, 47068 занятий, 0 ошибок. Проверка 2026-09-20T23:46:47.592Z; дата актуальности источника не изменялась."
           }
         ],
         "metricDefinitions": [

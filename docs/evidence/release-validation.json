@@ -25,7 +25,10 @@
     "physicalDevice": "not available, not tested"
   },
   "sourceRefresh": {
-    "attemptedAt": "2026-09-20T18:54:33.899Z",
-    "result": "failed: official www.timacad.ru connection timeout; existing snapshot preserved"
+    "checkedAt": "2026-09-20T23:43:59.123Z",
+    "result": "success",
+    "groups": 805,
+    "lessons": 47068,
+    "failures": 0
   }
 }

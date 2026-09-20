@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#ffffff">
-<meta name="data-app-snapshot-sha256" content="bea21858fe4167a49700bea6b2e635b201adbc2c3bcd3947d470b0a14f30ac5c">
+<meta name="data-app-snapshot-sha256" content="272a58b82b6ad7007356f860e4ca360a034bd6eb6db91c8ac8f4b3a0003261ad">
 <meta name="data-app-runtime-sha256" content="b5514c44f112ed9b8fe2e8674369e515b7e712abfc70a896140b96f0ab65cfd2">
 <meta name="data-app-bootstrap" content="deferred-content-v1">
 
@@ -25,12 +25,12 @@
 <script type="application/json" id="data-app-reviewed-snapshot">{
   "surface": "report",
   "title": "ТИМ Кампус 4.0: проверенный бета-выпуск и границы готовности",
-  "generatedAt": "2026-09-20T18:54:33.898Z",
+  "generatedAt": "2026-09-20T23:47:09.440Z",
   "status": "reviewed",
   "buildStatus": "complete",
   "filters": [],
   "report": {
-    "asOf": "2026-09-19"
+    "asOf": "2026-09-21"
   },
   "queries": {
     "coverage": {
@@ -54,8 +54,8 @@
         {
           "institute": "Институт садоводства и ландшафтной архитектуры",
           "groups": 91,
-          "withLessons": 40,
-          "withoutLessons": 51,
+          "withLessons": 43,
+          "withoutLessons": 48,
           "failed": 0,
           "documents": 14
         },
@@ -125,12 +125,12 @@
         ],
         "filters": [
           "Учебный период 2026/2027, семестр 1",
-          "Даты занятий 2026-09-12 — 2026-10-31"
+          "Даты занятий 2026-09-14 — 2026-11-02"
         ],
         "evidenceFlow": [
           {
             "title": "Первоисточник",
-            "detail": "Официальная страница https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuchaiushchikhsia ссылается на https://eg.timacad.ru/schedule/groups/. Проверено 2026-09-19T19:27:48.662Z."
+            "detail": "Официальная страница https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuchaiushchikhsia ссылается на https://eg.timacad.ru/schedule/groups/. Проверено 2026-09-20T23:43:59.123Z."
           },
           {
             "title": "Получение",
@@ -138,7 +138,7 @@
           },
           {
             "title": "Проверка",
-            "detail": "Повторный разбор сохранённых исходных страниц: 805 групп, 45816 занятий, 0 ошибок. Проверка 2026-09-20T07:53:13.847Z; дата актуальности источника не изменялась."
+            "detail": "Повторный разбор сохранённых исходных страниц: 805 групп, 47068 занятий, 0 ошибок. Проверка 2026-09-20T23:46:47.592Z; дата актуальности источника не изменялась."
           }
         ],
         "metricDefinitions": [
@@ -163,16 +163,21 @@
     "summary": {
       "rows": [
         {
+          "checkedAt": "2026-09-20T23:43:59.123Z",
+          "window": {
+            "from": "2026-09-14",
+            "to": "2026-11-02"
+          },
           "groups": 805,
-          "withLessons": 460,
-          "withoutLessons": 345,
-          "lessons": 45816,
+          "withLessons": 463,
+          "withoutLessons": 342,
+          "lessons": 47068,
           "pdfs": 104,
           "failed": 0,
-          "catalogBytes": 436493,
-          "allShardBytes": 21168208,
-          "medianShardBytes": 29933,
-          "maxThreeShardBytes": 201888,
+          "catalogBytes": 436484,
+          "allShardBytes": 21742676,
+          "medianShardBytes": 30417,
+          "maxThreeShardBytes": 208164,
           "revalidatedGroups": 805,
           "parserFailures": 0
         }
@@ -186,12 +191,12 @@
         ],
         "filters": [
           "Учебный период 2026/2027, семестр 1",
-          "Даты занятий 2026-09-12 — 2026-10-31"
+          "Даты занятий 2026-09-14 — 2026-11-02"
         ],
         "evidenceFlow": [
           {
             "title": "Первоисточник",
-            "detail": "Официальная страница https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuchaiushchikhsia ссылается на https://eg.timacad.ru/schedule/groups/. Проверено 2026-09-19T19:27:48.662Z."
+            "detail": "Официальная страница https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuchaiushchikhsia ссылается на https://eg.timacad.ru/schedule/groups/. Проверено 2026-09-20T23:43:59.123Z."
           },
           {
             "title": "Получение",
@@ -199,7 +204,7 @@
           },
           {
             "title": "Проверка",
-            "detail": "Повторный разбор сохранённых исходных страниц: 805 групп, 45816 занятий, 0 ошибок. Проверка 2026-09-20T07:53:13.847Z; дата актуальности источника не изменялась."
+            "detail": "Повторный разбор сохранённых исходных страниц: 805 групп, 47068 занятий, 0 ошибок. Проверка 2026-09-20T23:46:47.592Z; дата актуальности источника не изменялась."
           }
         ],
         "metricDefinitions": [
@@ -342,7 +347,7 @@ function ReportContent(){
     })
     , visible("security-table")&&jsxRuntime.jsx(dataApp.DataComponent, { id: "security-table", queryId: "security", kind: "table", title: "Исходные находки Codex Security"   , sourceRows: security, displayRows: security, children: jsxRuntime.jsx(dataApp.DataTable, { rows: security, caption: "Находки исходного скана"  , searchable: false, columns: [{field:"finding",label:"Проблема",renderCell:value=>jsxRuntime.jsx('span', { style: {display:"block",whiteSpace:"normal",minWidth:200,maxWidth:520}, children: value})},{field:"severity",label:"Оценка"}],})})
     , jsxRuntime.jsx(dataApp.RichNarrative, { id: "delivery:remaining", value: "## Границы бета-выпуска и следующие шаги\\n\\n- APK собран и подпись проверена. Проверить установку и работу на физическом Android-устройстве.\\n- Офлайн-запуск готовой веб-сборки проверен. Публикация предусматривает сверку commit и SHA-256 всех файлов; квитанция включается в релиз.\\n- Дополнить сверку всех институтов и курсов по официальным документам; явно показать пробелы источника.\\n- Для режима старосты внедрить вход и проверяемое членство в группе. Для Wallet/NFC и системных виджетов нужны отдельные интеграции и платформенные расширения.\\n\\nВыбран React с Capacitor, поскольку это существующая рабочая кодовая база. Переход на KMP или Rust не реализован. Схема кампуса основана на предоставленном плане; точные маршруты между этажами и занятость помещений не подтверждены."                                                                                                  ,})
-    , jsxRuntime.jsx(dataApp.RichNarrative, { id: "methods:body", sourcePreviews: sourcePreviews, value: `## Как проверялись данные\n\n[Официальная страница расписания](${official}) содержит документы семестра и ссылку на [электронное расписание](https://eg.timacad.ru/schedule/groups/). Снимок источника проверен 19 сентября 2026 в 22:27 МСК; период занятий — 12 сентября–31 октября 2026. Парсер сохраняет конкретные даты, время, преподавателя и аудиторию без выдуманного повторения по неделям.\n\nПовторный разбор сохранённых страниц всех ${s.revalidatedGroups} групп вернул те же занятия с ${s.parserFailures} ошибками. Обновления ограничены HTTPS-источниками, проверяют схему и контрольные суммы. Отсутствующие сведения не заменяются демонстрационными.\n\nМетодика, точные числа и пути к воспроизводящим скриптам доступны через действия источников у таблиц и разделов. Повторная попытка актуализации 20 сентября завершилась тайм-аутом официального сайта. Последний успешный снимок сохранён без изменения даты проверки. Отчёт описывает проверенную бета-версию, а не завершение всех функций первоначального замысла.`,})
+    , jsxRuntime.jsx(dataApp.RichNarrative, { id: "methods:body", sourcePreviews: sourcePreviews, value: `## Как проверялись данные\n\n[Официальная страница расписания](${official}) содержит документы семестра и ссылку на [электронное расписание](https://eg.timacad.ru/schedule/groups/). Снимок источника проверен ${new Intl.DateTimeFormat("ru-RU",{dateStyle:"long",timeStyle:"short",timeZone:"Europe/Moscow"}).format(new Date(s.checkedAt))} МСК; период занятий — ${s.window.from} — ${s.window.to}. Парсер сохраняет конкретные даты, время, преподавателя и аудиторию без выдуманного повторения по неделям.\n\nПовторный разбор сохранённых страниц всех ${s.revalidatedGroups} групп вернул те же занятия с ${s.parserFailures} ошибками. Обновления ограничены HTTPS-источниками, проверяют схему и контрольные суммы. Отсутствующие сведения не заменяются демонстрационными.\n\nМетодика, точные числа и пути к воспроизводящим скриптам доступны через действия источников у таблиц и разделов. При ошибке официального сайта приложение сохраняет последний проверенный снимок и явно показывает его дату. Отчёт описывает проверенную бета-версию, а не завершение всех функций первоначального замысла.`,})
   ]})
 }
 

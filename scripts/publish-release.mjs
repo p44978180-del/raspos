@@ -15,6 +15,9 @@ const report=path.join(root,'docs/release-report.html');
 const notes=fs.readFileSync(path.join(root,'docs/RELEASE-NOTES.md'),'utf8');
 if(!fs.existsSync(report))throw new Error('Verified release report is required.');
 const zip=path.join(dir,`tim-campus-${version}-web.zip`);
+// Package a fresh web build; an old dist directory must never enter a new release.
+const webBuild=spawnSync(process.execPath,[path.join(root,'node_modules/vite/bin/vite.js'),'build'],{cwd:root,stdio:'inherit',windowsHide:true,env:{...process.env,BASE_URL:'./',MOBILE_PUBLIC_DIR:'public',VITE_SCHEDULE_BASE_URL:''}});
+if(webBuild.status!==0)throw new Error('Fresh web release build failed.');
 const python=process.env.PYTHON || 'python';
 const archive=spawnSync(python,['-c','import pathlib,sys,zipfile; base=pathlib.Path(sys.argv[1]); z=zipfile.ZipFile(sys.argv[2],"w",zipfile.ZIP_DEFLATED); [(z.write(p,p.relative_to(base))) for p in base.rglob("*") if p.is_file()]; z.close()',path.join(root,'dist'),zip],{stdio:'inherit',windowsHide:true});
 if(archive.status!==0)throw new Error('Web archive failed.');
