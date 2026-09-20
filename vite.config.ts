@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
     publicDir: process.env.MOBILE_PUBLIC_DIR || "public",
     base: process.env.FIGMA_PUBLIC_URL
       ? `${process.env.FIGMA_PUBLIC_URL}/`
-      : (process.env.BASE_URL || "./"),
+      : (process.env.BASE_URL || "./").replace(/\/?$/, "/"),
     build: {
       sourcemap: emitSourcemaps ? "inline" : false,
       minify: !emitSourcemaps,
@@ -44,7 +44,7 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       campusOfflineAssets(),
-      figmaSiteConfiguration(siteConfiguration),
+      figmaSiteConfiguration({ ...siteConfiguration, title: "ТИМ Кампус — Тимирязевка рядом", description: "Расписание Тимирязевской академии, карта кампуса и личные дела. Независимый студенческий проект.", language: "ru" }),
       figmaErrorOverlayReplay(),
       figmaReactRefreshBoundaryFallback(),
       figmaMakeKitPlugin({ storiesGlob: "/src/**/*.stories.{ts,tsx,js,jsx}" }),
