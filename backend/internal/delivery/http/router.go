@@ -1,78 +1,84 @@
 package http
 
 import (
+	"crypto/sha256"
+	"crypto/subtle"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 )
 
+// Optional legacy API; v4 uses public dated files, not this backend.
 func NewRouter(handler *Handler) http.Handler {
 	r := chi.NewRouter()
-
-	// Standard middleware
 	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-
-	// Permissive CORS for web preview & Capacitor mobile app
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("X-Content-Type-Options", "nosniff")
+			w.Header().Set("Cache-Control", "no-store")
+			req.Body = http.MaxBytesReader(w, req.Body, 64<<10)
+			next.ServeHTTP(w, req)
+		})
+	})
+	// Public reads are intentional. Cross-origin mutations are not enabled.
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Cache"},
-		ExposedHeaders:   []string{"Link", "X-Cache"},
-		AllowCredentials: false,
-		MaxAge:           300,
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: []string{"GET", "OPTIONS"},
+		AllowedHeaders: []string{"Accept", "Content-Type"},
+		ExposedHeaders: []string{"X-Cache"},
+		MaxAge:         300,
 	}))
-
-	// Health check endpoints
 	r.Get("/healthz", handler.HealthCheck)
 	r.Get("/health", handler.HealthCheck)
-
-	// API v1
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/institutes", handler.GetInstitutes)
 		r.Get("/groups", handler.GetGroups)
 		r.Get("/schedule", handler.GetSchedule)
-
-		// SuperApp: Empty Classroom Radar
-		r.Get("/radar/empty-classrooms", handler.GetEmptyClassrooms)
-
-		// SuperApp: Window Matchmaking
-		r.Post("/matchmaking/windows", handler.MatchWindows)
-
-		// SuperApp: Smart Campus Navigation
-		r.Get("/navigation/route", handler.GetCampusRoute)
-
-		// SuperApp: Peer Crowdsourcing & Deputy Headstudent Confirmation
-		r.Post("/crowdsource/propose", handler.ProposeCrowdsourceChange)
-		r.Post("/crowdsource/vote", handler.VoteCrowdsourceChange)
-		r.Get("/crowdsource/proposals", handler.ListCrowdsourceProposals)
-
-		// Realtime Server-Sent Events (SSE) stream
-		r.Get("/events", handler.EventsSSE)
-
+		r.Get("/radar/empty-classrooms", unavailableIntegration)
+		r.Post("/matchmaking/windows", unavailableIntegration)
+		r.Get("/navigation/route", unavailableIntegration)
+		r.Post("/crowdsource/propose", unavailableIntegration)
+		r.Post("/crowdsource/vote", unavailableIntegration)
+		r.Get("/crowdsource/proposals", unavailableIntegration)
+		r.Get("/events", unavailableIntegration)
 		r.Route("/admin", func(r chi.Router) {
-			r.Post("/sync-schedule", handler.TriggerSync)
-			r.Get("/sync-schedule/status", handler.GetSyncStatus)
+			r.Use(requireAdmin(os.Getenv("ADMIN_API_TOKEN")))
+			// The old Python importer cannot ingest v4's dated catalog safely.
+			r.Post("/sync-schedule", unavailableIntegration)
+			r.Get("/sync-schedule/status", unavailableIntegration)
 		})
 	})
-
-	// Connect-RPC Protocol Endpoints (schedule.v1.ScheduleService)
-	r.Route("/schedule.v1.ScheduleService", func(r chi.Router) {
-		r.Post("/GetSchedule", handler.GetSchedule)
-		r.Get("/ListInstitutes", handler.GetInstitutes)
-		r.Get("/ListGroups", handler.GetGroups)
-		r.Get("/GetEmptyClassrooms", handler.GetEmptyClassrooms)
-		r.Post("/MatchWindows", handler.MatchWindows)
-		r.Get("/GetCampusRoute", handler.GetCampusRoute)
-		r.Post("/ProposeScheduleChange", handler.ProposeCrowdsourceChange)
-		r.Post("/VoteScheduleChange", handler.VoteCrowdsourceChange)
-		r.Get("/StreamScheduleEvents", handler.EventsSSE)
-	})
-
-
+	// These old aliases were not an implemented Connect-RPC service.
+	r.Handle("/schedule.v1.ScheduleService/*", http.HandlerFunc(unavailableIntegration))
 	return r
+}
+
+func unavailableIntegration(w http.ResponseWriter, r *http.Request) {
+	respondError(w, http.StatusNotImplemented, "This integration is unavailable. TIM Campus v4 uses verified public schedule files and device-local personal data.")
+}
+
+func requireAdmin(token string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if len(token) < 32 {
+				respondError(w, http.StatusServiceUnavailable, "Administrative API is disabled")
+				return
+			}
+			value := r.Header.Get("Authorization")
+			provided := strings.TrimPrefix(value, "Bearer ")
+			expectedHash, providedHash := sha256.Sum256([]byte(token)), sha256.Sum256([]byte(provided))
+			if !strings.HasPrefix(value, "Bearer ") || subtle.ConstantTimeCompare(expectedHash[:], providedHash[:]) != 1 {
+				w.Header().Set("WWW-Authenticate", "Bearer")
+				respondError(w, http.StatusUnauthorized, "Administrator authentication required")
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }

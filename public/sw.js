@@ -1,72 +1,48 @@
-﻿// Service Worker for RGAU-MSHA Student Schedule PWA
-const CACHE_NAME = "rgau-schedule-v2.0.0";
-const STATIC_ASSETS = [
-  "./",
-  "./index.html",
-  "./manifest.webmanifest",
-  "./manifest.json",
-  "./favicon.ico",
-  "./favicon.svg",
-  "./apple-touch-icon.png",
-  "./icons/apple-touch-icon.png",
-  "./data/official-schedule.json",
-  "./data/official-timacad-feed.json"
-];
+/* TIM Campus: cache only this build's public app shell.
+ * Schedule catalog/shards use a bounded IndexedDB cache in campus-data.ts.
+ * API responses, credentials and cross-origin requests never enter CacheStorage.
+ */
+importScripts("./sw-precache.js");
+const BUILD = self.__TIM_PRECACHE__;
+const SCOPE = new URL(self.registration.scope);
+const PREFIX = "tim-campus-v4-" + encodeURIComponent(SCOPE.pathname) + "-";
+const CACHE = PREFIX + BUILD.version;
+const ASSETS = new Set(BUILD.assets.map(p => new URL(p, SCOPE).href));
+const INDEX = new URL("index.html", SCOPE).href;
 
-self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS).catch((err) => {
-        console.warn("[SW] Static asset pre-cache warning:", err);
-      });
-    }).then(() => self.skipWaiting())
-  );
+self.addEventListener("install", event => {
+  event.waitUntil((async () => {
+    if (!Array.isArray(BUILD.assets) || BUILD.assets.length > 96) throw new Error("Invalid app manifest");
+    const cache = await caches.open(CACHE);
+    // Atomic install: failure keeps the previous working service worker active.
+    await cache.addAll([...ASSETS].map(url => new Request(url, { credentials: "omit", cache: "reload" })));
+    await self.skipWaiting();
+  })());
 });
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-      );
-    }).then(() => self.clients.claim())
-  );
+self.addEventListener("activate", event => {
+  event.waitUntil((async () => {
+    const names = await caches.keys();
+    await Promise.all(names.filter(name => (name.startsWith(PREFIX) && name !== CACHE) || name === "rgau-schedule-v2.0.0").map(name => caches.delete(name)));
+    await self.clients.claim();
+  })());
 });
 
-self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
-
-  // API Requests: Network First, fallback to cache
-  if (url.pathname.startsWith("/api/")) {
-    event.respondWith(
-      fetch(event.request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(() => caches.match(event.request))
-    );
-    return;
-  }
-
-  // Static Assets: Cache First, fallback to network
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        if (response && response.status === 200 && event.request.method === "GET") {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
-        }
-        return response;
-      });
-    }).catch(() => {
-      if (event.request.mode === "navigate") {
-        return caches.match("./index.html");
-      }
-    })
-  );
+self.addEventListener("fetch", event => {
+  const request = event.request;
+  const url = new URL(request.url);
+  if (request.method !== "GET" || url.origin !== SCOPE.origin || !url.pathname.startsWith(SCOPE.pathname)
+    || request.headers.has("Authorization") || url.username || url.password) return;
+  const relative = url.pathname.slice(SCOPE.pathname.length);
+  // Exact allowlist: no API, public JSON, arbitrary navigations or query-string variants.
+  const navigation = request.mode === "navigate" && (relative === "" || relative === "index.html") && !url.search;
+  if (!navigation && (!ASSETS.has(url.href) || url.search)) return;
+  event.respondWith((async () => {
+    const cache = await caches.open(CACHE);
+    // Always use one internally consistent build. Updates install a new shell atomically.
+    const cached = await cache.match(navigation ? INDEX : url.href);
+    if (cached) return cached;
+    // No runtime cache writes: only the finite, build-generated manifest is persisted.
+    return fetch(request);
+  })());
 });

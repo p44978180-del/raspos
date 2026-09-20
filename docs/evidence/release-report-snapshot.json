@@ -1,0 +1,258 @@
+{
+  "surface": "report",
+  "title": "ТИМ Кампус 4.0: проверенный бета-выпуск и границы готовности",
+  "generatedAt": "2026-09-20T18:54:33.898Z",
+  "status": "reviewed",
+  "buildStatus": "complete",
+  "filters": [],
+  "report": {
+    "asOf": "2026-09-19"
+  },
+  "queries": {
+    "coverage": {
+      "rows": [
+        {
+          "institute": "Институт агробиотехнологии",
+          "groups": 100,
+          "withLessons": 66,
+          "withoutLessons": 34,
+          "failed": 0,
+          "documents": 6
+        },
+        {
+          "institute": "Институт зоотехнии и биологии",
+          "groups": 119,
+          "withLessons": 73,
+          "withoutLessons": 46,
+          "failed": 0,
+          "documents": 22
+        },
+        {
+          "institute": "Институт садоводства и ландшафтной архитектуры",
+          "groups": 91,
+          "withLessons": 40,
+          "withoutLessons": 51,
+          "failed": 0,
+          "documents": 14
+        },
+        {
+          "institute": "Технологический институт",
+          "groups": 40,
+          "withLessons": 25,
+          "withoutLessons": 15,
+          "failed": 0,
+          "documents": 6
+        },
+        {
+          "institute": "Институт экономики и управления АПК",
+          "groups": 183,
+          "withLessons": 100,
+          "withoutLessons": 83,
+          "failed": 0,
+          "documents": 28
+        },
+        {
+          "institute": "Институт механики и энергетики имени В.П. Горячкина",
+          "groups": 135,
+          "withLessons": 73,
+          "withoutLessons": 62,
+          "failed": 0,
+          "documents": 13
+        },
+        {
+          "institute": "Институт мелиорации, водного хозяйства и строительства имени А.Н. Костякова",
+          "groups": 135,
+          "withLessons": 82,
+          "withoutLessons": 53,
+          "failed": 0,
+          "documents": 14
+        },
+        {
+          "institute": "Калужский филиал ФГБОУ ВО РГАУ-МСХА имени К.А. Тимирязева",
+          "groups": 1,
+          "withLessons": 1,
+          "withoutLessons": 0,
+          "failed": 0,
+          "documents": 0
+        },
+        {
+          "institute": "Заочного образования. Отделение природообустройства",
+          "groups": 1,
+          "withLessons": 0,
+          "withoutLessons": 1,
+          "failed": 0,
+          "documents": 0
+        },
+        {
+          "institute": "Центр «Проектный институт цифровой трансформации АПК»",
+          "groups": 0,
+          "withLessons": 0,
+          "withoutLessons": 0,
+          "failed": 0,
+          "documents": 1
+        }
+      ],
+      "source": {
+        "label": "Официальное расписание РГАУ-МСХА, проверенный снимок",
+        "files": [
+          "public/data/official-schedule.json",
+          "public/data/groups/*.json",
+          "docs/evidence/parser-revalidation.json"
+        ],
+        "filters": [
+          "Учебный период 2026/2027, семестр 1",
+          "Даты занятий 2026-09-12 — 2026-10-31"
+        ],
+        "evidenceFlow": [
+          {
+            "title": "Первоисточник",
+            "detail": "Официальная страница https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuchaiushchikhsia ссылается на https://eg.timacad.ru/schedule/groups/. Проверено 2026-09-19T19:27:48.662Z."
+          },
+          {
+            "title": "Получение",
+            "detail": "scripts/sync-schedule.mjs получает каталог групп и каждую страницу по HTTPS с условными запросами. Демонстрационные группы исключены. Архивные документы исключены по учебному году и семестру."
+          },
+          {
+            "title": "Проверка",
+            "detail": "Повторный разбор сохранённых исходных страниц: 805 групп, 45816 занятий, 0 ошибок. Проверка 2026-09-20T07:53:13.847Z; дата актуальности источника не изменялась."
+          }
+        ],
+        "metricDefinitions": [
+          {
+            "label": "Группа с занятиями",
+            "definition": "Группа с хотя бы одним занятием на конкретную дату внутри загруженного периода. Отсутствие занятий в источнике не доказывает отсутствие учебных обязанностей.",
+            "componentIds": [
+              "coverage-table",
+              "coverage-summary"
+            ]
+          },
+          {
+            "label": "Объём локального расписания",
+            "definition": "Размер JSON в байтах до сжатия. Каталог и максимум три выбранных расписания; размер IndexedDB и общий установленный объём приложения здесь не измерены.",
+            "componentIds": [
+              "storage-summary"
+            ]
+          }
+        ]
+      }
+    },
+    "summary": {
+      "rows": [
+        {
+          "groups": 805,
+          "withLessons": 460,
+          "withoutLessons": 345,
+          "lessons": 45816,
+          "pdfs": 104,
+          "failed": 0,
+          "catalogBytes": 436493,
+          "allShardBytes": 21168208,
+          "medianShardBytes": 29933,
+          "maxThreeShardBytes": 201888,
+          "revalidatedGroups": 805,
+          "parserFailures": 0
+        }
+      ],
+      "source": {
+        "label": "Официальное расписание РГАУ-МСХА, проверенный снимок",
+        "files": [
+          "public/data/official-schedule.json",
+          "public/data/groups/*.json",
+          "docs/evidence/parser-revalidation.json"
+        ],
+        "filters": [
+          "Учебный период 2026/2027, семестр 1",
+          "Даты занятий 2026-09-12 — 2026-10-31"
+        ],
+        "evidenceFlow": [
+          {
+            "title": "Первоисточник",
+            "detail": "Официальная страница https://www.timacad.ru/about/sveden/document/rezhim-zaniatii-obuchaiushchikhsia ссылается на https://eg.timacad.ru/schedule/groups/. Проверено 2026-09-19T19:27:48.662Z."
+          },
+          {
+            "title": "Получение",
+            "detail": "scripts/sync-schedule.mjs получает каталог групп и каждую страницу по HTTPS с условными запросами. Демонстрационные группы исключены. Архивные документы исключены по учебному году и семестру."
+          },
+          {
+            "title": "Проверка",
+            "detail": "Повторный разбор сохранённых исходных страниц: 805 групп, 45816 занятий, 0 ошибок. Проверка 2026-09-20T07:53:13.847Z; дата актуальности источника не изменялась."
+          }
+        ],
+        "metricDefinitions": [
+          {
+            "label": "Группа с занятиями",
+            "definition": "Группа с хотя бы одним занятием на конкретную дату внутри загруженного периода. Отсутствие занятий в источнике не доказывает отсутствие учебных обязанностей.",
+            "componentIds": [
+              "coverage-table",
+              "coverage-summary"
+            ]
+          },
+          {
+            "label": "Объём локального расписания",
+            "definition": "Размер JSON в байтах до сжатия. Каталог и максимум три выбранных расписания; размер IndexedDB и общий установленный объём приложения здесь не измерены.",
+            "componentIds": [
+              "storage-summary"
+            ]
+          }
+        ]
+      }
+    },
+    "security": {
+      "rows": [
+        {
+          "finding": "Anonymous callers can certify schedule changes as a head student",
+          "severity": "medium",
+          "status": "Исправление внесено; см. ограничения аудита"
+        },
+        {
+          "finding": "Anonymous requests can run the administrator's schedule ingestion job",
+          "severity": "medium",
+          "status": "Исправление внесено; см. ограничения аудита"
+        },
+        {
+          "finding": "Docker defaults expose database and cache outside the host",
+          "severity": "medium",
+          "status": "Исправление внесено; см. ограничения аудита"
+        },
+        {
+          "finding": "Startup logs reveal database and cache credentials",
+          "severity": "low",
+          "status": "Исправление внесено; см. ограничения аудита"
+        },
+        {
+          "finding": "Unbounded matchmaking lists amplify anonymous requests into database work",
+          "severity": "medium",
+          "status": "Исправление внесено; см. ограничения аудита"
+        }
+      ],
+      "source": {
+        "label": "Codex Security и текущие исправления",
+        "files": [
+          "docs/evidence/security-scan-summary.json",
+          "docs/security-audit.md"
+        ],
+        "evidenceFlow": [
+          {
+            "title": "Запечатанный скан",
+            "detail": "Codex Security get_codex_security_completed_scan, scanId 386b2691-8231-484d-859e-db6bc600a09a. Покрытие partial, исходные находки до исправлений."
+          },
+          {
+            "title": "Проверка исправлений",
+            "detail": "Go-тесты HTTP/config/Redis; npm test проверяет данные, импорт копии, service worker и проверку релиза. Динамический аудит APK ещё не завершён."
+          }
+        ],
+        "metricDefinitions": [
+          {
+            "label": "Оценка риска",
+            "definition": "Оценка исходного скана для условно развёрнутого legacy backend. Это не оценка уязвимости активного клиента после исправлений.",
+            "componentIds": [
+              "security-table",
+              "security-summary"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "id": "report:ace3bd4f-9310-497c-ac22-4c71a0a6b426"
+}

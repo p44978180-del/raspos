@@ -1,0 +1,47 @@
+{
+  "scanId": "386b2691-8231-484d-859e-db6bc600a09a",
+  "completedAt": "2026-09-20T00:13:53.304392Z",
+  "coverage": "partial",
+  "limitations": [
+    "Working tree changed concurrently during audit; initial vulnerabilities retained with original source evidence.",
+    "Independent baseline worker returned partial findings only due to usage limit.",
+    "No production penetration/load test or claim of complete safety."
+  ],
+  "findings": [
+    {
+      "id": "csf_c5f1d98613457a45240684f5",
+      "title": "Anonymous callers can certify schedule changes as a head student",
+      "severity": "medium",
+      "summary": "The public proposal and vote endpoints accept student identity and role from JSON. A caller can submit headstudent and obtain an officially_confirmed badge, or vary student_name to manufacture peer confirmations, without being a group member.",
+      "remediation": "Disable public social proposal, vote and listing endpoints until server-verified identities, group membership, role authorization and stable voter IDs exist. Disable sibling pseudo-RPC paths as well."
+    },
+    {
+      "id": "csf_3f04c57eee990fea833f6968",
+      "title": "Anonymous requests can run the administrator's schedule ingestion job",
+      "severity": "medium",
+      "summary": "POST /api/v1/admin/sync-schedule has no authentication and directly starts a parser subprocess and PostgreSQL ingestion. Any reachable client can initiate repeated expensive refreshes and access internal job status.",
+      "remediation": "Require a server-only admin bearer token for both admin routes, compare it in constant time, reject by default if unset/short, and never put the token in frontend builds."
+    },
+    {
+      "id": "csf_cde60487c62dcf589653acbb",
+      "title": "Docker defaults expose database and cache outside the host",
+      "severity": "medium",
+      "summary": "The supplied Compose deployment publishes PostgreSQL and Redis on every host interface. PostgreSQL has a fixed repository-defined password and Redis has no authentication configuration, allowing reachable clients to access the schedule stores directly.",
+      "remediation": "Remove database/cache host port publication, require a deployment-provided PostgreSQL password/DSN, bind backend port to loopback by default, and document TLS/reverse proxy requirements."
+    },
+    {
+      "id": "csf_2beb28dfef4705df038e7293",
+      "title": "Startup logs reveal database and cache credentials",
+      "severity": "low",
+      "summary": "Backend startup formats full configured DATABASE_URL and REDIS_URL into log output. Credentials embedded in those URLs are disclosed to log readers who need not have database access.",
+      "remediation": "Remove full connection-string logging, avoid credential-bearing error propagation and report only configured/unconfigured state."
+    },
+    {
+      "id": "csf_63ee3b2fdbb5e3f24a123617",
+      "title": "Unbounded matchmaking lists amplify anonymous requests into database work",
+      "severity": "medium",
+      "summary": "The public MatchWindows body accepts any length group_ids array and iterates it twice for database lookups without a body or group-count limit. Reachable anonymous callers can hold the shared database pool busy with repeated IDs.",
+      "remediation": "Disable the unfinished matchmaking endpoints; if restored, enforce bounded body size, maximum distinct group IDs, a request deadline and bounded aggregate queries."
+    }
+  ]
+}

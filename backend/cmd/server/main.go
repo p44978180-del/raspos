@@ -18,9 +18,7 @@ import (
 	"timacad-backend/internal/repository/postgres"
 	"timacad-backend/internal/repository/redis"
 	"timacad-backend/internal/usecase"
-	"timacad-backend/internal/worker"
 	"timacad-backend/pkg/parser"
-	"timacad-backend/pkg/storage"
 )
 
 func main() {
@@ -28,8 +26,9 @@ func main() {
 
 	cfg := config.Load()
 	log.Printf("[Config] Port: %s", cfg.Port)
-	log.Printf("[Config] Database URL: %s", cfg.DatabaseURL)
-	log.Printf("[Config] Redis URL: %s", cfg.RedisURL)
+	if cfg.DatabaseURL == "" {
+		log.Fatal("[Config] DATABASE_URL must be configured explicitly; the legacy backend is not required by TIM Campus v4")
+	}
 	log.Printf("[Config] Auto-seed: %v", cfg.AutoSeed)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -38,7 +37,7 @@ func main() {
 	// 1. Initialize PostgreSQL Repository
 	pgRepo, err := postgres.New(ctx, cfg.DatabaseURL)
 	if err != nil {
-		log.Fatalf("[Fatal] Failed to connect to PostgreSQL: %v", err)
+		log.Fatal("[Fatal] Failed to connect to PostgreSQL; check server configuration")
 	}
 	defer pgRepo.Close()
 
@@ -66,17 +65,10 @@ func main() {
 	// 5. Initialize Parser Bridge
 	bridge := parser.New(cfg.PythonBin, cfg.ParserScriptPath, cfg.ScheduleDataPath)
 
-	// 6. Initialize Realtime SSE Hub & Snapshot Storage
+	// No background legacy importer runs in v4. Its weekly schema is incompatible
+	// with current dated source snapshots; the supported sync is the Node pipeline.
 	sseHub := realtime.NewSSEHub()
-	snapshotStore, err := storage.NewSnapshotStorage("./snapshots")
-	if err != nil {
-		log.Printf("[Warning] Snapshot storage initialization warning: %v", err)
-	}
-
-	// 7. Initialize Asynchronous Orchestrator & Worker Pool
 	orch := orchestrator.New(redisRepo)
-	asyncWorker := worker.NewWorker(1, orch, pgRepo, redisRepo, bridge, snapshotStore, sseHub.Broadcast)
-	asyncWorker.Start(ctx)
 
 	// 8. Initialize UseCases
 	instituteUC := usecase.NewInstituteUseCase(pgRepo)
@@ -89,13 +81,14 @@ func main() {
 	router := deliveryHTTP.NewRouter(handler)
 
 	server := &http.Server{
-		Addr:         fmt.Sprintf(":%s", cfg.Port),
-		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		Addr:              fmt.Sprintf(":%s", cfg.Port),
+		Handler:           router,
+		ReadTimeout:       15 * time.Second,
+		ReadHeaderTimeout: 5 * time.Second,
+		MaxHeaderBytes:    16 << 10,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
-
 
 	// 8. Start HTTP Server in background
 	go func() {

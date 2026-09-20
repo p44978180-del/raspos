@@ -6,9 +6,7 @@ services:
     environment:
       POSTGRES_DB: timacad_schedule
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
-    ports:
-      - "5432:5432"
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a unique PostgreSQL password}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./migrations:/docker-entrypoint-initdb.d:ro
@@ -22,8 +20,6 @@ services:
     image: redis:7-alpine
     container_name: timacad_redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -39,19 +35,20 @@ services:
     container_name: timacad_backend
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       PORT: "8080"
-      DATABASE_URL: "postgres://postgres:postgrespassword@postgres:5432/timacad_schedule?sslmode=disable"
+      DATABASE_URL: ${DATABASE_URL:?Set PostgreSQL connection URL with the configured password}
+      ADMIN_API_TOKEN: ${ADMIN_API_TOKEN:-}
       REDIS_URL: "redis://redis:6379/0"
       PYTHON_BIN: "python3"
       PARSER_SCRIPT_PATH: "/app/scripts/timacad_parser.py"
       SCHEDULE_DATA_PATH: "/app/public/data/official-schedule.json"
-      AUTO_SEED: "true"
+      AUTO_SEED: "false"
     volumes:
       - ../scripts:/app/scripts:ro
-      - ../public/data:/app/public/data
-      - ../downloads:/app/downloads
+      - ../public/data:/app/public/data:ro
+      - ../downloads:/app/downloads:ro
     depends_on:
       postgres:
         condition: service_healthy

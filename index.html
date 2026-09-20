@@ -1,76 +1,22 @@
 <!doctype html>
-<html lang="ru" class="h-full w-full bg-background">
+<html lang="ru">
   <head>
     <!-- figma:head-start -->
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
-    <title>РГАУ-МСХА Расписание</title>
-
-    <!-- PWA Web App Manifest -->
-    <link rel="manifest" href="./manifest.webmanifest" />
-    <link rel="alternate" type="application/json" href="./manifest.json" />
-
-    <!-- Brand Favicons -->
-    <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" />
-    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-    <link rel="alternate icon" type="image/x-icon" href="./favicon.ico" />
-
-    <!-- Apple Web App Capabilities (iOS Safari) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>ТИМ Кампус — Тимирязевка рядом</title>
+    <meta name="description" content="Расписание Тимирязевской академии, карта кампуса и личные дела. Независимый студенческий проект." />
+    <meta name="theme-color" content="#111410" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="ТИМ Кампус" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="РГАУ Студент" />
-    <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png" />
-    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
-
-    <!-- Android / Chrome PWA Capabilities -->
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="application-name" content="РГАУ-МСХА Расписание" />
-
-    <!-- Brand Theme Colors matching --color-bg to prevent top bar coloring -->
-    <meta name="theme-color" content="#F8F9FA" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#090D0B" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#F8F9FA" />
-
-    <style>
-      :root {
-        --color-bg: #F8F9FA;
-        --color-fg: #0F172A;
-      }
-      html.dark {
-        --color-bg: #090D0B;
-        --color-fg: #F1F5F9;
-      }
-      html, body, #root {
-        height: 100%;
-        min-height: 100dvh;
-        width: 100%;
-        margin: 0;
-        padding: 0;
-        background-color: var(--color-bg);
-        color: var(--color-fg);
-        overscroll-behavior-y: none;
-      }
-    </style>
-    <script>
-      (function() {
-        try {
-          var saved = localStorage.getItem("rgau_theme");
-          var isDark = saved ? saved === "dark" : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
-          if (isDark) {
-            document.documentElement.classList.add("dark");
-            document.documentElement.style.backgroundColor = "#090D0B";
-            if (document.body) document.body.style.backgroundColor = "#090D0B";
-          } else {
-            document.documentElement.classList.remove("dark");
-            document.documentElement.style.backgroundColor = "#F8F9FA";
-            if (document.body) document.body.style.backgroundColor = "#F8F9FA";
-          }
-        } catch(e) {}
-      })();
-    </script>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="./icons/icon.svg" />
+    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <!-- figma:head-end -->
   </head>
-  <body class="h-full w-full bg-background overflow-x-hidden antialiased">
+  <body>
     <!-- figma:body-start -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>

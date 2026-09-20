@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import path from "node:path"
 import fs from "node:fs"
+import { createHash } from "node:crypto"
 
 let siteConfiguration: any = {
   title: "РГАУ-МСХА Расписание",
@@ -31,6 +32,7 @@ export default defineConfig(({ mode }) => {
   const emitSourcemaps = mode === "development"
 
   return {
+    publicDir: process.env.MOBILE_PUBLIC_DIR || "public",
     base: process.env.FIGMA_PUBLIC_URL
       ? `${process.env.FIGMA_PUBLIC_URL}/`
       : (process.env.BASE_URL || "./"),
@@ -41,6 +43,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      campusOfflineAssets(),
       figmaSiteConfiguration(siteConfiguration),
       figmaErrorOverlayReplay(),
       figmaReactRefreshBoundaryFallback(),
@@ -63,6 +66,29 @@ export default defineConfig(({ mode }) => {
     },
   }
 })
+
+/** Only bundle assets + selected public shell files; never cache data shards or APIs. */
+function campusOfflineAssets(): Plugin {
+  let publicDirectory = ""
+  return {
+    name: "campus-offline-assets",
+    apply: "build",
+    configResolved(config) { publicDirectory = config.publicDir },
+    generateBundle(_, bundle) {
+      const assets = Object.keys(bundle).filter(name => name === "index.html" || /^assets\/.+\.(?:js|css|woff2?|svg|png|webp)$/.test(name))
+      const hash = createHash("sha256")
+      for (const file of Object.values(bundle)) hash.update(file.type === "chunk" ? file.code : file.source)
+      for (const name of ["index.html", "manifest.webmanifest", "icons/icon.svg", "icons/apple-touch-icon.png", "campus-reference.png"]) {
+        const file = path.join(publicDirectory, name)
+        if (fs.existsSync(file)) { assets.push(name); hash.update(fs.readFileSync(file)) }
+      }
+      // Vite's HTML emission may run after this hook; its URL is always part of the shell.
+      assets.push("index.html")
+      hash.update(fs.readFileSync(path.resolve(__dirname, "index.html")))
+      this.emitFile({ type: "asset", fileName: "sw-precache.js", source: `self.__TIM_PRECACHE__=${JSON.stringify({ version: hash.digest("hex").slice(0, 16), assets: [...new Set(assets)].sort() })};` })
+    },
+  }
+}
 
 type FigmaSiteConfiguration = {
   title?: string

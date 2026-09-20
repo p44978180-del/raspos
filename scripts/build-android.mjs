@@ -1,0 +1,55 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+
+const root=path.resolve(import.meta.dirname,'..');
+const pkg=JSON.parse(fs.readFileSync(path.join(root,'package.json'),'utf8'));
+const debug=process.argv.includes('--debug');
+const env={...process.env};
+if(!env.JAVA_HOME || !(env.ANDROID_HOME || env.ANDROID_SDK_ROOT)) throw new Error('Set JAVA_HOME and ANDROID_HOME to the installed JDK 21 and Android SDK.');
+env.ANDROID_HOME ||= env.ANDROID_SDK_ROOT;
+if(!debug && ['ANDROID_KEYSTORE_PATH','ANDROID_KEYSTORE_PASSWORD','ANDROID_KEY_ALIAS','ANDROID_KEY_PASSWORD'].some(k=>!env[k])) throw new Error('Release signing environment is required. No fallback to debug signing.');
+function run(command,args,cwd=root,capture=false) {
+  const result=spawnSync(command,args,{cwd,env,encoding:'utf8',stdio:capture?'pipe':'inherit',windowsHide:true});
+  if(result.status!==0) throw new Error(`Build command failed (${path.basename(command)}), exit ${result.status}${capture ? ': '+result.stderr : ''}`);
+  return result.stdout || '';
+}
+const staging=path.join(root,'.cache/mobile-public');
+// Only this fixed generated staging directory may be replaced.
+if(path.relative(root,staging)!==path.join('.cache','mobile-public')) throw new Error('Unsafe staging target');
+fs.rmSync(staging,{recursive:true,force:true});fs.mkdirSync(path.join(staging,'data'),{recursive:true});
+for(const file of ['manifest.webmanifest','manifest.json','campus-reference.png','sw.js']) if(fs.existsSync(path.join(root,'public',file))) fs.copyFileSync(path.join(root,'public',file),path.join(staging,file));
+fs.cpSync(path.join(root,'public/icons'),path.join(staging,'icons'),{recursive:true});
+fs.copyFileSync(path.join(root,'public/data/official-schedule.json'),path.join(staging,'data/official-schedule.json'));
+env.MOBILE_PUBLIC_DIR=staging;
+env.ANDROID_WEB_DIR='dist-android';
+env.VITE_SCHEDULE_BASE_URL ||= 'https://p44978180-del.github.io/raspos/';
+run(process.execPath,['node_modules/typescript/bin/tsc','--noEmit']);
+run(process.execPath,['node_modules/vite/bin/vite.js','build','--outDir','dist-android']);
+run(process.execPath,['node_modules/@capacitor/cli/bin/capacitor','sync','android']);
+const android=path.join(root,'android');
+const task=debug?'assembleDebug':'assembleRelease';
+if(process.platform==='win32') run(process.env.ComSpec || 'cmd.exe',['/d','/s','/c',`gradlew.bat --no-daemon ${task}`],android);
+else run('./gradlew',['--no-daemon',task],android);
+const mode=debug?'debug':'release';
+const source=path.join(android,`app/build/outputs/apk/${mode}/app-${mode}.apk`);
+if(!fs.existsSync(source)) throw new Error('Gradle did not produce the expected fresh APK');
+const buildTools=path.join(env.ANDROID_HOME,'build-tools','36.0.0');
+const aapt=path.join(buildTools,process.platform==='win32'?'aapt.exe':'aapt');
+const badging=run(aapt,['dump','badging',source],root,true);
+if(!badging.includes(`versionName='${pkg.version}'`) || !badging.includes("name='ru.timacad.student'")) throw new Error('APK identity/version verification failed');
+if(!debug && badging.includes('application-debuggable')) throw new Error('Refusing to distribute debuggable APK');
+const java=path.join(env.JAVA_HOME,'bin',process.platform==='win32'?'java.exe':'java');
+const signature=run(java,['-jar',path.join(buildTools,'lib','apksigner.jar'),'verify','--verbose','--print-certs',source],root,true);
+if(!/^Verified using v[23] scheme[^\r\n]*:\s*true\s*$/m.test(signature)) throw new Error('APK signature verification was inconclusive');
+const releaseDir=path.join(root,'releases');fs.mkdirSync(releaseDir,{recursive:true});
+const filename=`tim-campus-${pkg.version}${debug?'-debug':''}.apk`;
+const target=path.join(releaseDir,filename);fs.copyFileSync(source,target);
+const sha256=createHash('sha256').update(fs.readFileSync(target)).digest('hex');
+const commit=run('git',['rev-parse','HEAD'],root,true).trim();
+const webFiles=fs.readdirSync(path.join(root,'dist-android/assets')).sort();
+const receipt={version:pkg.version,package:'ru.timacad.student',mode,filename,bytes:fs.statSync(target).size,sha256,builtAt:new Date().toISOString(),commit,webFiles,scheduleBase:env.VITE_SCHEDULE_BASE_URL,certificateSha256:signature.match(/certificate SHA-256 digest:\s*(\S+)/)?.[1]};
+fs.writeFileSync(path.join(releaseDir,`build-${mode}.json`),JSON.stringify(receipt,null,2));
+fs.writeFileSync(path.join(releaseDir,filename+'.sha256'),`${sha256}  ${filename}\n`);
+console.log(JSON.stringify(receipt,null,2));

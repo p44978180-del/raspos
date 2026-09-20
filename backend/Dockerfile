@@ -26,12 +26,11 @@ COPY backend/migrations /app/migrations
 
 # Default environment configuration
 ENV PORT=8080 \
-    DATABASE_URL=postgres://postgres:postgrespassword@postgres:5432/timacad_schedule?sslmode=disable \
     REDIS_URL=redis://redis:6379/0 \
     PYTHON_BIN=python3 \
     PARSER_SCRIPT_PATH=/app/scripts/timacad_parser.py \
     SCHEDULE_DATA_PATH=/app/public/data/official-schedule.json \
-    AUTO_SEED=true
+    AUTO_SEED=false
 
 EXPOSE 8080
 

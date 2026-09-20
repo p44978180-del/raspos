@@ -1,38 +1,41 @@
-name: Timiryazevka Daily Schedule Sync
-
+name: Official schedule synchronization
 on:
   schedule:
-    # 04:00 AM MSK = 01:00 AM UTC
-    - cron: '0 1 * * *'
+    - cron: '17 */4 * * *'
   workflow_dispatch:
-
 permissions:
   contents: write
-
+  pages: write
+  id-token: write
+concurrency:
+  group: schedule-sync
+  cancel-in-progress: false
 jobs:
-  sync-schedule:
-    name: Sync Official Schedule
+  sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js 22
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
-
-      - name: Run Timacad Sync Engine
+      - name: Fetch and validate official current schedules
         run: node scripts/sync-schedule.mjs
-
-      - name: Commit and push changes if updated
+      - name: Verify data contracts
+        run: node --test tests/official-data.test.mjs
+      - name: Commit all matching catalog and group snapshots
         run: |
-          git config --global user.name "Студенческий совет РГАУ-МСХА"
-          git config --global user.email "studsovet@timacad.ru"
-          git add src/data/official-schedule.json public/data/official-schedule.json
-          if git diff --staged --quiet; then
-            echo "No schedule changes detected."
-          else
-            git commit -m "chore(schedule): daily sync with official Timacad schedule [04:00 MSK]"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/data/official-schedule.json src/data/official-timacad-feed.json public/data docs/evidence/schedule-sync.json
+          if ! git diff --staged --quiet; then
+            git commit -m 'data: refresh verified official schedule snapshots'
             git push
           fi
+  publish:
+    needs: sync
+    uses: ./.github/workflows/deploy.yml
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

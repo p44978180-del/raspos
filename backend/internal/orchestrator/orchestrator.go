@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	redisclient "github.com/redis/go-redis/v9"
+
 	"timacad-backend/internal/repository/redis"
 )
 
@@ -78,7 +80,7 @@ func (o *Orchestrator) EnqueueSyncTask(ctx context.Context, task SyncTask) (stri
 	if o.redisRepo != nil && o.redisRepo.Client() != nil {
 		data, err := json.Marshal(task)
 		if err == nil {
-			err = o.redisRepo.Client().XAdd(ctx, &redis.XAddArgs{
+			err = o.redisRepo.Client().XAdd(ctx, &redisclient.XAddArgs{
 				Stream: StreamScheduleSync,
 				Values: map[string]any{
 					"payload": string(data),

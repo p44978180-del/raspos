@@ -44,7 +44,6 @@ func NewHandler(
 	}
 }
 
-
 func (h *Handler) HealthCheck(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, map[string]string{
 		"status": "healthy",
@@ -325,8 +324,10 @@ func respondJSON(w http.ResponseWriter, code int, payload any) {
 }
 
 func respondError(w http.ResponseWriter, code int, message string) {
+	if code == http.StatusInternalServerError {
+		message = "Internal server error"
+	}
 	respondJSON(w, code, map[string]string{
 		"error": message,
 	})
 }
-

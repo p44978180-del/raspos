@@ -1,0 +1,31 @@
+{
+  "checkedAt": "2026-09-20T18:54:33.899Z",
+  "scope": "production web and signed Android build",
+  "automated": {
+    "nodeTests": 20,
+    "typecheck": "passed",
+    "webBuild": "passed",
+    "goPackages": [
+      "internal/delivery/http",
+      "internal/config",
+      "internal/repository/redis"
+    ]
+  },
+  "browser": {
+    "desktop": "inspected",
+    "mobileViewport": "390x844",
+    "offline": "Local HTTP server stopped, page reloaded, saved group schedule remained accessible",
+    "group": "ДЭ17-26",
+    "date": "2026-09-21",
+    "lessons": 3
+  },
+  "android": {
+    "releaseBuild": "passed",
+    "signature": "v2/v3 verified",
+    "physicalDevice": "not available, not tested"
+  },
+  "sourceRefresh": {
+    "attemptedAt": "2026-09-20T18:54:33.899Z",
+    "result": "failed: official www.timacad.ru connection timeout; existing snapshot preserved"
+  }
+}

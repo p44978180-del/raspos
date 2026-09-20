@@ -18,12 +18,12 @@ type Config struct {
 func Load() *Config {
 	return &Config{
 		Port:             getEnv("PORT", "8080"),
-		DatabaseURL:      getEnv("DATABASE_URL", "postgres://postgres:postgrespassword@localhost:5432/timacad_schedule?sslmode=disable"),
+		DatabaseURL:      getEnv("DATABASE_URL", ""),
 		RedisURL:         getEnv("REDIS_URL", "redis://localhost:6379/0"),
 		PythonBin:        getEnv("PYTHON_BIN", "python3"),
 		ParserScriptPath: getEnv("PARSER_SCRIPT_PATH", "../scripts/timacad_parser.py"),
 		ScheduleDataPath: getEnv("SCHEDULE_DATA_PATH", "../public/data/official-schedule.json"),
-		AutoSeed:         getEnvBool("AUTO_SEED", true),
+		AutoSeed:         getEnvBool("AUTO_SEED", false),
 	}
 }
 

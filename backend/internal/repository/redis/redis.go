@@ -22,18 +22,8 @@ type Repository struct {
 func New(ctx context.Context, redisURL string) (*Repository, error) {
 	opts, err := redis.ParseURL(redisURL)
 	if err != nil {
-		// Fallback for simple host:port or malformed URL
-		host := "localhost:6379"
-		if strings.HasPrefix(redisURL, "redis://") {
-			parts := strings.TrimPrefix(redisURL, "redis://")
-			parts = strings.TrimPrefix(parts, "/")
-			if parts != "" {
-				host = parts
-			}
-		}
-		opts = &redis.Options{
-			Addr: host,
-		}
+		// Never reinterpret a malformed credential-bearing URL as a loggable host.
+		return nil, fmt.Errorf("invalid Redis connection configuration")
 	}
 
 	client := redis.NewClient(opts)
@@ -43,7 +33,7 @@ func New(ctx context.Context, redisURL string) (*Repository, error) {
 	defer cancel()
 
 	if err := client.Ping(pingCtx).Err(); err != nil {
-		log.Printf("[Redis] Warning: Redis ping failed (%v). Caching might operate in degraded mode.", err)
+		log.Print("[Redis] Connection unavailable; caching may operate in degraded mode")
 	} else {
 		log.Println("[Redis] Successfully connected to Redis")
 	}

@@ -6,6 +6,7 @@ on:
       - main
       - master
   workflow_dispatch:
+  workflow_call:
 
 # Grant minimal permissions required for GitHub Pages deployment
 permissions:
@@ -26,6 +27,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       # Set up pnpm matching .mise.toml
       - name: Set up pnpm
@@ -47,6 +50,9 @@ jobs:
       # Enforce zero TypeScript compilation errors
       - name: Verify TypeScript types
         run: pnpm exec tsc --noEmit
+
+      - name: Verify data and release boundaries
+        run: pnpm test
 
       # Configure GitHub Pages metadata
       - name: Setup Pages

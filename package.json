@@ -1,7 +1,7 @@
 {
   "name": "figma-make-app",
   "private": true,
-  "version": "3.2.0",
+  "version": "4.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,16 +9,21 @@
     "preview": "vite preview",
     "format": "oxfmt",
     "typecheck": "tsc --noEmit",
-    "build:android": "vite build && cap sync android",
+    "build:android": "node scripts/build-android.mjs",
     "sync:android": "cap sync android",
     "sync:schedule": "node scripts/sync-schedule.mjs",
     "package:release": "node scripts/publish-release.mjs --package-only",
     "release": "node scripts/publish-release.mjs",
-    "test": "node tests/manifest-stress.test.mjs && node tests/m2-capacitor-stress.test.mjs && node tests/m3-cartography-spring-stress.test.mjs && node tests/m3-theme-wave-stress.test.mjs && node tests/m4-deploy-stress.test.mjs && node tests/m4-build-verification-stress.test.mjs && node tests/test-ios-prompt.mjs && node tests/test-timacad-autosync.mjs && node tests/test-cache-retention.test.mjs && node tests/test-superapp-enterprise.test.mjs && node tests/test-v3-architecture.test.mjs"
+    "test": "node --test tests/official-data.test.mjs tests/release-engineering.test.mjs tests/service-worker-security.test.mjs",
+    "build:android:debug": "node scripts/build-android.mjs --debug",
+    "test:release": "node --test tests/release-engineering.test.mjs",
+    "test:legacy": "node tests/manifest-stress.test.mjs && node tests/m2-capacitor-stress.test.mjs && node tests/m3-cartography-spring-stress.test.mjs && node tests/m3-theme-wave-stress.test.mjs && node tests/m4-deploy-stress.test.mjs && node tests/m4-build-verification-stress.test.mjs && node tests/test-ios-prompt.mjs && node tests/test-timacad-autosync.mjs && node tests/test-cache-retention.test.mjs && node tests/test-superapp-enterprise.test.mjs && node tests/test-v3-architecture.test.mjs"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.15.0",
     "@capacitor/core": "^8.5.1",
+    "@capacitor/filesystem": "^8.1.3",
+    "@capacitor/share": "^8.0.2",
     "@connectrpc/connect": "^2.2.0",
     "@connectrpc/connect-web": "^2.2.0",
     "@tanstack/query-persist-client-core": "^5.102.8",

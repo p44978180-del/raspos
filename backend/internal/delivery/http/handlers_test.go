@@ -64,20 +64,8 @@ func TestGetCampusRoute(t *testing.T) {
 
 	router.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected status 200, got %d", rec.Code)
-	}
-
-	var route map[string]any
-	if err := json.Unmarshal(rec.Body.Bytes(), &route); err != nil {
-		t.Fatalf("failed to decode json: %v", err)
-	}
-
-	if route["from_building"] != "1-й учебный корпус" {
-		t.Errorf("expected from_building '1-й учебный корпус', got %v", route["from_building"])
-	}
-	if route["walking_duration_minutes"] == nil {
-		t.Errorf("expected walking_duration_minutes to be populated")
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("unverified route must not be presented as navigation: got %d", rec.Code)
 	}
 }
 
@@ -90,8 +78,7 @@ func TestConnectRPCGetCampusRoute(t *testing.T) {
 
 	router.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("expected status 200 on connect-rpc route, got %d", rec.Code)
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("unimplemented protocol must fail closed: got %d", rec.Code)
 	}
 }
-
