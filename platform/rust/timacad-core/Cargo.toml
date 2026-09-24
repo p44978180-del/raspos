@@ -1,0 +1,40 @@
+[package]
+name = "timacad-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+description = "Shared core for the TIM platform. Phase 0 exports the UniFFI identity string."
+license = "MIT"
+
+[lib]
+crate-type = ["lib", "staticlib", "cdylib"]
+name = "timacad_core"
+
+[features]
+default = ["wasm"]
+cli = ["uniffi/cli"]
+wasm = ["dep:wasmtime"]
+
+[[bin]]
+name = "uniffi-bindgen"
+path = "uniffi-bindgen.rs"
+required-features = ["cli"]
+
+[[bin]]
+name = "compact-doc"
+path = "src/bin/compact_doc.rs"
+
+[[bin]]
+name = "personal-fixture"
+path = "src/bin/personal_fixture.rs"
+
+[dependencies]
+loro = "1.10.3"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10.8"
+uniffi = "0.28.3"
+wasmtime = { version = "29", optional = true }
+
+[dev-dependencies]
+wat = "1"

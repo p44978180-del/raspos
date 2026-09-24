@@ -1,0 +1,9 @@
+{
+  "id": "group-bulletin",
+  "name": "Доска объявлений группы",
+  "version": "1.0.0",
+  "bundle_sha256": "",
+  "signature": "",
+  "csp": "default-src 'none'; script-src 'self'",
+  "host_methods": ["host.v1.schedule.read", "host.v1.thread.read"]
+}

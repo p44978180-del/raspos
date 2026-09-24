@@ -1,0 +1,24 @@
+name: ios
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - platform/rust/timacad-core/**
+      - platform/mobile/ios-extensions/**
+      - .github/workflows/ios.yml
+  pull_request:
+    paths:
+      - platform/rust/timacad-core/**
+      - platform/mobile/ios-extensions/**
+      - .github/workflows/ios.yml
+
+jobs:
+  widgetkit:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Compile SharedCore.xcframework and the WidgetKit target
+        run: bash platform/mobile/ios-extensions/build-widget.sh

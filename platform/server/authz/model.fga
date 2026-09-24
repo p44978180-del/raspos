@@ -1,0 +1,35 @@
+model
+  schema 1.1
+
+type user
+
+type institute
+  relations
+    define staff: [user]
+
+type group
+  relations
+    define member: [user]
+    define deputy: [user]
+    define head: [user]
+    define editor: head or deputy
+    define reader: member or editor
+
+type lesson_change
+  relations
+    define group: [group]
+    define can_propose: reader from group
+    define can_publish: editor from group
+
+type document
+  relations
+    define owner: [user]
+    define group: [group]
+    define can_edit: owner or reader from group
+
+type thread
+  relations
+    define group: [group]
+    define institute: [institute]
+    define can_post: reader from group
+    define can_hide: editor from group or staff from institute

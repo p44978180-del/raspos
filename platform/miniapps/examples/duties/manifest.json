@@ -1,0 +1,9 @@
+{
+  "id": "group-duties",
+  "name": "Дежурства",
+  "version": "1.0.0",
+  "bundle_sha256": "",
+  "signature": "",
+  "csp": "default-src 'none'; script-src 'self'",
+  "host_methods": ["host.v1.storage.kv", "host.v1.duty_roster.write"]
+}

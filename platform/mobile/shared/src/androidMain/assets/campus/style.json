@@ -1,0 +1,48 @@
+{
+  "version": 8,
+  "name": "Схема территории",
+  "glyphs": "asset://campus/glyphs/{fontstack}/{range}.pbf",
+  "center": [37.5502, 55.8334],
+  "zoom": 17,
+  "sources": {
+    "scheme": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "properties": {"name": "Корпус 2", "kind": "building"},
+            "geometry": {"type": "Polygon", "coordinates": [[[37.5496, 55.8330], [37.5508, 55.8330], [37.5508, 55.8338], [37.5496, 55.8338], [37.5496, 55.8330]]]}
+          },
+          {
+            "type": "Feature",
+            "properties": {"name": "101", "kind": "room"},
+            "geometry": {"type": "Point", "coordinates": [37.5499, 55.8332]}
+          },
+          {
+            "type": "Feature",
+            "properties": {"name": "102", "kind": "room"},
+            "geometry": {"type": "Point", "coordinates": [37.5505, 55.8332]}
+          },
+          {
+            "type": "Feature",
+            "properties": {"name": "201", "kind": "room"},
+            "geometry": {"type": "Point", "coordinates": [37.5499, 55.8336]}
+          },
+          {
+            "type": "Feature",
+            "properties": {"name": "Лестница", "kind": "stair"},
+            "geometry": {"type": "Point", "coordinates": [37.5502, 55.8334]}
+          }
+        ]
+      }
+    }
+  },
+  "layers": [
+    {"id": "paper", "type": "background", "paint": {"background-color": "#f3efe4"}},
+    {"id": "footprint", "type": "fill", "source": "scheme", "filter": ["==", ["geometry-type"], "Polygon"], "paint": {"fill-color": "#d9c7a6", "fill-outline-color": "#6b5a45"}},
+    {"id": "rooms", "type": "circle", "source": "scheme", "filter": ["==", ["get", "kind"], "room"], "paint": {"circle-radius": 6, "circle-color": "#2f5d50"}},
+    {"id": "labels", "type": "symbol", "source": "scheme", "filter": ["has", "name"], "layout": {"text-field": ["get", "name"], "text-font": ["TimCampus"], "text-size": 14, "text-offset": [0, 1.1]}, "paint": {"text-color": "#1c1915"}}
+  ]
+}

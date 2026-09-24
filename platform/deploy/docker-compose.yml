@@ -1,0 +1,230 @@
+name: timacad-platform
+
+# `docker compose up` starts nothing. The everyday backend loop is
+# `docker compose --profile core up`: PostgreSQL, Dragonfly, and NATS.
+# `--profile authz` adds OpenFGA. `--profile full` adds the heavy services.
+
+services:
+  postgres:
+    profiles: ["core", "authz", "full"]
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?Set PostgreSQL user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a unique PostgreSQL password}
+      POSTGRES_DB: timacad
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d timacad"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  dragonfly:
+    profiles: ["core", "full"]
+    image: dragonflydb/dragonfly:v1.27.1
+    command:
+      - --requirepass
+      - ${DRAGONFLY_PASSWORD:?Set Dragonfly password}
+    restart: unless-stopped
+
+  nats:
+    profiles: ["core", "full"]
+    image: nats:2.11-alpine
+    command: ["-js"]
+    restart: unless-stopped
+
+  temporal:
+    profiles: ["full"]
+    image: temporalio/auto-setup:1.23.1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER:?Set PostgreSQL user}
+      POSTGRES_PWD: ${POSTGRES_PASSWORD:?Set a unique PostgreSQL password}
+      POSTGRES_SEEDS: postgres
+      DBNAME: temporal
+      VISIBILITY_DBNAME: temporal_visibility
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development.yaml
+    volumes:
+      - ./temporal/dynamicconfig.yaml:/etc/temporal/config/dynamicconfig/development.yaml:ro
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        export TEMPORAL_BROADCAST_ADDRESS=$$(hostname -i | awk '{print $$1}')
+        exec /etc/temporal/entrypoint.sh autosetup
+    restart: unless-stopped
+
+  # Same release as the Windows openfga.exe used by the Go tests.
+  # `run` does not create tables; migrate has to finish first.
+  openfga-migrate:
+    profiles: ["authz", "full"]
+    image: openfga/openfga:v1.21.0
+    command: migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment: &openfga-datastore
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://${POSTGRES_USER:?Set PostgreSQL user}:${POSTGRES_PASSWORD:?Set a unique PostgreSQL password}@postgres:5432/openfga?sslmode=disable
+    restart: "no"
+
+  openfga:
+    profiles: ["authz", "full"]
+    image: openfga/openfga:v1.21.0
+    command: run
+    depends_on:
+      postgres:
+        condition: service_healthy
+      openfga-migrate:
+        condition: service_completed_successfully
+    environment:
+      <<: *openfga-datastore
+      OPENFGA_HTTP_ADDR: 0.0.0.0:8080
+      OPENFGA_PLAYGROUND_ENABLED: "false"
+    restart: unless-stopped
+
+  centrifugo:
+    profiles: ["full"]
+    image: centrifugo/centrifugo:v6.9.6
+    depends_on:
+      - dragonfly
+    environment:
+      CENTRIFUGO_HMAC_SECRET: ${CENTRIFUGO_HMAC_SECRET:?Set Centrifugo HMAC secret}
+      CENTRIFUGO_HTTP_API_KEY: ${CENTRIFUGO_HTTP_API_KEY:?Set Centrifugo HTTP API key}
+      DRAGONFLY_PASSWORD: ${DRAGONFLY_PASSWORD:?Set Dragonfly password}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cat > /tmp/centrifugo.json <<EOF
+        {
+          "client": {
+            "token": {"hmac_secret_key": "$$CENTRIFUGO_HMAC_SECRET"},
+            "allow_anonymous_connect_without_token": true
+          },
+          "http_api": {"key": "$$CENTRIFUGO_HTTP_API_KEY"},
+          "health": {"enabled": true},
+          "engine": {"type": "redis", "redis": {"address": "dragonfly:6379", "password": "$$DRAGONFLY_PASSWORD"}},
+          "channel": {
+            "namespaces": [{
+              "name": "group",
+              "history_size": 20,
+              "history_ttl": "300s",
+              "allow_subscribe_for_client": true,
+              "allow_subscribe_for_anonymous": true
+            }]
+          }
+        }
+        EOF
+        exec centrifugo -c /tmp/centrifugo.json
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+
+  server:
+    profiles: ["full"]
+    build: &platform-build
+      context: ../..
+      dockerfile: platform/deploy/Dockerfile
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        ip=$$(getent hosts temporal | awk '{print $$1; exit}')
+        if [ -n "$$ip" ]; then export TEMPORAL_ADDRESS="$$ip:7233"; fi
+        exec /usr/local/bin/server
+    environment: &platform-env
+      DATABASE_URL: postgres://${POSTGRES_USER:?Set PostgreSQL user}:${POSTGRES_PASSWORD:?Set a unique PostgreSQL password}@postgres:5432/timacad?sslmode=disable
+      ADDR: 0.0.0.0:8080
+      OPENFGA_API_URL: http://openfga:8080
+      TEMPORAL_ADDRESS: temporal:7233
+      NATS_URL: nats://nats:4222
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:?Set MinIO user}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?Set MinIO password}
+      MINIO_BUCKET: sources
+      INGEST_TOKEN: ${INGEST_TOKEN:?Set the ingest token}
+      FIXTURE_DIR: /fixtures
+      COMPACT_DOC_BIN: /usr/local/bin/compact-doc
+    volumes:
+      - ../../docs/evidence:/fixtures:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      openfga-migrate:
+        condition: service_completed_successfully
+      nats:
+        condition: service_started
+      minio:
+        condition: service_started
+    restart: unless-stopped
+
+  worker:
+    profiles: ["full"]
+    build: *platform-build
+    # The Go gRPC client does not finish name lookup for "temporal:7233" inside this image.
+    # glibc getent does. Dial the container IP, which is also what Temporal advertises.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          ip=$$(getent hosts temporal | awk '{print $$1; exit}')
+          if [ -n "$$ip" ]; then export TEMPORAL_ADDRESS="$$ip:7233"; break; fi
+          sleep 1
+        done
+        exec /usr/local/bin/worker
+    environment: *platform-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      temporal:
+        condition: service_started
+      nats:
+        condition: service_started
+      minio:
+        condition: service_started
+    restart: unless-stopped
+
+  bridge:
+    profiles: ["full"]
+    build: *platform-build
+    entrypoint: ["bridge"]
+    environment:
+      NATS_URL: nats://nats:4222
+      CENTRIFUGO_API_URL: http://centrifugo:8000/api
+      CENTRIFUGO_HTTP_API_KEY: ${CENTRIFUGO_HTTP_API_KEY:?Set Centrifugo HTTP API key}
+    depends_on:
+      - nats
+      - centrifugo
+    restart: unless-stopped
+
+  minio:
+    profiles: ["full"]
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z.hotfix.7aa24e772
+    command: ["server", "/data"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Set MinIO user}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MinIO password}
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  caddy:
+    profiles: ["full"]
+    image: caddy:2.10-alpine
+    depends_on:
+      - centrifugo
+      - server
+    ports:
+      - "127.0.0.1:8088:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  minio_data:

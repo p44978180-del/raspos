@@ -1,0 +1,10 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Дежурства</title>
+<script>
+async function save() {
+  await TimHost.call("host.v1.duty_roster.write", { id: "monday", assignee: "Анна" });
+  await TimHost.call("host.v1.storage.kv", { op: "put", key: "monday", value: "Анна" });
+}
+save();
+</script>

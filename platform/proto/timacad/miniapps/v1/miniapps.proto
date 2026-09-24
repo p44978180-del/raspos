@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package timacad.miniapps.v1;
+
+option go_package = "raspos/platform/server/internal/gen/timacad/miniapps/v1;miniappsv1";
+
+// MiniappService resolves the published bundle for a device.
+service MiniappService {
+  rpc Resolve(ResolveRequest) returns (ResolveResponse);
+}
+
+message ResolveRequest {
+  string app_id = 1;
+}
+
+message ResolveResponse {
+  string version = 1;
+  string bundle_sha256 = 2;
+  string signature = 3;
+  repeated string host_methods = 4;
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "occurs_on": "2026-09-29",
+    "starts_at": "10:55",
+    "ends_at": "12:30",
+    "subject": "Пара Б",
+    "kind": "practice",
+    "teacher": "Иванов",
+    "building": "2",
+    "room": "10",
+    "week_type": "all",
+    "source_url": "https://eg.timacad.ru/schedule/groups/?group=1"
+  },
+  {
+    "occurs_on": "2026-09-29",
+    "starts_at": "09:00",
+    "ends_at": "10:35",
+    "subject": "Пара А",
+    "kind": "lecture",
+    "teacher": "Петров",
+    "building": "1",
+    "room": "101",
+    "week_type": "odd",
+    "source_url": "https://eg.timacad.ru/schedule/groups/?group=1"
+  }
+]

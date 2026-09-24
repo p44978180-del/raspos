@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Доска объявлений</title>
+<script>
+async function load() {
+  const schedule = await TimHost.call("host.v1.schedule.read", { group: "ДА 01-24" });
+  const thread = await TimHost.call("host.v1.thread.read", { thread: "chat" });
+  document.body.textContent = JSON.stringify({ schedule, thread });
+}
+load();
+</script>

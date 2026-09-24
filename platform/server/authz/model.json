@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.1",
+  "type_definitions": [
+    {"type": "user"},
+    {
+      "type": "institute",
+      "relations": {"staff": {"this": {}}},
+      "metadata": {"relations": {"staff": {"directly_related_user_types": [{"type": "user"}]}}}
+    },
+    {
+      "type": "group",
+      "relations": {
+        "member": {"this": {}},
+        "deputy": {"this": {}},
+        "head": {"this": {}},
+        "editor": {"union": {"child": [{"computedUserset": {"relation": "head"}}, {"computedUserset": {"relation": "deputy"}}]}},
+        "reader": {"union": {"child": [{"computedUserset": {"relation": "member"}}, {"computedUserset": {"relation": "editor"}}]}}
+      },
+      "metadata": {
+        "relations": {
+          "member": {"directly_related_user_types": [{"type": "user"}]},
+          "deputy": {"directly_related_user_types": [{"type": "user"}]},
+          "head": {"directly_related_user_types": [{"type": "user"}]}
+        }
+      }
+    },
+    {
+      "type": "lesson_change",
+      "relations": {
+        "group": {"this": {}},
+        "can_propose": {"tupleToUserset": {"tupleset": {"relation": "group"}, "computedUserset": {"relation": "reader"}}},
+        "can_publish": {"tupleToUserset": {"tupleset": {"relation": "group"}, "computedUserset": {"relation": "editor"}}}
+      },
+      "metadata": {"relations": {"group": {"directly_related_user_types": [{"type": "group"}]}}}
+    },
+    {
+      "type": "document",
+      "relations": {
+        "owner": {"this": {}},
+        "group": {"this": {}},
+        "can_edit": {"union": {"child": [{"computedUserset": {"relation": "owner"}}, {"tupleToUserset": {"tupleset": {"relation": "group"}, "computedUserset": {"relation": "reader"}}}]}}
+      },
+      "metadata": {
+        "relations": {
+          "owner": {"directly_related_user_types": [{"type": "user"}]},
+          "group": {"directly_related_user_types": [{"type": "group"}]}
+        }
+      }
+    },
+    {
+      "type": "thread",
+      "relations": {
+        "group": {"this": {}},
+        "institute": {"this": {}},
+        "can_post": {"tupleToUserset": {"tupleset": {"relation": "group"}, "computedUserset": {"relation": "reader"}}},
+        "can_hide": {"union": {"child": [
+          {"tupleToUserset": {"tupleset": {"relation": "group"}, "computedUserset": {"relation": "editor"}}},
+          {"tupleToUserset": {"tupleset": {"relation": "institute"}, "computedUserset": {"relation": "staff"}}}
+        ]}}
+      },
+      "metadata": {
+        "relations": {
+          "group": {"directly_related_user_types": [{"type": "group"}]},
+          "institute": {"directly_related_user_types": [{"type": "institute"}]}
+        }
+      }
+    }
+  ]
+}

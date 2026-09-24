@@ -1,0 +1,21 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema:
+      - "internal/schema/migrations/00001_init.sql"
+      - "internal/schema/migrations/00002_personal.sql"
+      - "internal/schema/migrations/00003_authz.sql"
+      - "internal/schema/migrations/00004_hint.sql"
+      - "internal/schema/migrations/00005_social.sql"
+      - "internal/schema/migrations/00006_miniapps.sql"
+    queries: "queries.sql"
+    gen:
+      go:
+        package: "db"
+        out: "internal/db"
+        sql_package: "pgx/v5"
+        overrides:
+          - db_type: "uuid"
+            go_type:
+              import: "github.com/google/uuid"
+              type: "UUID"

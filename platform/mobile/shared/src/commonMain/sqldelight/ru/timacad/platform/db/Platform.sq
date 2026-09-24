@@ -1,0 +1,163 @@
+CREATE TABLE platform_meta (
+    meta_key TEXT NOT NULL PRIMARY KEY,
+    meta_value TEXT NOT NULL
+);
+
+selectByKey:
+SELECT meta_value FROM platform_meta WHERE meta_key = ?;
+
+insertMeta:
+INSERT INTO platform_meta(meta_key, meta_value) VALUES (?, ?);
+
+CREATE TABLE local_group (
+    group_code TEXT NOT NULL PRIMARY KEY,
+    institute_name TEXT NOT NULL,
+    course INTEGER NOT NULL,
+    status TEXT NOT NULL
+);
+
+CREATE TABLE local_lesson (
+    group_code TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    occurs_on TEXT NOT NULL,
+    starts_at TEXT NOT NULL,
+    ends_at TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    teacher TEXT NOT NULL,
+    building TEXT NOT NULL,
+    room TEXT NOT NULL,
+    source_url TEXT NOT NULL,
+    snapshot_hash TEXT NOT NULL,
+    PRIMARY KEY (group_code, position)
+);
+
+CREATE TABLE local_cursor (
+    collection TEXT NOT NULL,
+    scope_id TEXT NOT NULL,
+    snapshot_hash TEXT NOT NULL,
+    lsn INTEGER NOT NULL,
+    PRIMARY KEY (collection, scope_id)
+);
+
+CREATE TABLE selected_group (
+    id INTEGER NOT NULL PRIMARY KEY,
+    group_code TEXT NOT NULL
+);
+
+deleteGroups:
+DELETE FROM local_group;
+
+insertGroup:
+INSERT INTO local_group(group_code, institute_name, course, status)
+VALUES (?, ?, ?, ?);
+
+searchGroups:
+SELECT group_code, institute_name, course, status
+FROM local_group
+WHERE group_code LIKE '%' || ? || '%' OR institute_name LIKE '%' || ? || '%'
+ORDER BY group_code
+LIMIT 100;
+
+deleteLessons:
+DELETE FROM local_lesson WHERE group_code = ?;
+
+insertLesson:
+INSERT INTO local_lesson(
+    group_code, position, occurs_on, starts_at, ends_at, subject, kind, teacher, building, room, source_url, snapshot_hash
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+lessonsOn:
+SELECT starts_at, ends_at, subject, kind, teacher, building, room, source_url
+FROM local_lesson
+WHERE group_code = ? AND occurs_on = ?
+ORDER BY starts_at, position;
+
+datesForGroup:
+SELECT DISTINCT occurs_on FROM local_lesson WHERE group_code = ? ORDER BY occurs_on;
+
+upsertCursor:
+INSERT OR REPLACE INTO local_cursor(collection, scope_id, snapshot_hash, lsn)
+VALUES (?, ?, ?, ?);
+
+selectCursor:
+SELECT snapshot_hash, lsn FROM local_cursor WHERE collection = ? AND scope_id = ?;
+
+upsertSelection:
+INSERT OR REPLACE INTO selected_group(id, group_code) VALUES (1, ?);
+
+selectedGroup:
+SELECT group_code FROM selected_group WHERE id = 1;
+
+CREATE TABLE personal_task (
+    task_id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    task_date TEXT NOT NULL,
+    done INTEGER NOT NULL,
+    kind TEXT NOT NULL
+);
+
+CREATE TABLE personal_plan (
+    plan_id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    plan_date TEXT NOT NULL,
+    starts_at TEXT NOT NULL,
+    ends_at TEXT NOT NULL,
+    room TEXT NOT NULL,
+    cancelled INTEGER NOT NULL
+);
+
+CREATE TABLE outbox (
+    client_seq INTEGER NOT NULL PRIMARY KEY,
+    collection TEXT NOT NULL,
+    scope_id TEXT NOT NULL,
+    payload BLOB NOT NULL,
+    state TEXT NOT NULL
+);
+
+upsertTask:
+INSERT OR REPLACE INTO personal_task(task_id, title, task_date, done, kind)
+VALUES (?, ?, ?, ?, ?);
+
+listTasks:
+SELECT task_id, title, task_date, done, kind FROM personal_task ORDER BY task_id;
+
+upsertPlan:
+INSERT OR REPLACE INTO personal_plan(plan_id, title, plan_date, starts_at, ends_at, room, cancelled)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+listPlans:
+SELECT plan_id, title, plan_date, starts_at, ends_at, room, cancelled FROM personal_plan ORDER BY plan_id;
+
+enqueue:
+INSERT INTO outbox(client_seq, collection, scope_id, payload, state)
+VALUES (?, ?, ?, ?, 'queued');
+
+findOutbox:
+SELECT state FROM outbox WHERE client_seq = ?;
+
+ackOutbox:
+UPDATE outbox SET state = 'acked' WHERE client_seq = ?;
+
+pendingOutbox:
+SELECT client_seq FROM outbox WHERE state = 'queued' ORDER BY client_seq;
+
+CREATE TABLE local_lesson_change (
+    group_code TEXT NOT NULL,
+    lsn INTEGER NOT NULL,
+    fingerprint TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    payload_json TEXT NOT NULL,
+    status TEXT NOT NULL,
+    PRIMARY KEY (group_code, lsn)
+);
+
+insertLessonChange:
+INSERT OR REPLACE INTO local_lesson_change(group_code, lsn, fingerprint, kind, payload_json, status)
+VALUES (?, ?, ?, ?, ?, ?);
+
+publishedChanges:
+SELECT lsn, fingerprint, kind, payload_json
+FROM local_lesson_change
+WHERE group_code = ? AND status = 'published'
+ORDER BY lsn;

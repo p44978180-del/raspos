@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+package timacad.sync.v1;
+
+option go_package = "raspos/platform/server/internal/gen/timacad/sync/v1;syncv1";
+
+enum ReplicationMode {
+  REPLICATION_MODE_UNSPECIFIED = 0;
+  REPLICATION_MODE_SERVER_WINS = 1;
+  REPLICATION_MODE_LORO = 2;
+  REPLICATION_MODE_APPEND_LOG = 3;
+}
+
+message CanonicalLesson {
+  string occurs_on = 1;
+  string starts_at = 2;
+  string ends_at = 3;
+  string subject = 4;
+  string kind = 5;
+  string teacher = 6;
+  string building = 7;
+  string room = 8;
+  string week_type = 9;
+  string source_url = 10;
+}
+
+message DirectoryEntry {
+  string group_code = 1;
+  string institute_code = 2;
+  string institute_name = 3;
+  int32 course = 4;
+  string status = 5;
+  int32 external_id = 6;
+  string degree = 7;
+  string study_form = 8;
+}
+
+message DirectorySnapshot {
+  string data_version = 1;
+  repeated DirectoryEntry groups = 2;
+}
+
+message LessonSnapshot {
+  string group_code = 1;
+  string snapshot_hash = 2;
+  repeated CanonicalLesson lessons = 3;
+}
+
+message LessonChange {
+  string group_code = 1;
+  string lesson_fingerprint = 2;
+  string kind = 3;
+  string payload_json = 4;
+}
+
+message AuthzGrant {
+  string object_type = 1;
+  string object_id = 2;
+  string relation = 3;
+}
+
+message AuthzProjection {
+  string principal_id = 1;
+  repeated AuthzGrant grants = 2;
+}
+
+message ThreadPost {
+  string thread_id = 1;
+  string group_code = 2;
+  string body = 3;
+}
+
+message ThreadHide {
+  string thread_id = 1;
+  int64 entry_lsn = 2;
+}
+
+message ThreadOp {
+  oneof body {
+    ThreadPost post = 1;
+    ThreadHide hide = 2;
+  }
+}
+
+message SyncOp {
+  oneof body {
+    DirectorySnapshot directory = 1;
+    LessonSnapshot lessons = 2;
+  }
+}
+
+message BootstrapRequest {
+  string replica_id = 1;
+  string group_code = 2;
+}
+
+message BootstrapResponse {
+  int64 lsn = 1;
+  string collection = 2;
+  string scope_id = 3;
+  bytes op = 4;
+  bool snapshot_reset = 5;
+  int64 server_time_unix_ms = 6;
+}
+
+message PullRequest {
+  string collection = 1;
+  string scope_id = 2;
+  int64 since_lsn = 3;
+  string known_snapshot_version = 4;
+}
+
+message PullResponse {
+  int64 lsn = 1;
+  bytes op = 2;
+  int64 server_time_unix_ms = 3;
+  bool snapshot_reset = 4;
+  string snapshot_version = 5;
+}
+
+message PushOperation {
+  string collection = 1;
+  string scope_id = 2;
+  int64 client_seq = 3;
+  bytes op = 4;
+}
+
+message PushRequest {
+  string replica_id = 1;
+  repeated PushOperation operations = 2;
+}
+
+message PushAckItem {
+  int64 client_seq = 1;
+  int64 lsn = 2;
+  bool accepted = 3;
+  string reject_reason = 4;
+}
+
+message PushResponse {
+  repeated PushAckItem items = 1;
+}
+
+service SyncService {
+  rpc Bootstrap(BootstrapRequest) returns (stream BootstrapResponse);
+  rpc Pull(PullRequest) returns (stream PullResponse);
+  rpc Push(PushRequest) returns (PushResponse);
+}
