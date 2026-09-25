@@ -1,5 +1,7 @@
 package ru.timacad.platform
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -16,6 +18,12 @@ class MainActivity : ComponentActivity() {
         val database = PlatformDatabase(driver)
         val store = PlatformStore(database)
         store.ensureSeeded()
+        if (intent.getBooleanExtra("pin_widget", false)) {
+            val widgets = AppWidgetManager.getInstance(this)
+            if (widgets.isRequestPinAppWidgetSupported) {
+                widgets.requestPinAppWidget(ComponentName(this, ScheduleGlanceWidgetReceiver::class.java), null, null)
+            }
+        }
         val schedule = ScheduleRepository(database)
         val day = schedule.day(schedule.selectedGroup(), null)
         setContent {
