@@ -25,6 +25,8 @@ scripts/*.pdf
 scripts/*.txt
 scripts/*.json
 *.apk
+*.so
+*.aar
 *.aab
 *.jks
 *.keystore

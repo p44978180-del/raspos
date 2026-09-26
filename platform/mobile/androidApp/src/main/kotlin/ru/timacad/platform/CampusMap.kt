@@ -29,7 +29,7 @@ fun CampusMap(modifier: Modifier = Modifier) {
             map.setStyle(Style.Builder().fromUri("asset://campus/style.json")) {
                 map.cameraPosition = CameraPosition.Builder()
                     .target(LatLng(55.8334, 37.5502))
-                    .zoom(16.6)
+                    .zoom(CampusScheme.cameraZoom)
                     .build()
             }
         }

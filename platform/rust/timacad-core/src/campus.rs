@@ -344,7 +344,7 @@ pub const CAMPUS_STYLE: &str = r##"{
   "name": "Схема территории",
   "glyphs": "asset://campus/glyphs/{fontstack}/{range}.pbf",
   "center": [37.5502, 55.8334],
-  "zoom": 17,
+  "zoom": 16.5,
   "sources": {
     "scheme": {
       "type": "geojson",
@@ -384,7 +384,7 @@ pub const CAMPUS_STYLE: &str = r##"{
     {"id": "paper", "type": "background", "paint": {"background-color": "#f3efe4"}},
     {"id": "footprint", "type": "fill", "source": "scheme", "filter": ["==", ["geometry-type"], "Polygon"], "paint": {"fill-color": "#d9c7a6", "fill-outline-color": "#6b5a45"}},
     {"id": "rooms", "type": "circle", "source": "scheme", "filter": ["==", ["get", "kind"], "room"], "paint": {"circle-radius": 6, "circle-color": "#2f5d50"}},
-    {"id": "labels", "type": "symbol", "source": "scheme", "filter": ["has", "name"], "layout": {"text-field": ["get", "name"], "text-font": ["TimCampus"], "text-size": 28, "text-anchor": "center", "text-allow-overlap": true, "text-ignore-placement": true}, "paint": {"text-color": "#111111", "text-halo-color": "#ffffff", "text-halo-width": 1}}
+    {"id": "labels", "type": "symbol", "source": "scheme", "minzoom": 0, "maxzoom": 24, "filter": ["==", ["get", "kind"], "room"], "layout": {"text-field": ["get", "name"], "text-font": ["Sans Regular"], "text-size": 18, "text-anchor": "top", "text-offset": [0, 0.4], "text-allow-overlap": true, "text-ignore-placement": true}, "paint": {"text-color": "#ffffff", "text-halo-color": "#000000", "text-halo-width": 1.5}}
   ]
 }
 "##;
@@ -497,7 +497,15 @@ mod tests {
         assert!(!lowered.contains("http://") && !lowered.contains("https://"), "style points at the network");
         assert!(style.contains("\"name\": \"Схема территории\""));
         assert!(style.contains("asset://campus/glyphs/{fontstack}/{range}.pbf"));
-        assert!(style.contains("\"text-font\": [\"TimCampus\"]"));
+        assert!(style.contains("\"text-font\": [\"Sans Regular\"]"));
+        assert!(style.contains("\"text-allow-overlap\": true"));
+        assert!(style.contains("\"text-ignore-placement\": true"));
+        assert!(style.contains("\"text-halo-color\": \"#000000\""));
+        assert!(style.contains("\"text-halo-width\": 1.5"));
+        assert!(style.contains("\"zoom\": 16.5"));
+        assert!(style.contains("\"minzoom\": 0"));
+        assert!(style.contains("\"maxzoom\": 24"));
+        assert!(style.contains("\"filter\": [\"==\", [\"get\", \"kind\"], \"room\"]"));
         let names = ["Корпус 2", "101", "102", "201", "Лестница"];
         for name in names {
             assert!(style.contains(name), "{name}");
