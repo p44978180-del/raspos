@@ -38,7 +38,7 @@ Hint приходит действием `ru.timacad.platform.HIGH_PRIORITY_HINT
 
 Маршрут считает `route_campus` по бинарной топологии `TMG1`, не по GeoJSON. A* добавляет штраф 40 к ребру, которое меняет этаж. На графе из 558 узлов (3 корпуса, 6 этажей, 30 аудиторий и лестницы) медиана debug-прогона ниже 2 мс.
 
-iOS: `.github/workflows/ios.yml` на `macos-latest` собирает `SharedCore.xcframework` и линкует Swift-таргет WidgetKit. ActivityKit и Dynamic Island в Kotlin нет. Прогон ветки `phase-7`: https://github.com/p44978180-del/raspos/actions/runs/36051953232 — job `widgetkit` успешен, 7 минут 41 секунда, 24 сентября 2026. Шаг компиляции завершился успехом. Сырой лог GitHub отдаёт только после входа.
+iOS: `.github/workflows/ios.yml` на `macos-latest` собирает `SharedCore.xcframework` и линкует Swift-таргет WidgetKit. ActivityKit и Dynamic Island в Kotlin нет. Прогон `d94551b`: https://github.com/p44978180-del/raspos/actions/runs/36051953232 — job `widgetkit` успешен, 7 минут 41 секунда, 24 сентября 2026. Прогон текущего `d433d5d`: https://github.com/p44978180-del/raspos/actions/runs/36247127688 — тот же job на `macos-latest` успешен, 7 минут 37 секунд, 26 сентября 2026. Шаг «Compile SharedCore.xcframework and the WidgetKit target» в обоих прогонах завершился успехом. Сырой лог GitHub отдаёт только после входа.
 
 ## Фаза 6
 
