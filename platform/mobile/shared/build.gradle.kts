@@ -45,6 +45,9 @@ kotlin {
             implementation(libs.sqldelight.android.driver)
             implementation(libs.glance.appwidget)
             implementation(libs.glance.material3)
+            implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.okhttp)
+            implementation(libs.ktor.client.websockets)
             implementation("net.java.dev.jna:jna:5.17.0@aar")
         }
         jvmMain.dependencies {

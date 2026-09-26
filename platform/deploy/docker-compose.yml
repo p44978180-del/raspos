@@ -223,6 +223,7 @@ services:
       - "127.0.0.1:8088:8080"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./well-known:/srv/well-known:ro
     restart: unless-stopped
 
 volumes:

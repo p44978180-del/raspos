@@ -1,0 +1,10 @@
+-keep class ru.timacad.core.** { *; }
+-keep class uniffi.** { *; }
+-keep class ru.timacad.platform.db.** { *; }
+-keep class org.maplibre.** { *; }
+-keep class io.ktor.** { *; }
+-keep class kotlinx.coroutines.** { *; }
+-keep class androidx.glance.** { *; }
+-keep class com.google.crypto.tink.** { *; }
+-dontwarn org.maplibre.**
+-dontwarn io.ktor.**

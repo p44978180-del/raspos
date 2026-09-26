@@ -27,10 +27,18 @@ class HighPriorityHintReceiver : BroadcastReceiver() {
             }
             val driver = AndroidSqliteDriver(PlatformDatabase.Schema, context, "platform.db")
             try {
-                val repository = ScheduleRepository(PlatformDatabase(driver))
+                val database = PlatformDatabase(driver)
+                val repository = ScheduleRepository(database, driver)
+                val transport = KtorSyncTransport()
                 val pump = HintPump(
                     repository = repository,
-                    pull = OfflineSyncPull,
+                    pull = SyncPull { collection, scopeId, since ->
+                        try {
+                            transport.pull(collection, scopeId, since)
+                        } catch (_: Throwable) {
+                            emptyList()
+                        }
+                    },
                     clock = { System.currentTimeMillis() },
                     onWidget = { runBlocking { ScheduleGlanceWidget().updateAll(context) } },
                 )

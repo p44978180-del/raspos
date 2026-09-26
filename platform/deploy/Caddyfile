@@ -3,5 +3,10 @@
 }
 
 :8080 {
+	handle /.well-known/assetlinks.json {
+		root * /srv/well-known
+		rewrite * /assetlinks.json
+		file_server
+	}
 	reverse_proxy server:8080
 }

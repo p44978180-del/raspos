@@ -88,7 +88,9 @@ class TimacadRustPlugin : Plugin<Project> {
             }
             project.tasks.findByName("compileKotlinJvm")?.dependsOn(bindgen)
             project.tasks.findByName("compileDebugKotlinAndroid")?.dependsOn(bindgen)
+            project.tasks.findByName("compileReleaseKotlinAndroid")?.dependsOn(bindgen)
             project.tasks.findByName("mergeDebugJniLibFolders")?.dependsOn(androidBuild)
+            project.tasks.findByName("mergeReleaseJniLibFolders")?.dependsOn(androidBuild)
             (project.tasks.findByName("jvmTest") as? org.gradle.api.tasks.testing.Test)?.let { test ->
                 test.dependsOn(hostBuild)
                 test.systemProperty("jna.library.path", hostLibrary.parentFile.absolutePath)

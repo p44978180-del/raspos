@@ -45,6 +45,48 @@ class PersonalRepository(private val database: PlatformDatabase) {
 
     fun pending(): List<Long> = database.platformQueries.pendingOutbox().executeAsList()
 
+    fun pendingRows(): List<OutboxRow> = database.platformQueries.pendingOutboxRows().executeAsList().map {
+        OutboxRow(it.client_seq, it.collection, it.scope_id, it.payload)
+    }
+
+    fun notes(): String = database.platformQueries.selectByKey("personal_notes").executeAsOneOrNull().orEmpty()
+
+    fun saveNotes(text: String) {
+        database.platformQueries.upsertMeta("personal_notes", text)
+    }
+
+    fun importV4(json: String): Boolean {
+        if (!json.contains("\"version\":4")) return false
+        saveNotes(jsonStringField(json, "notes").orEmpty())
+        Regex("""\{[^{}]*"done"\s*:\s*(true|false)[^{}]*}""").findAll(json).forEach { match ->
+            val body = match.value
+            saveTask(
+                PersonalTask(
+                    jsonStringField(body, "id") ?: return@forEach,
+                    jsonStringField(body, "title").orEmpty(),
+                    jsonStringField(body, "date").orEmpty(),
+                    match.groupValues[1] == "true",
+                    jsonStringField(body, "kind").orEmpty(),
+                ),
+            )
+        }
+        Regex("""\{[^{}]*"start"\s*:\s*"[^"]*"[^{}]*}""").findAll(json).forEach { match ->
+            val body = match.value
+            savePlan(
+                PersonalPlan(
+                    jsonStringField(body, "id") ?: return@forEach,
+                    jsonStringField(body, "title").orEmpty(),
+                    jsonStringField(body, "date").orEmpty(),
+                    jsonStringField(body, "start").orEmpty(),
+                    jsonStringField(body, "end").orEmpty(),
+                    jsonStringField(body, "room").orEmpty(),
+                    body.contains("\"cancelled\":true"),
+                ),
+            )
+        }
+        return true
+    }
+
     fun exportV4(group: String, name: String, notes: String): String {
         val tasks = tasks().joinToString(",") { task ->
             """{"id":${json(task.id)},"title":${json(task.title)},"date":${json(task.date)},"done":${task.done},"kind":${json(task.kind)}}"""
@@ -61,3 +103,10 @@ private fun json(value: String): String {
     val escaped = value.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n")
     return "\"$escaped\""
 }
+
+private fun jsonStringField(json: String, key: String): String? {
+    val match = Regex(""""${Regex.escape(key)}"\s*:\s*"((?:\\.|[^"])*)"""").find(json) ?: return null
+    return unescape(match.groupValues[1])
+}
+
+private fun unescape(value: String): String = value.replace("\\\"", "\"").replace("\\n", "\n").replace("\\\\", "\\")

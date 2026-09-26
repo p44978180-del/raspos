@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.get_login_creds", "delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ru.timacad.platform",
+      "sha256_cert_fingerprints": [
+        "9D:6F:B9:00:CF:24:F6:DA:F7:9F:BE:13:AD:35:43:B5:2F:80:86:4F:E3:5A:7A:98:54:40:9A:E4:C2:B7:DA:A2"
+      ]
+    }
+  }
+]
