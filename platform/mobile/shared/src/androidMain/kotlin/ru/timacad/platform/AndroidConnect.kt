@@ -17,7 +17,7 @@ import io.ktor.websocket.readText
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.runBlocking
 
-const val SYNC_BASE_URL = "http://10.0.2.2:8080"
+const val SYNC_BASE_URL = "http://10.0.2.2:8088"
 const val REALTIME_URL = "ws://10.0.2.2:8000/connection/websocket"
 
 class KtorSyncTransport(
@@ -25,12 +25,12 @@ class KtorSyncTransport(
 ) : SyncTransport {
     private val client = platformHttp()
     override fun bootstrap(replicaId: String, groupCode: String): List<BootstrapFrame> = runBlocking {
-        val body = postBytes("$SYNC_SERVICE/Bootstrap", encodeBootstrapRequest(replicaId, groupCode), "application/connect+proto")
+        val body = postBytes("$SYNC_SERVICE/Bootstrap", encodeEnvelope(encodeBootstrapRequest(replicaId, groupCode)), "application/connect+proto")
         decodeBootstrapFrames(body)
     }
 
     override fun pull(collection: String, scopeId: String, sinceLsn: Long): List<SyncFrame> = runBlocking {
-        val body = postBytes("$SYNC_SERVICE/Pull", encodePullRequest(collection, scopeId, sinceLsn), "application/connect+proto")
+        val body = postBytes("$SYNC_SERVICE/Pull", encodeEnvelope(encodePullRequest(collection, scopeId, sinceLsn)), "application/connect+proto")
         decodePullFrames(body)
     }
 
@@ -52,6 +52,7 @@ class KtorSyncTransport(
     private suspend fun postBytes(path: String, payload: ByteArray, content: String): ByteArray {
         return client.post(baseUrl + path) {
             contentType(ContentType.parse(content))
+            header("Connect-Protocol-Version", "1")
             setBody(payload)
         }.bodyAsBytes()
     }

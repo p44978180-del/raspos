@@ -18,3 +18,4 @@ dependencyResolutionManagement {
 rootProject.name = "timacad-platform"
 include(":shared")
 include(":androidApp")
+include(":iosApp")

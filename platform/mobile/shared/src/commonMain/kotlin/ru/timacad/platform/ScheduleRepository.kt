@@ -173,6 +173,8 @@ class ScheduleRepository(
 
     fun dates(groupCode: String): List<String> = database.platformQueries.datesForGroup(groupCode).executeAsList()
 
+    fun lessonCount(groupCode: String): Long = database.platformQueries.countLessons(groupCode).executeAsOne()
+
     fun publishedChanges(groupCode: String): List<StoredChange> {
         return database.platformQueries.publishedChanges(groupCode).executeAsList().map {
             StoredChange(it.lsn, it.fingerprint, it.kind, it.payload_json)

@@ -14,8 +14,12 @@ android {
         applicationId = "ru.timacad.platform"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 8
+        versionName = "0.8.0"
+        ndk {
+            val listed = (findProperty("timacad.rust.androidAbis") ?: findProperty("timacad.rust.androidAbi") ?: "arm64-v8a,x86_64").toString()
+            abiFilters += listed.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_21

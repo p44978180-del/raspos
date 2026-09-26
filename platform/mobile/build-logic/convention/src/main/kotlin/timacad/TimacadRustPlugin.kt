@@ -38,44 +38,38 @@ class TimacadRustPlugin : Plugin<Project> {
             outputs.dir(output)
         }
 
-        val androidAbi = project.findProperty("timacad.rust.androidAbi")?.toString() ?: "x86_64"
-        val androidTarget = when (androidAbi) {
-            "x86_64" -> "x86_64-linux-android"
-            "arm64-v8a" -> "aarch64-linux-android"
-            "armeabi-v7a" -> "armv7-linux-androideabi"
-            "x86" -> "i686-linux-android"
-            else -> error("Unsupported Android ABI $androidAbi")
+        val androidBuilds = androidAbis(project).map { abi ->
+            val androidTarget = androidTarget(abi)
+            project.tasks.register<Exec>("cargoBuildAndroid${abi.replace("-", "")}") {
+                group = "rust"
+                workingDir = crate
+                commandLine(cargo, "--version")
+                val so = crate.resolve("target/$androidTarget/debug/libtimacad_core.so")
+                inputs.dir(crate.resolve("src"))
+                outputs.file(so)
+                doFirst {
+                    val ndk = resolveNdk()
+                    val prebuilt = ndk.resolve("toolchains/llvm/prebuilt").listFiles()?.firstOrNull { it.isDirectory }
+                        ?: error("NDK llvm prebuilt toolchain is missing under $ndk")
+                    val toolPrefix = androidClang(abi)
+                    val linker = prebuilt.resolve("bin/$toolPrefix.cmd").takeIf { it.exists() }
+                        ?: prebuilt.resolve("bin/$toolPrefix")
+                    val envKey = "CARGO_TARGET_${androidTarget.uppercase().replace('-', '_')}_LINKER"
+                    commandLine(cargo, "build", "--lib", "--target", androidTarget, "--no-default-features")
+                    environment("PATH", cargoPath())
+                    environment(envKey, linker.absolutePath)
+                    environment("RUSTFLAGS", "-C link-arg=-Wl,-z,max-page-size=16384")
+                }
+                doLast {
+                    val dest = jniLibs.get().asFile.resolve(abi)
+                    dest.mkdirs()
+                    so.copyTo(dest.resolve("libtimacad_core.so"), overwrite = true)
+                }
+            }
         }
-        val androidBuild = project.tasks.register<Exec>("cargoBuildAndroidDebug") {
+        val androidBuild = project.tasks.register("cargoBuildAndroidDebug") {
             group = "rust"
-            workingDir = crate
-            val ndk = resolveNdk()
-            val prebuilt = ndk.resolve("toolchains/llvm/prebuilt").listFiles()?.firstOrNull { it.isDirectory }
-                ?: error("NDK llvm prebuilt toolchain is missing under $ndk")
-            val toolPrefix = when (androidAbi) {
-                "x86_64" -> "x86_64-linux-android24-clang"
-                "arm64-v8a" -> "aarch64-linux-android24-clang"
-                "armeabi-v7a" -> "armv7a-linux-androideabi24-clang"
-                "x86" -> "i686-linux-android24-clang"
-                else -> error("Unsupported Android ABI $androidAbi")
-            }
-            val linker = prebuilt.resolve("bin/$toolPrefix.cmd").takeIf { it.exists() }
-                ?: prebuilt.resolve("bin/$toolPrefix")
-            val envKey = "CARGO_TARGET_${androidTarget.uppercase().replace('-', '_')}_LINKER"
-            commandLine(cargo, "build", "--lib", "--target", androidTarget, "--no-default-features")
-            environment("PATH", cargoPath())
-            environment(envKey, linker.absolutePath)
-            environment("RUSTFLAGS", "-C link-arg=-Wl,-z,max-page-size=16384")
-            val so = crate.resolve("target/$androidTarget/debug/libtimacad_core.so")
-            inputs.dir(crate.resolve("src"))
-            outputs.file(so)
-            doLast {
-                val root = jniLibs.get().asFile
-                root.deleteRecursively()
-                val dest = root.resolve(androidAbi)
-                dest.mkdirs()
-                so.copyTo(dest.resolve("libtimacad_core.so"), overwrite = true)
-            }
+            dependsOn(androidBuilds)
         }
 
         project.afterEvaluate {
@@ -118,6 +112,29 @@ private fun hostLibraryRelativePath(): String {
         os.startsWith("Mac") -> "target/debug/libtimacad_core.dylib"
         else -> "target/debug/libtimacad_core.so"
     }
+}
+
+internal fun androidAbis(project: Project): List<String> {
+    val listed = project.findProperty("timacad.rust.androidAbis")?.toString()?.takeIf { it.isNotBlank() }
+        ?: project.findProperty("timacad.rust.androidAbi")?.toString()?.takeIf { it.isNotBlank() }
+        ?: "arm64-v8a,x86_64"
+    return listed.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+}
+
+private fun androidTarget(abi: String): String = when (abi) {
+    "x86_64" -> "x86_64-linux-android"
+    "arm64-v8a" -> "aarch64-linux-android"
+    "armeabi-v7a" -> "armv7-linux-androideabi"
+    "x86" -> "i686-linux-android"
+    else -> error("Unsupported Android ABI $abi")
+}
+
+private fun androidClang(abi: String): String = when (abi) {
+    "x86_64" -> "x86_64-linux-android24-clang"
+    "arm64-v8a" -> "aarch64-linux-android24-clang"
+    "armeabi-v7a" -> "armv7a-linux-androideabi24-clang"
+    "x86" -> "i686-linux-android24-clang"
+    else -> error("Unsupported Android ABI $abi")
 }
 
 private fun resolveNdk(): File {

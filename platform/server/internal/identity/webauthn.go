@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -36,11 +38,21 @@ type Handler struct {
 }
 
 func New(queries *db.Queries) (*Handler, error) {
+	origins := []string{"http://127.0.0.1:8080", "http://localhost:8080"}
+	if extra := os.Getenv("WEBAUTHN_EXTRA_ORIGINS"); extra != "" {
+		for _, origin := range strings.Split(extra, ",") {
+			origin = strings.TrimSpace(origin)
+			if origin != "" {
+				origins = append(origins, origin)
+			}
+		}
+	}
 	engine, err := webauthn.New(&webauthn.Config{
 		RPDisplayName: "ТИМ",
 		RPID:          "localhost",
 		// Fully qualified origins. The default cmd/server address is 127.0.0.1:8080.
-		RPOrigins: []string{"http://127.0.0.1:8080", "http://localhost:8080"},
+		// WEBAUTHN_EXTRA_ORIGINS adds the Android apk-key-hash origin for Credential Manager.
+		RPOrigins: origins,
 	})
 	if err != nil {
 		return nil, err

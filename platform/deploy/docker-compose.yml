@@ -12,6 +12,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?Set PostgreSQL user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set a unique PostgreSQL password}
       POSTGRES_DB: timacad
+    ports:
+      - "127.0.0.1:55432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres-init:/docker-entrypoint-initdb.d:ro
@@ -148,6 +150,7 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?Set MinIO password}
       MINIO_BUCKET: sources
       INGEST_TOKEN: ${INGEST_TOKEN:?Set the ingest token}
+      WEBAUTHN_EXTRA_ORIGINS: ${WEBAUTHN_EXTRA_ORIGINS:-}
       FIXTURE_DIR: /fixtures
       COMPACT_DOC_BIN: /usr/local/bin/compact-doc
     volumes:

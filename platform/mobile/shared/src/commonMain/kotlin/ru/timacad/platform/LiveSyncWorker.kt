@@ -8,15 +8,19 @@ class LiveSyncWorker(
 ) {
     var quietFailures: Int = 0
         private set
+    var lastError: String? = null
+        private set
 
     fun bootstrap(replicaId: String, groupCode: String): Int {
         return try {
             val frames = transport.bootstrap(replicaId, groupCode)
             frames.forEach { frame -> apply(frame.collection, frame.scopeId, SyncFrame(frame.lsn, frame.op)) }
             quietFailures = 0
+            lastError = null
             frames.size
-        } catch (_: Throwable) {
+        } catch (error: Throwable) {
             quietFailures += 1
+            lastError = error.message
             0
         }
     }

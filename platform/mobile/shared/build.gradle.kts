@@ -67,7 +67,8 @@ android {
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
         ndk {
-            abiFilters += (findProperty("timacad.rust.androidAbi")?.toString() ?: "x86_64")
+            val listed = (findProperty("timacad.rust.androidAbis") ?: findProperty("timacad.rust.androidAbi") ?: "arm64-v8a,x86_64").toString()
+            abiFilters += listed.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         }
     }
     compileOptions {

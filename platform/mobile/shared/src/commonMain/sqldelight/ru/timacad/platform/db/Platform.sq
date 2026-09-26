@@ -161,6 +161,9 @@ SELECT group_code, institute_name, course, status
 FROM local_group
 ORDER BY institute_name, course, group_code;
 
+countLessons:
+SELECT count(*) FROM local_lesson WHERE group_code = ?;
+
 CREATE TABLE local_lesson_change (
     group_code TEXT NOT NULL,
     lsn INTEGER NOT NULL,

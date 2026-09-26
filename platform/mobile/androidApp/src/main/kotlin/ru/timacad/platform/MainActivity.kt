@@ -3,6 +3,11 @@ package ru.timacad.platform
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
+import android.view.FrameMetrics
+import android.view.Window
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
@@ -43,10 +48,39 @@ class MainActivity : ComponentActivity() {
         val worker = LiveSyncWorker(schedule, personal, transport) {
             refreshScheduleWidget(this@MainActivity)
         }
+        val frameBuckets = IntArray(4)
+        window.addOnFrameMetricsAvailableListener({ _: Window, metrics: FrameMetrics, _: Int ->
+            val ms = metrics.getMetric(FrameMetrics.TOTAL_DURATION) / 1_000_000.0
+            val index = when {
+                ms < 8.0 -> 0
+                ms < 12.0 -> 1
+                ms < 17.0 -> 2
+                else -> 3
+            }
+            frameBuckets[index] += 1
+            val seen = frameBuckets.sum()
+            if (seen % 30 == 0) {
+                Log.i("TimFrame", "frames=$seen under8=${frameBuckets[0]} under12=${frameBuckets[1]} under17=${frameBuckets[2]} slower=${frameBuckets[3]}")
+            }
+        }, Handler(Looper.getMainLooper()))
         thread(name = "timacad-sync") {
             val replica = schedule.replicaId()
-            worker.bootstrap(replica, schedule.selectedGroup().orEmpty())
+            val directory = worker.bootstrap(replica, "")
+            val known = schedule.allGroups()
+            val groupCode = when {
+                known.any { it.code == "Д-А401" } -> "Д-А401"
+                known.isNotEmpty() -> known.first().code
+                else -> schedule.selectedGroup()
+            }
+            if (!groupCode.isNullOrBlank()) {
+                schedule.select(groupCode)
+                worker.bootstrap(replica, groupCode)
+            }
             worker.flushOutbox(replica)
+            Log.i(
+                "TimSync",
+                "host=$SYNC_BASE_URL directoryFrames=$directory groups=${schedule.allGroups().size} group=$groupCode lessons=${groupCode?.let(schedule::lessonCount) ?: 0} error=${worker.lastError}",
+            )
             while (!isDestroyed) {
                 try {
                     val scope = schedule.selectedGroup() ?: "catalog"

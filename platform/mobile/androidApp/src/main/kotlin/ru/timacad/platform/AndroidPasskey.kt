@@ -11,6 +11,7 @@ import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetPublicKeyCredentialOption
 import androidx.credentials.PublicKeyCredential
 import java.security.KeyStore
+import org.json.JSONObject
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
@@ -21,13 +22,22 @@ class AndroidPasskeyPrompt(private val context: Context) : PasskeyPrompt {
     private val manager = CredentialManager.create(context)
 
     override fun create(requestJson: String): String = runBlocking {
-        val result = manager.createCredential(context, CreatePublicKeyCredentialRequest(requestJson))
+        val result = manager.createCredential(context, CreatePublicKeyCredentialRequest(publicKeyJson(requestJson)))
         (result as CreatePublicKeyCredentialResponse).registrationResponseJson
     }
 
     override fun get(requestJson: String): String = runBlocking {
-        val result = manager.getCredential(context, GetCredentialRequest(listOf(GetPublicKeyCredentialOption(requestJson))))
+        val result = manager.getCredential(context, GetCredentialRequest(listOf(GetPublicKeyCredentialOption(publicKeyJson(requestJson)))))
         (result.credential as PublicKeyCredential).authenticationResponseJson
+    }
+
+    private fun publicKeyJson(body: String): String {
+        return try {
+            val root = JSONObject(body)
+            if (root.has("publicKey")) root.getJSONObject("publicKey").toString() else body
+        } catch (_: Throwable) {
+            body
+        }
     }
 }
 
