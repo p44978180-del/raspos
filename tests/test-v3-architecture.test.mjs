@@ -140,21 +140,14 @@ it("3.3 MiniAppRuntime.tsx provides sandboxed UI and NFC turnstile simulation", 
 // ─── SUITE 4: Rust Shared Core & WASM Bridge ──────────────────────────────────
 console.log("\n--- SUITE 4: Rust Shared Core & WASM Bridge ---")
 
-it("4.1 rust-core/Cargo.toml and src/lib.rs exist with cdylib configuration", () => {
-  const cargoPath = path.join(rootDir, "rust-core", "Cargo.toml")
-  const libPath = path.join(rootDir, "rust-core", "src", "lib.rs")
-  assert(fs.existsSync(cargoPath), "rust-core/Cargo.toml must exist")
-  assert(fs.existsSync(libPath), "rust-core/src/lib.rs must exist")
-  const cargoContent = fs.readFileSync(cargoPath, "utf-8")
-  assert(cargoContent.includes('crate-type = ["cdylib", "rlib"]'), "Must declare cdylib for WASM/FFI")
-})
-
-it("4.2 Rust core implements rust_fnv1a_hash, rust_crdt_vector_merge and dijkstra_search", () => {
-  const libPath = path.join(rootDir, "rust-core", "src", "lib.rs")
-  const content = fs.readFileSync(libPath, "utf-8")
-  assert(content.includes("rust_fnv1a_hash"), "Must export rust_fnv1a_hash")
-  assert(content.includes("rust_crdt_vector_merge"), "Must export rust_crdt_vector_merge")
-  assert(content.includes("dijkstra_search"), "Must implement zero-alloc dijkstra_search")
+it("4.1 legacy stub trees are gone and the platform tree is the entry", () => {
+  for (const name of ["backend", "kmp", "rust-core"]) {
+    assert.strictEqual(fs.existsSync(path.join(rootDir, name)), false, `${name} must stay removed`)
+  }
+  assert(fs.existsSync(path.join(rootDir, "platform", "README.md")), "platform/README.md must exist")
+  assert(fs.existsSync(path.join(rootDir, "platform", "server", "go.mod")), "platform server must exist")
+  assert(fs.existsSync(path.join(rootDir, "platform", "rust", "timacad-core", "Cargo.toml")), "timacad-core must exist")
+  assert(fs.existsSync(path.join(rootDir, "platform", "mobile", "settings.gradle.kts")), "platform mobile must exist")
 })
 
 it("4.3 src/utils/rustCore.ts bridges FNV-1a hashing and varint decoding with zero lag", async () => {
@@ -170,120 +163,6 @@ it("4.3 src/utils/rustCore.ts bridges FNV-1a hashing and varint decoding with ze
   const decoded = rustCore.decodeVarint(varintBuf)
   assert.strictEqual(decoded.value, 300)
   assert.strictEqual(decoded.bytesRead, 2)
-})
-
-// ─── SUITE 5: Kotlin Multiplatform (KMP) Full Architecture ────────────────────
-console.log("\n--- SUITE 5: Kotlin Multiplatform (KMP) Architecture ---")
-
-it("5.1 kmp/ settings and build gradle files declare cross-platform targets", () => {
-  const settingsPath = path.join(rootDir, "kmp", "settings.gradle.kts")
-  const buildPath = path.join(rootDir, "kmp", "build.gradle.kts")
-  const sharedBuildPath = path.join(rootDir, "kmp", "shared", "build.gradle.kts")
-  assert(fs.existsSync(settingsPath), "kmp/settings.gradle.kts must exist")
-  assert(fs.existsSync(buildPath), "kmp/build.gradle.kts must exist")
-  assert(fs.existsSync(sharedBuildPath), "kmp/shared/build.gradle.kts must exist")
-
-  const sharedBuild = fs.readFileSync(sharedBuildPath, "utf-8")
-  assert(sharedBuild.includes("androidTarget"), "Must configure androidTarget")
-  assert(sharedBuild.includes("iosArm64"), "Must configure ios targets")
-  assert(sharedBuild.includes("io.ktor:ktor-client-core"), "Must depend on Ktor client")
-  assert(sharedBuild.includes("app.cash.sqldelight"), "Must depend on SQLDelight")
-  assert(sharedBuild.includes("com.arkivanov.decompose"), "Must depend on Decompose/MVIKotlin")
-})
-
-it("5.2 KMP commonMain defines domain models, Connect-RPC client, and MVI ScheduleStore", () => {
-  const modelsPath = path.join(rootDir, "kmp", "shared", "src", "commonMain", "kotlin", "ru", "timacad", "raspos", "core", "domain", "models", "ScheduleModels.kt")
-  const rpcPath = path.join(rootDir, "kmp", "shared", "src", "commonMain", "kotlin", "ru", "timacad", "raspos", "core", "data", "network", "ConnectRpcClient.kt")
-  const mviPath = path.join(rootDir, "kmp", "shared", "src", "commonMain", "kotlin", "ru", "timacad", "raspos", "core", "mvi", "ScheduleStore.kt")
-
-  assert(fs.existsSync(modelsPath), "ScheduleModels.kt must exist")
-  assert(fs.existsSync(rpcPath), "ConnectRpcClient.kt must exist")
-  assert(fs.existsSync(mviPath), "ScheduleStore.kt must exist")
-
-  const mviContent = fs.readFileSync(mviPath, "utf-8")
-  assert(mviContent.includes("interface ScheduleStore : Store"), "ScheduleStore must implement MVI Store interface")
-})
-
-it("5.3 KMP androidMain defines Jetpack Glance Widget and Dynamic Island Overlay Service", () => {
-  const glancePath = path.join(rootDir, "kmp", "shared", "src", "androidMain", "kotlin", "ru", "timacad", "raspos", "glance", "ScheduleGlanceWidget.kt")
-  const islandPath = path.join(rootDir, "kmp", "shared", "src", "androidMain", "kotlin", "ru", "timacad", "raspos", "dynamicisland", "DynamicIslandOverlayService.kt")
-
-  assert(fs.existsSync(glancePath), "ScheduleGlanceWidget.kt must exist")
-  assert(fs.existsSync(islandPath), "DynamicIslandOverlayService.kt must exist")
-
-  const glanceContent = fs.readFileSync(glancePath, "utf-8")
-  assert(glanceContent.includes("class ScheduleGlanceWidget : GlanceAppWidget()"), "Must implement GlanceAppWidget")
-})
-
-it("5.4 KMP iosMain defines Swift ActivityKit Live Activity and WidgetKit module", () => {
-  const swiftPath = path.join(rootDir, "kmp", "shared", "src", "iosMain", "swift", "ScheduleLiveActivity.swift")
-  const bridgePath = path.join(rootDir, "kmp", "shared", "src", "iosMain", "kotlin", "ru", "timacad", "raspos", "activitykit", "LiveActivityBridge.kt")
-
-  assert(fs.existsSync(swiftPath), "ScheduleLiveActivity.swift must exist")
-  assert(fs.existsSync(bridgePath), "LiveActivityBridge.kt must exist")
-
-  const swiftContent = fs.readFileSync(swiftPath, "utf-8")
-  assert(swiftContent.includes("struct ScheduleLiveActivityWidget: Widget"), "Must define ScheduleLiveActivityWidget")
-  assert(swiftContent.includes("DynamicIslandExpandedRegion"), "Must configure expanded Dynamic Island regions")
-})
-
-it("5.5 KMP composeApp implements 120 FPS Compose Multiplatform ScheduleScreen", () => {
-  const screenPath = path.join(rootDir, "kmp", "composeApp", "src", "commonMain", "kotlin", "ru", "timacad", "raspos", "ui", "ScheduleScreen.kt")
-  assert(fs.existsSync(screenPath), "ScheduleScreen.kt must exist")
-  const content = fs.readFileSync(screenPath, "utf-8")
-  assert(content.includes("fun ScheduleScreen("), "Must export ScheduleScreen composable")
-  assert(content.includes("LazyColumn"), "Must use virtualized LazyColumn for 120 FPS performance")
-})
-
-// ─── SUITE 6: Go 1.23+ Backend Core ───────────────────────────────────────────
-console.log("\n--- SUITE 6: Go 1.23+ Backend Core (Connect-RPC, Temporal, sqlc, Centrifugo, Dragonfly) ---")
-
-it("6.1 backend/internal/delivery/connectrpc/service.go implements Connect-RPC protocol", () => {
-  const servicePath = path.join(rootDir, "backend", "internal", "delivery", "connectrpc", "service.go")
-  assert(fs.existsSync(servicePath), "connectrpc/service.go must exist")
-  const content = fs.readFileSync(servicePath, "utf-8")
-  assert(content.includes("HeaderConnectProtocolVersion = \"Connect-Protocol-Version\""), "Must handle Connect-Protocol-Version")
-  assert(content.includes("GetScheduleDeltaResponse"), "Must provide binary delta response")
-  assert(content.includes("http.StatusNotModified"), "Must support 304 Not Modified delta verification")
-})
-
-it("6.2 backend/internal/temporal/workflow.go implements distributed scraper saga", () => {
-  const wfPath = path.join(rootDir, "backend", "internal", "temporal", "workflow.go")
-  assert(fs.existsSync(wfPath), "temporal/workflow.go must exist")
-  const content = fs.readFileSync(wfPath, "utf-8")
-  assert(content.includes("ScheduleScraperWorkflow"), "Must define ScheduleScraperWorkflow")
-  assert(content.includes("DownloadPDFActivity"), "Must define DownloadPDFActivity")
-  assert(content.includes("ComputeDiffAndSnapshotActivity"), "Must define ComputeDiffAndSnapshotActivity")
-})
-
-it("6.3 backend/internal/repository/sqlc defines PostgreSQL 16 schema and zero-alloc queries", () => {
-  const sqlcYaml = path.join(rootDir, "backend", "internal", "repository", "sqlc", "sqlc.yaml")
-  const schemaSql = path.join(rootDir, "backend", "internal", "repository", "sqlc", "schema.sql")
-  const queriesSql = path.join(rootDir, "backend", "internal", "repository", "sqlc", "queries.sql")
-
-  assert(fs.existsSync(sqlcYaml), "sqlc.yaml must exist")
-  assert(fs.existsSync(schemaSql), "schema.sql must exist")
-  assert(fs.existsSync(queriesSql), "queries.sql must exist")
-
-  const queries = fs.readFileSync(queriesSql, "utf-8")
-  assert(queries.includes("GetEmptyClassroomsRadar"), "queries.sql must define GetEmptyClassroomsRadar")
-  assert(queries.includes("UpsertLessonAssignment"), "queries.sql must define UpsertLessonAssignment")
-})
-
-it("6.4 backend/internal/delivery/centrifugo/hub.go implements sub-50ms push broadcast", () => {
-  const hubPath = path.join(rootDir, "backend", "internal", "delivery", "centrifugo", "hub.go")
-  assert(fs.existsSync(hubPath), "centrifugo/hub.go must exist")
-  const content = fs.readFileSync(hubPath, "utf-8")
-  assert(content.includes("BroadcastClassCancelled"), "Must provide BroadcastClassCancelled")
-  assert(content.includes("schedule:group:"), "Must use fine-grained group channels")
-})
-
-it("6.5 backend/internal/cache/dragonfly/cache.go provides high-throughput binary caching", () => {
-  const cachePath = path.join(rootDir, "backend", "internal", "cache", "dragonfly", "cache.go")
-  assert(fs.existsSync(cachePath), "dragonfly/cache.go must exist")
-  const content = fs.readFileSync(cachePath, "utf-8")
-  assert(content.includes("StoreBinarySnapshot"), "Must provide StoreBinarySnapshot")
-  assert(content.includes("GetBinarySnapshot"), "Must provide GetBinarySnapshot")
 })
 
 // ─── SUITE 7: Killer Features & Design Overhaul ───────────────────────────────
