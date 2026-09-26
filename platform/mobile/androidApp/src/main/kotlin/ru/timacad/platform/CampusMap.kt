@@ -26,11 +26,12 @@ fun CampusMap(modifier: Modifier = Modifier) {
         mapView.onStart()
         mapView.onResume()
         mapView.getMapAsync { map ->
-            map.setStyle(Style.Builder().fromUri("asset://campus/style.json"))
-            map.cameraPosition = CameraPosition.Builder()
-                .target(LatLng(55.8334, 37.5502))
-                .zoom(16.0)
-                .build()
+            map.setStyle(Style.Builder().fromUri("asset://campus/style.json")) {
+                map.cameraPosition = CameraPosition.Builder()
+                    .target(LatLng(55.8334, 37.5502))
+                    .zoom(16.6)
+                    .build()
+            }
         }
         onDispose {
             mapView.onPause()

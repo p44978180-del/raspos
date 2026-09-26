@@ -1,7 +1,7 @@
 {
   "version": 8,
   "name": "Схема территории",
-  "glyphs": "file:///android_asset/campus/glyphs/{fontstack}/{range}.pbf",
+  "glyphs": "asset://campus/glyphs/{fontstack}/{range}.pbf",
   "center": [37.5502, 55.8334],
   "zoom": 17,
   "sources": {
@@ -43,6 +43,6 @@
     {"id": "paper", "type": "background", "paint": {"background-color": "#f3efe4"}},
     {"id": "footprint", "type": "fill", "source": "scheme", "filter": ["==", ["geometry-type"], "Polygon"], "paint": {"fill-color": "#d9c7a6", "fill-outline-color": "#6b5a45"}},
     {"id": "rooms", "type": "circle", "source": "scheme", "filter": ["==", ["get", "kind"], "room"], "paint": {"circle-radius": 6, "circle-color": "#2f5d50"}},
-    {"id": "labels", "type": "symbol", "source": "scheme", "filter": ["has", "name"], "layout": {"text-field": ["get", "name"], "text-font": ["TimCampus"], "text-size": 22, "text-anchor": "top", "text-allow-overlap": true, "text-ignore-placement": true}, "paint": {"text-color": "#1c1915", "text-halo-color": "#f3efe4", "text-halo-width": 2}}
+    {"id": "labels", "type": "symbol", "source": "scheme", "filter": ["has", "name"], "layout": {"text-field": ["get", "name"], "text-font": ["TimCampus"], "text-size": 28, "text-anchor": "center", "text-allow-overlap": true, "text-ignore-placement": true}, "paint": {"text-color": "#111111", "text-halo-color": "#ffffff", "text-halo-width": 1}}
   ]
 }

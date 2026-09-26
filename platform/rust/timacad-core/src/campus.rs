@@ -274,7 +274,7 @@ fn sdf(rows: &[u8; 7]) -> (Vec<u8>, u32, u32) {
                 }
                 let near = ink.iter().any(|(ix, iy)| x.abs_diff(*ix) + y.abs_diff(*iy) == 1);
                 if near {
-                    bitmap[y * width + x] = 180;
+                    bitmap[y * width + x] = 192;
                 }
             }
         }
@@ -342,7 +342,7 @@ fn zigzag(value: i32) -> u64 {
 pub const CAMPUS_STYLE: &str = r##"{
   "version": 8,
   "name": "Схема территории",
-  "glyphs": "file:///android_asset/campus/glyphs/{fontstack}/{range}.pbf",
+  "glyphs": "asset://campus/glyphs/{fontstack}/{range}.pbf",
   "center": [37.5502, 55.8334],
   "zoom": 17,
   "sources": {
@@ -384,7 +384,7 @@ pub const CAMPUS_STYLE: &str = r##"{
     {"id": "paper", "type": "background", "paint": {"background-color": "#f3efe4"}},
     {"id": "footprint", "type": "fill", "source": "scheme", "filter": ["==", ["geometry-type"], "Polygon"], "paint": {"fill-color": "#d9c7a6", "fill-outline-color": "#6b5a45"}},
     {"id": "rooms", "type": "circle", "source": "scheme", "filter": ["==", ["get", "kind"], "room"], "paint": {"circle-radius": 6, "circle-color": "#2f5d50"}},
-    {"id": "labels", "type": "symbol", "source": "scheme", "filter": ["has", "name"], "layout": {"text-field": ["get", "name"], "text-font": ["TimCampus"], "text-size": 22, "text-anchor": "top", "text-allow-overlap": true, "text-ignore-placement": true}, "paint": {"text-color": "#1c1915", "text-halo-color": "#f3efe4", "text-halo-width": 2}}
+    {"id": "labels", "type": "symbol", "source": "scheme", "filter": ["has", "name"], "layout": {"text-field": ["get", "name"], "text-font": ["TimCampus"], "text-size": 28, "text-anchor": "center", "text-allow-overlap": true, "text-ignore-placement": true}, "paint": {"text-color": "#111111", "text-halo-color": "#ffffff", "text-halo-width": 1}}
   ]
 }
 "##;
@@ -496,7 +496,7 @@ mod tests {
         let lowered = style.to_ascii_lowercase();
         assert!(!lowered.contains("http://") && !lowered.contains("https://"), "style points at the network");
         assert!(style.contains("\"name\": \"Схема территории\""));
-        assert!(style.contains("file:///android_asset/campus/glyphs/{fontstack}/{range}.pbf"));
+        assert!(style.contains("asset://campus/glyphs/{fontstack}/{range}.pbf"));
         assert!(style.contains("\"text-font\": [\"TimCampus\"]"));
         let names = ["Корпус 2", "101", "102", "201", "Лестница"];
         for name in names {

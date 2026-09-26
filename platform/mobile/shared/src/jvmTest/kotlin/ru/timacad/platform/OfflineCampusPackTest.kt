@@ -15,7 +15,7 @@ class OfflineCampusPackTest {
         assertFalse(lowered.contains("http://"))
         assertFalse(lowered.contains("https://"))
         assertTrue(style.contains("\"name\": \"Схема территории\""))
-        assertTrue(style.contains("file:///android_asset/campus/glyphs/{fontstack}/{range}.pbf"))
+        assertTrue(style.contains("asset://campus/glyphs/{fontstack}/{range}.pbf"))
         assertTrue(style.contains("\"text-font\": [\"TimCampus\"]"))
         assertTrue(style.contains("\"id\": \"labels\""))
         val names = listOf("Корпус 2", "101", "102", "201", "Лестница")
