@@ -100,11 +100,19 @@ func main() {
 		_, _ = w.Write([]byte("ok"))
 	})
 	slog.Info("listen", "addr", addr)
-	server := &http.Server{Addr: addr, Handler: h2c.NewHandler(mux, &http2.Server{}), ReadHeaderTimeout: 10 * time.Second}
+	server := &http.Server{Addr: addr, Handler: transportHandler(mux), ReadHeaderTimeout: 10 * time.Second}
 	if err := server.ListenAndServe(); err != nil {
 		slog.Error("http", "err", err)
 		os.Exit(1)
 	}
+}
+
+// h2c reads an Upgrade request before the route handler sees it. Bound that
+// allocation as well as ordinary HTTP/1 and HTTP/2 request bodies.
+func transportHandler(next http.Handler) http.Handler {
+	const maxRequestBytes = 16 << 20
+	bounded := http.MaxBytesHandler(next, maxRequestBytes)
+	return http.MaxBytesHandler(h2c.NewHandler(bounded, &http2.Server{}), maxRequestBytes)
 }
 
 var errUnavailable = errString("temporal is not connected")
