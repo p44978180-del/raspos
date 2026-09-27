@@ -1,5 +1,8 @@
 package ru.timacad.platform
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+
 data class BootstrapFrame(
     val collection: String,
     val scopeId: String,
@@ -105,17 +108,27 @@ fun encodeEnvelope(payload: ByteArray, end: Boolean = false): ByteArray {
 fun decodeEnvelopes(stream: ByteArray): List<ByteArray> {
     val messages = mutableListOf<ByteArray>()
     var cursor = 0
-    while (cursor + 5 <= stream.size) {
+    var ended = false
+    while (cursor < stream.size) {
+        check(!ended) { "data after Connect end-stream envelope" }
+        check(stream.size - cursor >= 5) { "connect envelope header is truncated" }
         val flags = stream[cursor].toInt() and 0xff
         val size = ((stream[cursor + 1].toInt() and 0xff) shl 24) or
             ((stream[cursor + 2].toInt() and 0xff) shl 16) or
             ((stream[cursor + 3].toInt() and 0xff) shl 8) or
             (stream[cursor + 4].toInt() and 0xff)
         val start = cursor + 5
-        if (size < 0 || start + size > stream.size) error("connect envelope is truncated")
-        if (flags and 0x02 == 0) messages += stream.copyOfRange(start, start + size)
+        if (size < 0 || size > stream.size - start) error("connect envelope is truncated")
+        check(flags == 0 || flags == 2) { "unsupported Connect envelope flags" }
+        val payload = stream.copyOfRange(start, start + size)
+        if (flags == 0) messages += payload else {
+            val terminal = Json.parseToJsonElement(payload.decodeToString().ifEmpty { "{}" }).jsonObject
+            check("error" !in terminal) { "Connect stream returned an error" }
+            ended = true
+        }
         cursor = start + size
     }
+    check(ended) { "Connect stream ended without terminal envelope" }
     return messages
 }
 
@@ -194,6 +207,7 @@ fun decodePullFrames(stream: ByteArray): List<SyncFrame> {
         val reader = WireReader(message)
         var lsn = 0L
         var op = ByteArray(0)
+        var reset = false
         while (!reader.exhausted()) {
             val tag = reader.varint()
             val field = (tag ushr 3).toInt()
@@ -201,10 +215,11 @@ fun decodePullFrames(stream: ByteArray): List<SyncFrame> {
             when {
                 field == 1 && wire == 0 -> lsn = reader.varint()
                 field == 2 && wire == 2 -> op = reader.bytes()
+                field == 4 && wire == 0 -> reset = reader.varint() != 0L
                 else -> reader.skip(wire)
             }
         }
-        SyncFrame(lsn, op)
+        SyncFrame(lsn, op, reset)
     }
 }
 

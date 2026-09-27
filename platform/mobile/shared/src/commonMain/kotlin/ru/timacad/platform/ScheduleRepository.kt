@@ -8,9 +8,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import ru.timacad.platform.db.PlatformDatabase
 import kotlin.coroutines.CoroutineContext
+import androidx.compose.runtime.Immutable
 
+@Immutable
 data class LocalGroup(val code: String, val institute: String, val course: Int, val status: String)
 
+@Immutable
 data class LocalLesson(
     val occursOn: String,
     val startsAt: String,
@@ -23,6 +26,7 @@ data class LocalLesson(
     val sourceUrl: String,
 )
 
+@Immutable
 data class DayView(
     val groupCode: String?,
     val date: String?,
@@ -33,6 +37,8 @@ class ScheduleRepository(
     private val database: PlatformDatabase,
     private val driver: SqlDriver? = null,
 ) {
+    fun transaction(block: () -> Unit) { database.transaction { block() } }
+
     fun replaceDirectory(groups: List<LocalGroup>, lsn: Long = 0) {
         database.transaction {
             database.platformQueries.deleteGroups()
@@ -40,8 +46,8 @@ class ScheduleRepository(
                 database.platformQueries.insertGroup(group.code, group.institute, group.course.toLong(), group.status)
             }
             database.platformQueries.upsertCursor("group_directory", "catalog", "", lsn)
+            rebuildFts(groups)
         }
-        rebuildFts(groups)
     }
 
     fun replaceLessons(groupCode: String, snapshotHash: String, lsn: Long, lessons: List<LocalLesson>) {
@@ -64,19 +70,13 @@ class ScheduleRepository(
                 )
             }
             database.platformQueries.upsertCursor("lesson", groupCode, snapshotHash, lsn)
-            database.platformQueries.upsertSelection(groupCode)
+            if (selectedGroup() == null) database.platformQueries.upsertSelection(groupCode)
         }
     }
 
     fun search(query: String): List<LocalGroup> {
-        val fts = ftsCodes(query)
-        if (!fts.isNullOrEmpty()) {
-            return fts.mapNotNull { code ->
-                database.platformQueries.groupByCode(code).executeAsOneOrNull()?.let {
-                    LocalGroup(it.group_code, it.institute_name, it.course.toInt(), it.status)
-                }
-            }
-        }
+        val fts = ftsGroups(query)
+        if (fts != null) return fts
         return database.platformQueries.searchGroups(query, query).executeAsList().map {
             LocalGroup(it.group_code, it.institute_name, it.course.toInt(), it.status)
         }
@@ -124,28 +124,34 @@ class ScheduleRepository(
         groups.forEach { group ->
             sql.execute(null, "INSERT INTO group_fts(group_code, institute_name) VALUES (?, ?)", 2) {
                 bindString(0, group.code)
-                bindString(1, group.institute)
+                // Also index the numeric part separately: a student searching
+                // for 401 should find Д-А401 without knowing its letter prefix.
+                val numbers = Regex("[0-9]+").findAll(group.code).joinToString(" ") { it.value }
+                bindString(1, "${group.institute} $numbers")
             }
         }
     }
 
-    private fun ftsCodes(query: String): List<String>? {
+    private fun ftsGroups(query: String): List<LocalGroup>? {
         val sql = driver ?: return null
-        val token = query.trim()
-        if (token.isEmpty()) return null
-        val match = token.filter { it.isLetterOrDigit() }
-        if (match.length < 2) return null
-        return try {
-            val codes = mutableListOf<String>()
-            sql.executeQuery(null, "SELECT group_code FROM group_fts WHERE group_fts MATCH ? LIMIT 100", { cursor ->
-                while (cursor.next().value) codes += cursor.getString(0).orEmpty()
-                QueryResult.Value(codes)
-            }, 1) {
-                bindString(0, "$match*")
-            }.value
-        } catch (_: Throwable) {
-            null
-        }
+        // Match unicode61's word boundaries, including hyphenated group codes.
+        // Quote tokens so user input never becomes an FTS expression.
+        val tokens = query.split(Regex("[^\\p{L}\\p{N}]+" )).filter { it.isNotEmpty() }
+        if (tokens.isEmpty()) return emptyList()
+        val match = tokens.joinToString(" AND ") { "\"$it\"*" }
+        sql.execute(null, "CREATE VIRTUAL TABLE IF NOT EXISTS group_fts USING fts5(group_code, institute_name)", 0, null)
+        return sql.executeQuery(null, """
+            SELECT g.group_code, g.institute_name, g.course, g.status
+            FROM group_fts JOIN local_group g ON g.group_code = group_fts.group_code
+            WHERE group_fts MATCH ? ORDER BY g.group_code
+        """.trimIndent(), { cursor ->
+            val groups = mutableListOf<LocalGroup>()
+            while (cursor.next().value) groups += LocalGroup(
+                cursor.getString(0).orEmpty(), cursor.getString(1).orEmpty(),
+                cursor.getLong(2)!!.toInt(), cursor.getString(3).orEmpty(),
+            )
+            QueryResult.Value(groups)
+        }, 1) { bindString(0, match) }.value
     }
 
     fun day(groupCode: String?, preferredDate: String?): DayView {

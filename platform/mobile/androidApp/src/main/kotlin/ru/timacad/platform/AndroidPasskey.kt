@@ -10,6 +10,10 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetPublicKeyCredentialOption
 import androidx.credentials.PublicKeyCredential
+import androidx.credentials.exceptions.CreateCredentialCancellationException
+import androidx.credentials.exceptions.CreateCredentialNoCreateOptionException
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
 import java.security.KeyStore
 import org.json.JSONObject
 import javax.crypto.Cipher
@@ -22,13 +26,25 @@ class AndroidPasskeyPrompt(private val context: Context) : PasskeyPrompt {
     private val manager = CredentialManager.create(context)
 
     override fun create(requestJson: String): String = runBlocking {
-        val result = manager.createCredential(context, CreatePublicKeyCredentialRequest(publicKeyJson(requestJson)))
-        (result as CreatePublicKeyCredentialResponse).registrationResponseJson
+        try {
+            val result = manager.createCredential(context, CreatePublicKeyCredentialRequest(publicKeyJson(requestJson)))
+            (result as CreatePublicKeyCredentialResponse).registrationResponseJson
+        } catch (_: CreateCredentialCancellationException) {
+            throw PasskeyPromptException("Создание ключа отменено")
+        } catch (_: CreateCredentialNoCreateOptionException) {
+            throw PasskeyPromptException("Настройте блокировку экрана и провайдер ключей доступа в настройках Android")
+        }
     }
 
     override fun get(requestJson: String): String = runBlocking {
-        val result = manager.getCredential(context, GetCredentialRequest(listOf(GetPublicKeyCredentialOption(publicKeyJson(requestJson)))))
-        (result.credential as PublicKeyCredential).authenticationResponseJson
+        try {
+            val result = manager.getCredential(context, GetCredentialRequest(listOf(GetPublicKeyCredentialOption(publicKeyJson(requestJson)))))
+            (result.credential as PublicKeyCredential).authenticationResponseJson
+        } catch (_: GetCredentialCancellationException) {
+            throw PasskeyPromptException("Вход отменён")
+        } catch (_: NoCredentialException) {
+            throw PasskeyPromptException("Ключ доступа не найден. Создайте ключ или выберите другой провайдер.")
+        }
     }
 
     private fun publicKeyJson(body: String): String {
@@ -45,10 +61,14 @@ class KeystoreVault(context: Context) : SessionVault {
     private val prefs = context.getSharedPreferences("timacad.session", Context.MODE_PRIVATE)
 
     override fun save(token: String) {
-        prefs.edit().putString("sealed", seal(token)).apply()
+        check(prefs.edit().putString("sealed", seal(token)).commit()) { "Cannot save session" }
     }
 
     override fun load(): String? = prefs.getString("sealed", null)?.let(::open)
+
+    override fun clear() {
+        check(prefs.edit().remove("sealed").commit()) { "Cannot clear session" }
+    }
 
     private fun seal(token: String): String {
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")

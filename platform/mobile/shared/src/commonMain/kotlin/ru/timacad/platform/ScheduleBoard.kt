@@ -99,6 +99,22 @@ fun groupsOf(groups: List<LocalGroup>, institute: String, course: Int): List<Loc
     return groups.filter { it.institute == institute && it.course == course }.sortedBy { it.code }
 }
 
+@Immutable
+data class GroupPickerView(
+    val query: String = "", val institute: String? = null, val course: Int? = null,
+    val institutes: List<String> = emptyList(), val courses: List<Int> = emptyList(),
+    val shown: List<LocalGroup> = emptyList(),
+)
+
+fun groupPickerView(groups: List<LocalGroup>, previous: GroupPickerView, matches: List<LocalGroup>): GroupPickerView {
+    val institutes = institutesOf(groups)
+    val institute = previous.institute?.takeIf { it in institutes } ?: institutes.firstOrNull()
+    val courses = institute?.let { coursesOf(groups, it) }.orEmpty()
+    val course = previous.course?.takeIf { it in courses } ?: courses.firstOrNull()
+    val shown = if (previous.query.isNotBlank()) matches else if (institute != null && course != null) groupsOf(groups, institute, course) else emptyList()
+    return previous.copy(institute = institute, course = course, institutes = institutes, courses = courses, shown = shown)
+}
+
 fun backoffMillis(attempt: Int, unit: Double): Long {
     val power = attempt.coerceIn(0, 16)
     val base = min(30_000.0, 1_000.0 * 2.0.pow(power))
@@ -158,18 +174,22 @@ interface PasskeyPrompt {
 interface SessionVault {
     fun save(token: String)
     fun load(): String?
+    fun clear()
 }
 
 class MemoryVault : SessionVault {
     private var token: String? = null
     override fun save(token: String) { this.token = token }
     override fun load(): String? = token
+    override fun clear() { token = null }
 }
 
 sealed interface PasskeyOutcome {
     data class Session(val token: String) : PasskeyOutcome
     data class Quiet(val detail: String) : PasskeyOutcome
 }
+
+class PasskeyPromptException(message: String) : Exception(message)
 
 class PasskeyClient(
     private val http: PasskeyHttp,
@@ -182,28 +202,34 @@ class PasskeyClient(
         create = true,
     )
 
-    fun login(principalId: String): PasskeyOutcome = ceremony(
+    fun login(): PasskeyOutcome = ceremony(
         begin = PASSKEY_LOGIN_BEGIN,
         finish = PASSKEY_LOGIN_FINISH,
         create = false,
-        principal = principalId,
     )
 
-    private fun ceremony(begin: String, finish: String, create: Boolean, principal: String? = null): PasskeyOutcome {
-        val headers = if (principal == null) emptyMap() else mapOf("X-Principal-Id" to principal)
-        val started = http.post(begin, "", headers)
+    private fun ceremony(begin: String, finish: String, create: Boolean): PasskeyOutcome = try {
+        performCeremony(begin, finish, create)
+    } catch (error: PasskeyPromptException) {
+        PasskeyOutcome.Quiet(error.message ?: "Не удалось использовать ключ доступа")
+    } catch (_: Exception) {
+        PasskeyOutcome.Quiet("Не удалось завершить вход. Проверьте соединение и повторите попытку.")
+    }
+
+    private fun performCeremony(begin: String, finish: String, create: Boolean): PasskeyOutcome {
+        val started = http.post(begin, "", emptyMap())
         if (started.status !in 200..299) return PasskeyOutcome.Quiet("сервер не выдал challenge")
-        val principalId = principal ?: header(started.headers, "X-Principal-Id")
-            ?: return PasskeyOutcome.Quiet("сервер не назвал старосту")
-        val signed = try {
-            if (create) prompt.create(started.body) else prompt.get(started.body)
-        } catch (_: Throwable) {
-            return PasskeyOutcome.Quiet("система не подтвердила биометрию")
-        }
-        val done = http.post(finish, signed, mapOf("X-Principal-Id" to principalId))
+        val ceremonyId = header(started.headers, "X-Ceremony-Id")
+            ?: return PasskeyOutcome.Quiet("Сервер не выдал идентификатор запроса")
+        val headers = mutableMapOf("X-Ceremony-Id" to ceremonyId)
+        if (create) headers["X-Principal-Id"] = header(started.headers, "X-Principal-Id")
+            ?: return PasskeyOutcome.Quiet("Сервер не выдал идентификатор аккаунта")
+        val signed = if (create) prompt.create(started.body) else prompt.get(started.body)
+        val done = http.post(finish, signed, headers)
         val token = sessionToken(done.body)
         if (done.status !in 200..299 || token == null) return PasskeyOutcome.Quiet("сессия не выдана")
         vault.save(token)
+        check(vault.load() == token) { "Session was not persisted" }
         return PasskeyOutcome.Session(token)
     }
 }

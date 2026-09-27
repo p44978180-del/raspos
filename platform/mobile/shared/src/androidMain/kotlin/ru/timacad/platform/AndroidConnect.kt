@@ -4,6 +4,7 @@ import androidx.glance.appwidget.updateAll
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.header
 import io.ktor.client.request.post
@@ -16,12 +17,15 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.runBlocking
+import ru.timacad.platform.shared.BuildConfig
 
-const val SYNC_BASE_URL = "http://10.0.2.2:8088"
-const val REALTIME_URL = "ws://10.0.2.2:8000/connection/websocket"
+val SYNC_BASE_URL = BuildConfig.API_URL
+val REALTIME_URL = BuildConfig.REALTIME_URL
 
 class KtorSyncTransport(
     private val baseUrl: String = SYNC_BASE_URL,
+    private val realtimeUrl: String = REALTIME_URL,
+    private val session: () -> String? = { null },
 ) : SyncTransport {
     private val client = platformHttp()
     override fun bootstrap(replicaId: String, groupCode: String): List<BootstrapFrame> = runBlocking {
@@ -40,11 +44,18 @@ class KtorSyncTransport(
     }
 
     suspend fun listen(channel: String, onHint: (ScheduleHint) -> Unit) {
-        client.webSocket(REALTIME_URL) {
+        client.webSocket(realtimeUrl) {
             send(Frame.Text("""{"id":1,"connect":{}}"""))
             send(Frame.Text("""{"id":2,"subscribe":{"channel":"$channel"}}"""))
             incoming.receiveAsFlow().collect { frame ->
-                if (frame is Frame.Text) parseRealtimeHint(frame.readText())?.let(onHint)
+                if (frame is Frame.Text) {
+                    val payload = frame.readText()
+                    if (payload == "{}") send(Frame.Text("{}"))
+                    else {
+                        check(!payload.contains("\"error\"")) { "Realtime subscription failed" }
+                        parseRealtimeHint(payload)?.let(onHint)
+                    }
+                }
             }
         }
     }
@@ -53,9 +64,12 @@ class KtorSyncTransport(
         return client.post(baseUrl + path) {
             contentType(ContentType.parse(content))
             header("Connect-Protocol-Version", "1")
+            session()?.let { header("Authorization", "Bearer $it") }
             setBody(payload)
         }.bodyAsBytes()
     }
+
+    fun close() = client.close()
 }
 
 class KtorPasskeyHttp(
@@ -71,6 +85,8 @@ class KtorPasskeyHttp(
         val echoed = response.headers.entries().associate { it.key to it.value.joinToString(",") }
         PasskeyResponse(response.status.value, response.bodyAsText(), echoed)
     }
+
+    fun close() = client.close()
 }
 
 fun refreshScheduleWidget(context: android.content.Context) {
@@ -78,5 +94,11 @@ fun refreshScheduleWidget(context: android.content.Context) {
 }
 
 private fun platformHttp(): HttpClient = HttpClient(OkHttp) {
+    expectSuccess = true
+    install(HttpTimeout) {
+        connectTimeoutMillis = 5_000
+        requestTimeoutMillis = 30_000
+        socketTimeoutMillis = 30_000
+    }
     install(WebSockets)
 }

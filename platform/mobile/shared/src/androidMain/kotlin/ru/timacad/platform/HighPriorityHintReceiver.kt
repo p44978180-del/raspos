@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import androidx.glance.appwidget.updateAll
-import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import kotlinx.coroutines.runBlocking
 import ru.timacad.platform.db.PlatformDatabase
 import kotlin.concurrent.thread
@@ -25,7 +24,7 @@ class HighPriorityHintReceiver : BroadcastReceiver() {
                     pending.finish()
                 }
             }
-            val driver = AndroidSqliteDriver(PlatformDatabase.Schema, context, "platform.db")
+            val driver = platformDriver(context)
             try {
                 val database = PlatformDatabase(driver)
                 val repository = ScheduleRepository(database, driver)

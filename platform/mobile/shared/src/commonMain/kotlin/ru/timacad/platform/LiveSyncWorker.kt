@@ -1,5 +1,7 @@
 package ru.timacad.platform
 
+import kotlinx.coroutines.CancellationException
+
 class LiveSyncWorker(
     private val schedule: ScheduleRepository,
     private val personal: PersonalRepository,
@@ -14,10 +16,15 @@ class LiveSyncWorker(
     fun bootstrap(replicaId: String, groupCode: String): Int {
         return try {
             val frames = transport.bootstrap(replicaId, groupCode)
-            frames.forEach { frame -> apply(frame.collection, frame.scopeId, SyncFrame(frame.lsn, frame.op)) }
+            schedule.transaction {
+                frames.forEach { frame -> apply(frame.collection, frame.scopeId, SyncFrame(frame.lsn, frame.op)) }
+            }
             quietFailures = 0
             lastError = null
+            if (frames.isNotEmpty()) onWidget()
             frames.size
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (error: Throwable) {
             quietFailures += 1
             lastError = error.message
@@ -31,6 +38,8 @@ class LiveSyncWorker(
             val result = pump.deliver(hint)
             if (result.finishedInline) quietFailures = 0
             result
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (_: Throwable) {
             quietFailures += 1
             HintResult(0, 0, 0, true)
@@ -45,6 +54,8 @@ class LiveSyncWorker(
             acks.filter { it.accepted }.forEach { personal.acknowledge(it.clientSeq) }
             quietFailures = 0
             acks.count { it.accepted }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (_: Throwable) {
             quietFailures += 1
             0
@@ -60,8 +71,11 @@ class LiveSyncWorker(
                 val snapshot = decodeLessonSnapshot(frame.op)
                 schedule.replaceLessons(snapshot.groupCode.ifEmpty { scopeId }, snapshot.snapshotHash, frame.lsn, snapshot.lessons)
             }
-            "lesson_change" -> HintPump(schedule, transport.asPull(), onWidget = onWidget)
-                .deliver(ScheduleHint(collection, scopeId, frame.lsn))
+            "lesson_change" -> {
+                val change = decodeLessonChange(frame.op)
+                require(change.groupCode == scopeId)
+                schedule.applyPublishedChange(scopeId, frame.lsn, change.fingerprint, change.kind, change.payloadJson)
+            }
         }
     }
 }

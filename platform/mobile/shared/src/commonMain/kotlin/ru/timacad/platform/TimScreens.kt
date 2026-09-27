@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
@@ -123,43 +124,34 @@ private fun LessonCard(row: LessonRow) {
 
 @Composable
 fun GroupPickerScreen(
-    groups: List<LocalGroup>,
+    picker: GroupPickerView,
     favorites: Set<String>,
     onPick: (String) -> Unit,
     onFavorite: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onQuery: (String) -> Unit,
+    onInstitute: (String) -> Unit,
+    onCourse: (Int) -> Unit,
 ) {
-    var institute by remember(groups) { mutableStateOf(institutesOf(groups).firstOrNull()) }
-    var course by remember(institute, groups) { mutableStateOf(institute?.let { coursesOf(groups, it).firstOrNull() }) }
-    var query by remember { mutableStateOf("") }
-    val shown = if (query.isBlank()) {
-        val selectedInstitute = institute
-        val selectedCourse = course
-        if (selectedInstitute == null || selectedCourse == null) emptyList() else groupsOf(groups, selectedInstitute, selectedCourse)
-    } else {
-        groups.filter { it.code.contains(query, ignoreCase = true) || it.institute.contains(query, ignoreCase = true) }.take(100)
-    }
     Column(modifier = modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Группа", style = MaterialTheme.typography.headlineMedium)
-        BasicTextField(value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth())
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            institutesOf(groups).forEach { name ->
-                Button(onClick = {
-                    institute = name
-                    course = coursesOf(groups, name).firstOrNull()
-                }) { Text(name.take(12)) }
+        BasicTextField(value = picker.query, onValueChange = onQuery, modifier = Modifier.fillMaxWidth())
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(picker.institutes, key = { it }) { name ->
+                Button(onClick = { onInstitute(name) }) { Text(name.take(28)) }
             }
         }
-        val selectedInstitute = institute
+        val selectedInstitute = picker.institute
         if (selectedInstitute != null) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                coursesOf(groups, selectedInstitute).forEach { year ->
-                    Button(onClick = { course = year }) { Text(year.toString()) }
+            Text(selectedInstitute)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(picker.courses, key = { it }) { year ->
+                    Button(onClick = { onCourse(year) }) { Text(if (picker.course == year) "· $year" else year.toString()) }
                 }
             }
         }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(shown, key = { it.code }) { group ->
+            items(picker.shown, key = { it.code }) { group ->
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = { onPick(group.code) }) { Text(group.code) }
                     Button(onClick = { onFavorite(group.code) }) {
@@ -195,12 +187,20 @@ fun SettingsScreen(
     onTheme: (Boolean) -> Unit,
     onPasskey: () -> Unit,
     modifier: Modifier = Modifier,
+    onRegister: () -> Unit = onPasskey,
+    onLogout: () -> Unit = {},
+    busy: Boolean = false,
 ) {
     Column(modifier = modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Настройки", style = MaterialTheme.typography.headlineMedium)
-        Text(if (session.isNullOrBlank()) "Гость" else "Сессия старосты сохранена")
+        Text(if (session.isNullOrBlank()) "Гость" else "Вы вошли. Права группы проверяет сервер.")
         Button(onClick = { onTheme(!oled) }) { Text(if (oled) "Светлая тема" else "Тёмная тема") }
-        Button(onClick = onPasskey) { Text("Вход старосты по отпечатку") }
+        if (session.isNullOrBlank()) {
+            Button(onClick = onPasskey, enabled = !busy) { Text("Войти с ключом доступа") }
+            Button(onClick = onRegister, enabled = !busy) { Text("Создать ключ доступа") }
+        } else {
+            Button(onClick = onLogout, enabled = !busy) { Text("Выйти на этом устройстве") }
+        }
         if (!notice.isNullOrBlank()) Text(notice)
     }
 }

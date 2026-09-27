@@ -13,8 +13,70 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 class Phase8ClientTest {
+    @Test
+    fun ftsSearchHandlesCyrillicHyphensAndLiteralOperators() {
+        val driver = memory()
+        val repository = ScheduleRepository(PlatformDatabase(driver), driver)
+        repository.replaceDirectory(listOf(
+            LocalGroup("Д-А401", "Институт агробиотехнологии", 4, "current"),
+            LocalGroup("Д-А402", "Институт агробиотехнологии", 4, "current"),
+            LocalGroup("Д-Э401", "Институт экономики", 4, "current"),
+        ))
+        assertEquals(listOf("Д-А401"), repository.search("д-а401").map { it.code })
+        assertEquals(listOf("Д-А401", "Д-А402"), repository.search("агробио").map { it.code })
+        assertEquals(listOf("Д-А401", "Д-Э401"), repository.search("401").map { it.code })
+        assertTrue(repository.search("missing OR экономика").isEmpty())
+        assertTrue(repository.search("\"*:()").isEmpty())
+        driver.close()
+    }
+
+    @Test
+    fun partialOrFailedConnectStreamsNeverCommitBootstrap() {
+        val directory = encodeDirectoryOp("v4", listOf(LocalGroup("NEW", "Institute", 1, "current")))
+        val opened = open()
+        opened.first.replaceDirectory(listOf(LocalGroup("OLD", "Institute", 1, "current")), 1)
+        val worker = LiveSyncWorker(opened.first, opened.second, FakeTransport(listOf(
+            BootstrapFrame("group_directory", "catalog", 2, directory, true),
+            BootstrapFrame("lesson", "NEW", 2, byteArrayOf(0), true),
+        )))
+        assertEquals(0, worker.bootstrap("replica", "NEW"))
+        assertEquals(listOf("OLD"), opened.first.allGroups().map { it.code })
+        assertEquals(1, opened.first.cursorLsn("group_directory", "catalog"))
+        assertEquals(listOf("OLD"), opened.first.search("OLD").map { it.code })
+        val message = encodeEnvelope(byteArrayOf(1))
+        assertFailsWith<IllegalStateException> { decodeEnvelopes(message) }
+        assertFailsWith<IllegalStateException> { decodeEnvelopes(message + byteArrayOf(0)) }
+        assertFailsWith<IllegalStateException> { decodeEnvelopes(message + encodeEnvelope("""{"error":{"code":"unavailable"}}""".encodeToByteArray(), true)) }
+    }
+
+    @Test
+    fun passkeyLoginUsesTheSystemSelectionAndDoesNotRegisterAgain() {
+        val vault = MemoryVault()
+        val calls = mutableListOf<String>()
+        val client = PasskeyClient(object : PasskeyHttp {
+            override fun post(path: String, body: String, headers: Map<String, String>): PasskeyResponse {
+                calls += path
+                return if (path == PASSKEY_LOGIN_BEGIN) PasskeyResponse(200, "{}", mapOf("x-ceremony-id" to "login-request"))
+                else {
+                    assertEquals("login-request", headers["X-Ceremony-Id"])
+                    assertFalse(headers.containsKey("X-Principal-Id"))
+                    PasskeyResponse(200, """{"session":"verified"}""", emptyMap())
+                }
+            }
+        }, object : PasskeyPrompt {
+            override fun create(requestJson: String): String = error("Login must not register")
+            override fun get(requestJson: String): String = "{}"
+        }, vault)
+        assertTrue(client.login() is PasskeyOutcome.Session)
+        assertEquals(listOf(PASSKEY_LOGIN_BEGIN, PASSKEY_LOGIN_FINISH), calls)
+        assertEquals("verified", vault.load())
+        vault.clear()
+        assertEquals(null, vault.load())
+    }
+
     @Test
     fun directoryRoundTripAndLiveBootstrapLandInSqlite() {
         val groups = listOf(
@@ -129,7 +191,7 @@ class Phase8ClientTest {
                 override fun post(path: String, body: String, headers: Map<String, String>): PasskeyResponse {
                     calls += path.substringBefore('?')
                     return if (path.startsWith(PASSKEY_REGISTER_BEGIN)) {
-                        PasskeyResponse(200, """{"publicKey":{}}""", mapOf("X-Principal-Id" to "11111111-1111-4111-8111-111111111111"))
+                        PasskeyResponse(200, """{"publicKey":{}}""", mapOf("X-Principal-Id" to "11111111-1111-4111-8111-111111111111", "X-Ceremony-Id" to "test-ceremony"))
                     } else {
                         PasskeyResponse(200, """{"session":"issued.token"}""", emptyMap())
                     }

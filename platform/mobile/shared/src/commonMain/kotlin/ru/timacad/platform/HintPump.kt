@@ -2,7 +2,7 @@ package ru.timacad.platform
 
 data class ScheduleHint(val collection: String, val scopeId: String, val lsn: Long)
 
-data class SyncFrame(val lsn: Long, val op: ByteArray)
+data class SyncFrame(val lsn: Long, val op: ByteArray, val reset: Boolean = false)
 
 fun interface SyncPull {
     fun pull(collection: String, scopeId: String, sinceLsn: Long): List<SyncFrame>
@@ -34,19 +34,25 @@ class HintPump(
         if (elapsed() > budgetMs) return HintResult(0, 0, elapsed(), false)
         var applied = 0
         for (frame in frames.sortedBy { it.lsn }) {
-            if (frame.lsn <= since) continue
+            if (!frame.reset && frame.lsn <= since) continue
             when (hint.collection) {
                 "lesson" -> {
                     val snapshot = decodeLessonSnapshot(frame.op)
+                    require(snapshot.groupCode == hint.scopeId) { "snapshot scope mismatch" }
                     repository.replaceLessons(snapshot.groupCode, snapshot.snapshotHash, frame.lsn, snapshot.lessons)
                     applied += 1
                 }
                 "lesson_change" -> {
                     val change = decodeLessonChange(frame.op)
+                    require(change.groupCode == hint.scopeId) { "change scope mismatch" }
                     if (change.kind == "cancel" || change.kind == "move" || change.kind == "room") {
                         repository.applyPublishedChange(change.groupCode, frame.lsn, change.fingerprint, change.kind, change.payloadJson)
                         applied += 1
                     }
+                }
+                "group_directory" -> {
+                    repository.replaceDirectory(decodeDirectory(frame.op), frame.lsn)
+                    applied += 1
                 }
             }
         }

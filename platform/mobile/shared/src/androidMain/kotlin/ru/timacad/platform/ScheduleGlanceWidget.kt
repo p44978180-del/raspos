@@ -13,7 +13,6 @@ import androidx.glance.layout.padding
 import androidx.glance.text.Text
 import androidx.glance.text.TextDecoration
 import androidx.glance.text.TextStyle
-import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import ru.timacad.platform.db.PlatformDatabase
 import java.time.LocalDate
 import java.time.LocalTime
@@ -46,7 +45,7 @@ fun ScheduleFace(face: WidgetFace) {
 }
 
 fun readWidgetFace(context: Context): WidgetFace {
-    val driver = AndroidSqliteDriver(PlatformDatabase.Schema, context, "platform.db")
+    val driver = platformDriver(context)
     return try {
         val repository = ScheduleRepository(PlatformDatabase(driver))
         val group = repository.selectedGroup() ?: return WidgetFace("Пар нет", "день", "", "", 0, LessonMark.AsScheduled)
