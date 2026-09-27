@@ -137,6 +137,7 @@ func TestPasskeyBeginRejectsForgedFinish(t *testing.T) {
 	}
 	finish := httptest.NewRequest(http.MethodPost, "/auth/webauthn/register/finish", strings.NewReader(`{}`))
 	finish.Header.Set("X-Principal-Id", rec.Header().Get("X-Principal-Id"))
+	finish.Header.Set("X-Ceremony-Id", rec.Header().Get("X-Ceremony-Id"))
 	done := httptest.NewRecorder()
 	mux.ServeHTTP(done, finish)
 	if done.Code == http.StatusOK {
@@ -144,6 +145,9 @@ func TestPasskeyBeginRejectsForgedFinish(t *testing.T) {
 	}
 	principalID, err := uuid.Parse(rec.Header().Get("X-Principal-Id"))
 	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.New(pool).InsertPrincipal(ctx, db.InsertPrincipalParams{ID: principalID, DisplayName: "Test", CreatedAt: pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true}}); err != nil {
 		t.Fatal(err)
 	}
 	if err := db.New(pool).InsertWebAuthnCredential(ctx, db.InsertWebAuthnCredentialParams{
@@ -161,6 +165,7 @@ func TestPasskeyBeginRejectsForgedFinish(t *testing.T) {
 	}
 	forged := httptest.NewRequest(http.MethodPost, "/auth/webauthn/login/finish", strings.NewReader(`{}`))
 	forged.Header.Set("X-Principal-Id", principalID.String())
+	forged.Header.Set("X-Ceremony-Id", loginRec.Header().Get("X-Ceremony-Id"))
 	forgedRec := httptest.NewRecorder()
 	mux.ServeHTTP(forgedRec, forged)
 	if forgedRec.Code == http.StatusOK {

@@ -2,6 +2,8 @@ package syncsvc
 
 import (
 	"context"
+	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -49,6 +51,22 @@ func TestImportAndGuestBootstrap(t *testing.T) {
 	}
 	if again.Lessons != 47068 {
 		t.Fatalf("second import %+v", again)
+	}
+	// Retained immutable history must not inflate the current v4 parity count.
+	_, err = pool.Exec(ctx, `WITH historical AS (
+		INSERT INTO schedule_snapshot (id, group_id, document_id, parser_version, content_sha256, lesson_count, valid_from, superseded_at)
+		SELECT $1, group_id, document_id, parser_version, 'historical-parity-test', lesson_count, valid_from, now()
+		FROM schedule_snapshot WHERE lesson_count > 0 LIMIT 1 RETURNING id, group_id
+	)
+	INSERT INTO lesson (id, snapshot_id, group_id, occurs_on, starts_at, ends_at, subject, kind, teacher, building, room, week_type, source_url)
+	SELECT $2, h.id, h.group_id, l.occurs_on, l.starts_at, l.ends_at, l.subject, l.kind, l.teacher, l.building, l.room, l.week_type, l.source_url
+	FROM historical h JOIN lesson l ON l.group_id = h.group_id LIMIT 1`, uuid.New(), uuid.New())
+	if err != nil {
+		t.Fatal(err)
+	}
+	withHistory, err := ingest.Import(ctx, pool, findPublic(t))
+	if err != nil || withHistory.Lessons != 47068 {
+		t.Fatalf("history affected parity: %+v, %v", withHistory, err)
 	}
 
 	mux := http.NewServeMux()
@@ -102,12 +120,18 @@ func startPostgres(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
 	cache := filepath.Join(os.Getenv("USERPROFILE"), ".cache", "raspos-platform", "embedded-postgres")
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	port := listener.Addr().(*net.TCPAddr).Port
+	_ = listener.Close()
 	config := embeddedpostgres.DefaultConfig().
 		Version(embeddedpostgres.V17).
 		Username("timacad").
 		Password("timacad").
 		Database("timacad").
-		Port(55432).
+		Port(uint32(port)).
 		RuntimePath(dir).
 		CachePath(cache).
 		StartTimeout(2 * time.Minute)
@@ -116,7 +140,7 @@ func startPostgres(t *testing.T) string {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = database.Stop() })
-	return "postgres://timacad:timacad@127.0.0.1:55432/timacad?sslmode=disable"
+	return fmt.Sprintf("postgres://timacad:timacad@127.0.0.1:%d/timacad?sslmode=disable", port)
 }
 
 func findPublic(t *testing.T) string {

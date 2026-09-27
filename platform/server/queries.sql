@@ -59,7 +59,10 @@ ORDER BY lsn DESC
 LIMIT 1;
 
 -- name: CountLessons :one
-SELECT count(*)::bigint AS count FROM lesson;
+SELECT count(*)::bigint AS count
+FROM lesson l
+JOIN schedule_snapshot s ON s.id = l.snapshot_id
+WHERE s.superseded_at IS NULL;
 
 -- name: CountGroups :one
 SELECT count(*)::bigint AS count FROM student_group;
@@ -104,14 +107,27 @@ VALUES ($1, $2, $3, $4);
 SELECT principal_id, secret_hash, expires_at FROM session WHERE id = $1;
 
 -- name: InsertWebAuthnCredential :exec
-INSERT INTO webauthn_credential (credential_id, principal_id, public_key, sign_count, created_at)
-VALUES ($1, $2, $3, $4, $5);
+INSERT INTO webauthn_credential (credential_id, principal_id, public_key, sign_count, created_at, credential_data)
+VALUES ($1, $2, $3, $4, $5, $6);
+
+-- name: RegisterWebAuthnCredential :exec
+WITH registered AS (
+    INSERT INTO principal (id, display_name, created_at)
+    VALUES (sqlc.arg(principal_id), sqlc.arg(display_name), sqlc.arg(created_at))
+    RETURNING id
+)
+INSERT INTO webauthn_credential (credential_id, principal_id, public_key, sign_count, created_at, credential_data)
+SELECT sqlc.arg(credential_id), id, sqlc.arg(public_key), sqlc.arg(sign_count), sqlc.arg(created_at), sqlc.arg(credential_data)
+FROM registered;
 
 -- name: ListWebAuthnCredentials :many
-SELECT credential_id, public_key, sign_count FROM webauthn_credential WHERE principal_id = $1;
+SELECT credential_id, public_key, sign_count, credential_data FROM webauthn_credential WHERE principal_id = $1;
 
 -- name: UpdateWebAuthnSignCount :exec
 UPDATE webauthn_credential SET sign_count = $2 WHERE credential_id = $1;
+
+-- name: UpdateWebAuthnCredential :exec
+UPDATE webauthn_credential SET sign_count = $2, credential_data = $3 WHERE credential_id = $1;
 
 -- name: InsertLessonChange :exec
 INSERT INTO lesson_change (id, group_code, author_id, kind, payload, recorded_at)

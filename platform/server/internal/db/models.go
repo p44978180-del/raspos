@@ -150,9 +150,10 @@ type ThreadEntry struct {
 }
 
 type WebauthnCredential struct {
-	CredentialID []byte
-	PrincipalID  uuid.UUID
-	PublicKey    []byte
-	SignCount    int64
-	CreatedAt    pgtype.Timestamptz
+	CredentialID   []byte
+	PrincipalID    uuid.UUID
+	PublicKey      []byte
+	SignCount      int64
+	CreatedAt      pgtype.Timestamptz
+	CredentialData []byte
 }

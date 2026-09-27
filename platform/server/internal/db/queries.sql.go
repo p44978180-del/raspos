@@ -53,7 +53,10 @@ func (q *Queries) CountLessonChanges(ctx context.Context, groupCode string) (int
 }
 
 const countLessons = `-- name: CountLessons :one
-SELECT count(*)::bigint AS count FROM lesson
+SELECT count(*)::bigint AS count
+FROM lesson l
+JOIN schedule_snapshot s ON s.id = l.snapshot_id
+WHERE s.superseded_at IS NULL
 `
 
 func (q *Queries) CountLessons(ctx context.Context) (int64, error) {
@@ -569,16 +572,17 @@ func (q *Queries) InsertThreadEntry(ctx context.Context, arg InsertThreadEntryPa
 }
 
 const insertWebAuthnCredential = `-- name: InsertWebAuthnCredential :exec
-INSERT INTO webauthn_credential (credential_id, principal_id, public_key, sign_count, created_at)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO webauthn_credential (credential_id, principal_id, public_key, sign_count, created_at, credential_data)
+VALUES ($1, $2, $3, $4, $5, $6)
 `
 
 type InsertWebAuthnCredentialParams struct {
-	CredentialID []byte
-	PrincipalID  uuid.UUID
-	PublicKey    []byte
-	SignCount    int64
-	CreatedAt    pgtype.Timestamptz
+	CredentialID   []byte
+	PrincipalID    uuid.UUID
+	PublicKey      []byte
+	SignCount      int64
+	CreatedAt      pgtype.Timestamptz
+	CredentialData []byte
 }
 
 func (q *Queries) InsertWebAuthnCredential(ctx context.Context, arg InsertWebAuthnCredentialParams) error {
@@ -588,6 +592,7 @@ func (q *Queries) InsertWebAuthnCredential(ctx context.Context, arg InsertWebAut
 		arg.PublicKey,
 		arg.SignCount,
 		arg.CreatedAt,
+		arg.CredentialData,
 	)
 	return err
 }
@@ -721,13 +726,14 @@ func (q *Queries) ListUnpublishedHints(ctx context.Context) ([]ListUnpublishedHi
 }
 
 const listWebAuthnCredentials = `-- name: ListWebAuthnCredentials :many
-SELECT credential_id, public_key, sign_count FROM webauthn_credential WHERE principal_id = $1
+SELECT credential_id, public_key, sign_count, credential_data FROM webauthn_credential WHERE principal_id = $1
 `
 
 type ListWebAuthnCredentialsRow struct {
-	CredentialID []byte
-	PublicKey    []byte
-	SignCount    int64
+	CredentialID   []byte
+	PublicKey      []byte
+	SignCount      int64
+	CredentialData []byte
 }
 
 func (q *Queries) ListWebAuthnCredentials(ctx context.Context, principalID uuid.UUID) ([]ListWebAuthnCredentialsRow, error) {
@@ -739,7 +745,12 @@ func (q *Queries) ListWebAuthnCredentials(ctx context.Context, principalID uuid.
 	var items []ListWebAuthnCredentialsRow
 	for rows.Next() {
 		var i ListWebAuthnCredentialsRow
-		if err := rows.Scan(&i.CredentialID, &i.PublicKey, &i.SignCount); err != nil {
+		if err := rows.Scan(
+			&i.CredentialID,
+			&i.PublicKey,
+			&i.SignCount,
+			&i.CredentialData,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -805,6 +816,40 @@ func (q *Queries) NextLSN(ctx context.Context, arg NextLSNParams) (int64, error)
 	var next_lsn int64
 	err := row.Scan(&next_lsn)
 	return next_lsn, err
+}
+
+const registerWebAuthnCredential = `-- name: RegisterWebAuthnCredential :exec
+WITH registered AS (
+    INSERT INTO principal (id, display_name, created_at)
+    VALUES ($6, $7, $4)
+    RETURNING id
+)
+INSERT INTO webauthn_credential (credential_id, principal_id, public_key, sign_count, created_at, credential_data)
+SELECT $1, id, $2, $3, $4, $5
+FROM registered
+`
+
+type RegisterWebAuthnCredentialParams struct {
+	CredentialID   []byte
+	PublicKey      []byte
+	SignCount      int64
+	CreatedAt      pgtype.Timestamptz
+	CredentialData []byte
+	PrincipalID    uuid.UUID
+	DisplayName    string
+}
+
+func (q *Queries) RegisterWebAuthnCredential(ctx context.Context, arg RegisterWebAuthnCredentialParams) error {
+	_, err := q.db.Exec(ctx, registerWebAuthnCredential,
+		arg.CredentialID,
+		arg.PublicKey,
+		arg.SignCount,
+		arg.CreatedAt,
+		arg.CredentialData,
+		arg.PrincipalID,
+		arg.DisplayName,
+	)
+	return err
 }
 
 const setMiniappStatus = `-- name: SetMiniappStatus :exec
@@ -914,6 +959,21 @@ func (q *Queries) UpdateLoroSnapshot(ctx context.Context, arg UpdateLoroSnapshot
 		arg.SnapshotVersion,
 		arg.UpdatedAt,
 	)
+	return err
+}
+
+const updateWebAuthnCredential = `-- name: UpdateWebAuthnCredential :exec
+UPDATE webauthn_credential SET sign_count = $2, credential_data = $3 WHERE credential_id = $1
+`
+
+type UpdateWebAuthnCredentialParams struct {
+	CredentialID   []byte
+	SignCount      int64
+	CredentialData []byte
+}
+
+func (q *Queries) UpdateWebAuthnCredential(ctx context.Context, arg UpdateWebAuthnCredentialParams) error {
+	_, err := q.db.Exec(ctx, updateWebAuthnCredential, arg.CredentialID, arg.SignCount, arg.CredentialData)
 	return err
 }
 

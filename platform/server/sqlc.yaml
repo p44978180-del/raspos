@@ -8,6 +8,7 @@ sql:
       - "internal/schema/migrations/00004_hint.sql"
       - "internal/schema/migrations/00005_social.sql"
       - "internal/schema/migrations/00006_miniapps.sql"
+      - "internal/schema/migrations/00007_passkey_record.sql"
     queries: "queries.sql"
     gen:
       go:

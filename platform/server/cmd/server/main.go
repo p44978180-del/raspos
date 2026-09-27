@@ -11,6 +11,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.temporal.io/sdk/client"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 
 	"raspos/platform/server/internal/authz"
 	"raspos/platform/server/internal/db"
@@ -98,7 +100,8 @@ func main() {
 		_, _ = w.Write([]byte("ok"))
 	})
 	slog.Info("listen", "addr", addr)
-	if err := http.ListenAndServe(addr, mux); err != nil {
+	server := &http.Server{Addr: addr, Handler: h2c.NewHandler(mux, &http2.Server{}), ReadHeaderTimeout: 10 * time.Second}
+	if err := server.ListenAndServe(); err != nil {
 		slog.Error("http", "err", err)
 		os.Exit(1)
 	}
