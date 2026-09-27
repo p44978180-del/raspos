@@ -176,7 +176,7 @@ func (q *Queries) FindSession(ctx context.Context, id uuid.UUID) (FindSessionRow
 }
 
 const findSnapshot = `-- name: FindSnapshot :one
-SELECT id FROM schedule_snapshot
+SELECT id, superseded_at FROM schedule_snapshot
 WHERE group_id = $1 AND content_sha256 = $2
 `
 
@@ -185,11 +185,16 @@ type FindSnapshotParams struct {
 	ContentSha256 string
 }
 
-func (q *Queries) FindSnapshot(ctx context.Context, arg FindSnapshotParams) (uuid.UUID, error) {
+type FindSnapshotRow struct {
+	ID           uuid.UUID
+	SupersededAt pgtype.Timestamptz
+}
+
+func (q *Queries) FindSnapshot(ctx context.Context, arg FindSnapshotParams) (FindSnapshotRow, error) {
 	row := q.db.QueryRow(ctx, findSnapshot, arg.GroupID, arg.ContentSha256)
-	var id uuid.UUID
-	err := row.Scan(&id)
-	return id, err
+	var i FindSnapshotRow
+	err := row.Scan(&i.ID, &i.SupersededAt)
+	return i, err
 }
 
 const findThreadEntry = `-- name: FindThreadEntry :one
@@ -816,6 +821,20 @@ func (q *Queries) NextLSN(ctx context.Context, arg NextLSNParams) (int64, error)
 	var next_lsn int64
 	err := row.Scan(&next_lsn)
 	return next_lsn, err
+}
+
+const reactivateSnapshot = `-- name: ReactivateSnapshot :exec
+UPDATE schedule_snapshot SET superseded_at = NULL, valid_from = $2 WHERE id = $1
+`
+
+type ReactivateSnapshotParams struct {
+	ID        uuid.UUID
+	ValidFrom pgtype.Timestamptz
+}
+
+func (q *Queries) ReactivateSnapshot(ctx context.Context, arg ReactivateSnapshotParams) error {
+	_, err := q.db.Exec(ctx, reactivateSnapshot, arg.ID, arg.ValidFrom)
+	return err
 }
 
 const registerWebAuthnCredential = `-- name: RegisterWebAuthnCredential :exec

@@ -18,8 +18,11 @@ ON CONFLICT (code) DO UPDATE SET
 RETURNING id;
 
 -- name: FindSnapshot :one
-SELECT id FROM schedule_snapshot
+SELECT id, superseded_at FROM schedule_snapshot
 WHERE group_id = $1 AND content_sha256 = $2;
+
+-- name: ReactivateSnapshot :exec
+UPDATE schedule_snapshot SET superseded_at = NULL, valid_from = $2 WHERE id = $1;
 
 -- name: InsertSourceDocument :one
 INSERT INTO source_document (id, url, content_sha256, fetched_at)

@@ -109,35 +109,44 @@ func importGroup(ctx context.Context, queries *db.Queries, pool *pgxpool.Pool, p
 		return err
 	}
 	hash := canonical.Hash(lessons)
-	if _, err := q.FindSnapshot(ctx, db.FindSnapshotParams{GroupID: groupID, ContentSha256: hash}); err == nil {
+	existing, err := q.FindSnapshot(ctx, db.FindSnapshotParams{GroupID: groupID, ContentSha256: hash})
+	reuse := err == nil
+	if reuse && !existing.SupersededAt.Valid {
 		return tx.Commit(ctx)
-	} else if !errors.Is(err, pgx.ErrNoRows) {
+	} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return err
 	}
 	now := pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true}
 	if err := q.SupersedeSnapshots(ctx, db.SupersedeSnapshotsParams{GroupID: groupID, SupersededAt: now, ContentSha256: hash}); err != nil {
 		return err
 	}
-	documentID, err := q.InsertSourceDocument(ctx, db.InsertSourceDocumentParams{
-		ID: uuid.Must(uuid.NewV7()), Url: group.SourceURL, ContentSha256: fileHash,
-		FetchedAt: pgtype.Timestamptz{Time: checkedAt.UTC(), Valid: true},
-	})
-	if err != nil {
-		return err
-	}
-	snapshotID, err := q.InsertSnapshot(ctx, db.InsertSnapshotParams{
-		ID: uuid.Must(uuid.NewV7()), GroupID: groupID, DocumentID: documentID,
-		ParserVersion: parserVersion, ContentSha256: hash, LessonCount: int32(len(lessons)),
-		ValidFrom: pgtype.Timestamptz{Time: checkedAt.UTC(), Valid: true},
-	})
-	if err != nil {
-		return err
+	snapshotID := existing.ID
+	if reuse {
+		if err := q.ReactivateSnapshot(ctx, db.ReactivateSnapshotParams{ID: snapshotID, ValidFrom: now}); err != nil {
+			return err
+		}
+	} else {
+		documentID, err := q.InsertSourceDocument(ctx, db.InsertSourceDocumentParams{
+			ID: uuid.Must(uuid.NewV7()), Url: group.SourceURL, ContentSha256: fileHash,
+			FetchedAt: pgtype.Timestamptz{Time: checkedAt.UTC(), Valid: true},
+		})
+		if err != nil {
+			return err
+		}
+		snapshotID, err = q.InsertSnapshot(ctx, db.InsertSnapshotParams{
+			ID: uuid.Must(uuid.NewV7()), GroupID: groupID, DocumentID: documentID,
+			ParserVersion: parserVersion, ContentSha256: hash, LessonCount: int32(len(lessons)),
+			ValidFrom: pgtype.Timestamptz{Time: checkedAt.UTC(), Valid: true},
+		})
+		if err != nil {
+			return err
+		}
 	}
 	rows, protoLessons, err := lessonRows(snapshotID, groupID, lessons)
 	if err != nil {
 		return err
 	}
-	if len(rows) > 0 {
+	if !reuse && len(rows) > 0 {
 		if _, err := q.InsertLesson(ctx, rows); err != nil {
 			return err
 		}

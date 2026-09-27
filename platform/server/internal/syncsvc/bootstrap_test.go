@@ -68,6 +68,18 @@ func TestImportAndGuestBootstrap(t *testing.T) {
 	if err != nil || withHistory.Lessons != 47068 {
 		t.Fatalf("history affected parity: %+v, %v", withHistory, err)
 	}
+	// Returning to a previously imported version must reactivate it, rather
+	// than leaving the newer version active because the hash already exists.
+	_, err = pool.Exec(ctx, `UPDATE schedule_snapshot SET superseded_at = CASE
+		WHEN content_sha256 = 'historical-parity-test' THEN NULL ELSE now() END
+		WHERE group_id = (SELECT group_id FROM schedule_snapshot WHERE content_sha256 = 'historical-parity-test')`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	reverted, err := ingest.Import(ctx, pool, findPublic(t))
+	if err != nil || reverted.Lessons != 47068 {
+		t.Fatalf("reverting to v4 failed: %+v, %v", reverted, err)
+	}
 
 	mux := http.NewServeMux()
 	path, handler := syncv1connect.NewSyncServiceHandler(&Service{Pool: pool, Queries: db.New(pool)})

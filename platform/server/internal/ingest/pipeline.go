@@ -61,14 +61,8 @@ func Run(ctx context.Context, pool *pgxpool.Pool, sources Fetcher, objects blob.
 	if !bytes.Equal(stored, body) {
 		return Outcome{}, errors.New("stored source bytes differ from the download")
 	}
-	queries := db.New(pool)
-	previous, err := queries.LatestSourceHash(ctx, pageURL)
-	if err == nil && previous == contentHash {
-		return Outcome{Status: "noop", ContentSHA: contentHash}, nil
-	}
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return Outcome{}, err
-	}
+	// A source can revert to bytes already seen before. Only the currently
+	// active canonical snapshot decides whether this is a no-op.
 	page, err := journalhtml.Parse(stored, pageURL)
 	if err != nil || len(page.Lessons) == 0 {
 		return Outcome{Status: "stored", ContentSHA: contentHash}, nil
@@ -106,37 +100,46 @@ func commitPage(ctx context.Context, pool *pgxpool.Pool, pageURL, contentHash st
 		return 0, "", err
 	}
 	lessonHash := canonical.Hash(page.Lessons)
-	if _, err := queries.FindSnapshot(ctx, db.FindSnapshotParams{GroupID: groupID, ContentSha256: lessonHash}); err == nil {
+	existing, err := queries.FindSnapshot(ctx, db.FindSnapshotParams{GroupID: groupID, ContentSha256: lessonHash})
+	reuse := err == nil
+	if reuse && !existing.SupersededAt.Valid {
 		if err := tx.Commit(ctx); err != nil {
 			return 0, "", err
 		}
 		return 0, lessonHash, nil
-	} else if !errors.Is(err, pgx.ErrNoRows) {
+	} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return 0, "", err
 	}
 	now := pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true}
 	if err := queries.SupersedeSnapshots(ctx, db.SupersedeSnapshotsParams{GroupID: groupID, SupersededAt: now, ContentSha256: lessonHash}); err != nil {
 		return 0, "", err
 	}
-	documentID, err := queries.InsertSourceDocument(ctx, db.InsertSourceDocumentParams{
-		ID: uuid.Must(uuid.NewV7()), Url: pageURL, ContentSha256: contentHash, FetchedAt: now,
-	})
-	if err != nil {
-		return 0, "", err
-	}
-	snapshotID, err := queries.InsertSnapshot(ctx, db.InsertSnapshotParams{
-		ID: uuid.Must(uuid.NewV7()), GroupID: groupID, DocumentID: documentID,
-		ParserVersion: journalParser, ContentSha256: lessonHash, LessonCount: int32(len(page.Lessons)),
-		ValidFrom: now,
-	})
-	if err != nil {
-		return 0, "", err
+	snapshotID := existing.ID
+	if reuse {
+		if err := queries.ReactivateSnapshot(ctx, db.ReactivateSnapshotParams{ID: snapshotID, ValidFrom: now}); err != nil {
+			return 0, "", err
+		}
+	} else {
+		documentID, err := queries.InsertSourceDocument(ctx, db.InsertSourceDocumentParams{
+			ID: uuid.Must(uuid.NewV7()), Url: pageURL, ContentSha256: contentHash, FetchedAt: now,
+		})
+		if err != nil {
+			return 0, "", err
+		}
+		snapshotID, err = queries.InsertSnapshot(ctx, db.InsertSnapshotParams{
+			ID: uuid.Must(uuid.NewV7()), GroupID: groupID, DocumentID: documentID,
+			ParserVersion: journalParser, ContentSha256: lessonHash, LessonCount: int32(len(page.Lessons)),
+			ValidFrom: now,
+		})
+		if err != nil {
+			return 0, "", err
+		}
 	}
 	rows, protoLessons, err := lessonRows(snapshotID, groupID, page.Lessons)
 	if err != nil {
 		return 0, "", err
 	}
-	if len(rows) > 0 {
+	if !reuse && len(rows) > 0 {
 		if _, err := queries.InsertLesson(ctx, rows); err != nil {
 			return 0, "", err
 		}
