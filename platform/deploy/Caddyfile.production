@@ -1,0 +1,24 @@
+{
+	admin off
+}
+
+{$PUBLIC_HOST} {
+	encode zstd gzip
+	handle /.well-known/assetlinks.json {
+		root * /srv/well-known
+		rewrite * /assetlinks.json
+		file_server
+	}
+	handle /connection/websocket {
+		reverse_proxy centrifugo:8000
+	}
+	handle /ingest {
+		respond 404
+	}
+	handle /fixtures/* {
+		respond 404
+	}
+	handle {
+		reverse_proxy h2c://server:8080
+	}
+}

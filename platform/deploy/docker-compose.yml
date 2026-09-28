@@ -151,6 +151,7 @@ services:
       MINIO_BUCKET: sources
       INGEST_TOKEN: ${INGEST_TOKEN:?Set the ingest token}
       WEBAUTHN_EXTRA_ORIGINS: ${WEBAUTHN_EXTRA_ORIGINS:-}
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-localhost}
       FIXTURE_DIR: /fixtures
       COMPACT_DOC_BIN: /usr/local/bin/compact-doc
     volumes:

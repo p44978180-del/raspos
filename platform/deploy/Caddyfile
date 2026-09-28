@@ -8,5 +8,5 @@
 		rewrite * /assetlinks.json
 		file_server
 	}
-	reverse_proxy server:8080
+	reverse_proxy h2c://server:8080
 }

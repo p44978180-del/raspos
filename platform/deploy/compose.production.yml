@@ -1,0 +1,25 @@
+# Use with docker-compose.yml on the deployment host. DNS must point to this host.
+services:
+  server:
+    environment:
+      WEBAUTHN_RP_ID: ${PUBLIC_HOST:?Set the HTTPS hostname without scheme or path}
+      WEBAUTHN_EXTRA_ORIGINS: ${WEBAUTHN_EXTRA_ORIGINS:?Set the release Android apk-key-hash origin}
+      FIXTURE_DIR: ""
+  worker:
+    environment:
+      FIXTURE_DIR: ""
+  caddy:
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?Set the HTTPS hostname}
+    ports: !override
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes: !override
+      - ./Caddyfile.production:/etc/caddy/Caddyfile:ro
+      - ./well-known:/srv/well-known:ro
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  caddy_data:
+  caddy_config:
