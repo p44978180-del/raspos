@@ -1,7 +1,7 @@
 FROM rust:1.88-bookworm AS rust
 WORKDIR /src
 COPY platform/rust/timacad-core /src
-RUN cargo build --release --bin compact-doc
+RUN cargo build --release --no-default-features --bin compact-doc --jobs 2
 
 FROM golang:1.25-bookworm AS go
 WORKDIR /src

@@ -35,6 +35,9 @@ type pushDecision struct {
 func (s *Service) preflight(ctx context.Context, principal uuid.UUID, operation *syncv1.PushOperation) (pushDecision, error) {
 	switch operation.GetCollection() {
 	case collectionPersonal:
+		if principal == uuid.Nil || operation.GetScopeId() != principal.String() {
+			return pushDecision{early: reject(operation, "personal scope must match the session")}, nil
+		}
 		if operation.GetScopeId() == "" || operation.GetClientSeq() < 1 || len(operation.GetOp()) == 0 || len(operation.GetOp()) > maxPersonalOpBytes {
 			return pushDecision{early: reject(operation, "personal op is invalid")}, nil
 		}

@@ -98,10 +98,22 @@ func New(queries *db.Queries) (*Handler, error) {
 }
 
 func (h *Handler) Register(mux *http.ServeMux) {
+	mux.HandleFunc("GET /auth/session", h.sessionInfo)
 	mux.HandleFunc("POST /auth/webauthn/register/begin", h.beginRegistration)
 	mux.HandleFunc("POST /auth/webauthn/register/finish", h.finishRegistration)
 	mux.HandleFunc("POST /auth/webauthn/login/begin", h.beginLogin)
 	mux.HandleFunc("POST /auth/webauthn/login/finish", h.finishLogin)
+}
+
+func (h *Handler) sessionInfo(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
+	principal, err := session.Principal(r.Context(), h.Queries, r.Header.Get("Authorization"))
+	if err != nil || principal == uuid.Nil {
+		http.Error(w, "session required", http.StatusUnauthorized)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]string{"principal_id": principal.String()})
 }
 
 func (h *Handler) beginRegistration(w http.ResponseWriter, r *http.Request) {

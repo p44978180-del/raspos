@@ -1,6 +1,7 @@
 package compact
 
 import (
+	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +13,7 @@ import (
 
 	"connectrpc.com/connect"
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -19,6 +21,7 @@ import (
 	syncv1 "raspos/platform/server/internal/gen/timacad/sync/v1"
 	syncv1connect "raspos/platform/server/internal/gen/timacad/sync/v1/syncv1connect"
 	"raspos/platform/server/internal/schema"
+	"raspos/platform/server/internal/session"
 	"raspos/platform/server/internal/syncsvc"
 )
 
@@ -41,17 +44,25 @@ func TestCompactDropsHistoryAndPullResets(t *testing.T) {
 	}
 	queries := db.New(pool)
 	now := pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true}
+	principal := uuid.New()
+	if err := queries.InsertPrincipal(ctx, db.InsertPrincipalParams{ID: principal, DisplayName: "Personal owner", CreatedAt: now}); err != nil {
+		t.Fatal(err)
+	}
+	token, err := session.Issue(ctx, queries, principal)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := queries.UpsertLoroDoc(ctx, db.UpsertLoroDocParams{
-		DocID: "user-1", LatestSnapshot: fixture, SnapshotVersion: 2, UpdatedAt: now,
+		DocID: principal.String(), LatestSnapshot: fixture, SnapshotVersion: 2, UpdatedAt: now,
 	}); err != nil {
 		t.Fatal(err)
 	}
 	for _, item := range []struct {
 		lsn int64
 		op  []byte
-	}{{1, []byte("old-update")}, {2, fixture}} {
+	}{{1, fixture}, {2, fixture}} {
 		if err := queries.InsertSyncLog(ctx, db.InsertSyncLogParams{
-			Collection: "personal", ScopeID: "user-1", Lsn: item.lsn, Op: item.op, RecordedAt: now,
+			Collection: "personal", ScopeID: principal.String(), Lsn: item.lsn, Op: item.op, RecordedAt: now,
 		}); err != nil {
 			t.Fatal(err)
 		}
@@ -60,11 +71,11 @@ func TestCompactDropsHistoryAndPullResets(t *testing.T) {
 	if err != nil || done != 1 {
 		t.Fatalf("compacted %d err %v", done, err)
 	}
-	count, err := queries.CountSyncOps(ctx, db.CountSyncOpsParams{Collection: "personal", ScopeID: "user-1"})
+	count, err := queries.CountSyncOps(ctx, db.CountSyncOpsParams{Collection: "personal", ScopeID: principal.String()})
 	if err != nil || count != 1 {
 		t.Fatalf("sync rows %d err %v", count, err)
 	}
-	stored, err := queries.GetLoroDoc(ctx, "user-1")
+	stored, err := queries.GetLoroDoc(ctx, principal.String())
 	if err != nil || string(stored.LatestSnapshot) != string(snapshot) {
 		t.Fatalf("snapshot mismatch err %v", err)
 	}
@@ -74,9 +85,9 @@ func TestCompactDropsHistoryAndPullResets(t *testing.T) {
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	client := syncv1connect.NewSyncServiceClient(server.Client(), server.URL)
-	stream, err := client.Pull(ctx, connect.NewRequest(&syncv1.PullRequest{
-		Collection: "personal", ScopeId: "user-1", SinceLsn: 1,
-	}))
+	request := connect.NewRequest(&syncv1.PullRequest{Collection: "personal", ScopeId: principal.String(), SinceLsn: 1})
+	request.Header().Set("Authorization", "Bearer "+token)
+	stream, err := client.Pull(ctx, request)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,6 +99,29 @@ func TestCompactDropsHistoryAndPullResets(t *testing.T) {
 	}
 	if stream.Receive() {
 		t.Fatal("pull returned more than the compacted snapshot")
+	}
+	// A later delta must not replace the reset snapshot needed by an old cursor.
+	stored, err = queries.GetLoroDoc(ctx, principal.String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := queries.InsertSyncLog(ctx, db.InsertSyncLogParams{Collection: "personal", ScopeID: principal.String(), Lsn: stored.SnapshotVersion + 1, Op: fixture, RecordedAt: now}); err != nil {
+		t.Fatal(err)
+	}
+	request = connect.NewRequest(&syncv1.PullRequest{Collection: "personal", ScopeId: principal.String(), SinceLsn: 1})
+	request.Header().Set("Authorization", "Bearer "+token)
+	stream, err = client.Pull(ctx, request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !stream.Receive() || !stream.Msg().SnapshotReset || !bytes.Equal(stream.Msg().Op, snapshot) {
+		t.Fatal("reset did not begin with the complete snapshot")
+	}
+	if !stream.Receive() || stream.Msg().SnapshotReset || !bytes.Equal(stream.Msg().Op, fixture) {
+		t.Fatal("delta after snapshot was lost")
+	}
+	if stream.Receive() || stream.Err() != nil {
+		t.Fatalf("unexpected stream end: %v", stream.Err())
 	}
 }
 

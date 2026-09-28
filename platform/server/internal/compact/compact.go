@@ -26,11 +26,7 @@ func Run(ctx context.Context, pool *pgxpool.Pool, bin string) (int, error) {
 	}
 	done := 0
 	for _, doc := range docs {
-		snapshot, err := Exec(bin, doc.LatestSnapshot)
-		if err != nil {
-			return done, err
-		}
-		if err := replace(ctx, pool, doc.DocID, snapshot); err != nil {
+		if err := compactOne(ctx, pool, doc.DocID, bin); err != nil {
 			return done, err
 		}
 		done++
@@ -40,8 +36,24 @@ func Run(ctx context.Context, pool *pgxpool.Pool, bin string) (int, error) {
 
 // Exec runs compact-doc. Stdout is a little-endian length, the snapshot, then the v4 JSON.
 func Exec(bin string, doc []byte) ([]byte, error) {
-	command := exec.Command(bin)
-	command.Stdin = bytes.NewReader(doc)
+	return ExecBatch(context.Background(), bin, [][]byte{doc})
+}
+
+func ExecBatch(ctx context.Context, bin string, updates [][]byte) ([]byte, error) {
+	var input bytes.Buffer
+	input.WriteString("TMB1")
+	_ = binary.Write(&input, binary.LittleEndian, uint32(len(updates)))
+	for _, update := range updates {
+		if len(update) > 8*1024*1024 || input.Len()+len(update) > 64*1024*1024 {
+			return nil, errors.New("compaction batch is too large")
+		}
+		_ = binary.Write(&input, binary.LittleEndian, uint32(len(update)))
+		input.Write(update)
+	}
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+	command := exec.CommandContext(ctx, bin)
+	command.Stdin = &input
 	output, err := command.Output()
 	if err != nil {
 		var exit *exec.ExitError
@@ -60,13 +72,36 @@ func Exec(bin string, doc []byte) ([]byte, error) {
 	return output[8 : 8+size], nil
 }
 
-func replace(ctx context.Context, pool *pgxpool.Pool, docID string, snapshot []byte) error {
+func compactOne(ctx context.Context, pool *pgxpool.Pool, docID, bin string) error {
 	tx, err := pool.Begin(ctx)
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback(ctx)
 	queries := db.New(tx)
+	// The same scope lock as Push protects the read/merge/replace cycle.
+	if err := queries.LockSyncScope(ctx, collectionPersonal+"|"+docID); err != nil {
+		return err
+	}
+	rows, err := queries.SyncOpsAfter(ctx, db.SyncOpsAfterParams{Collection: collectionPersonal, ScopeID: docID, Lsn: 0})
+	if err != nil {
+		return err
+	}
+	updates := make([][]byte, 0, len(rows))
+	for _, row := range rows {
+		updates = append(updates, row.Op)
+	}
+	if len(updates) == 0 {
+		stored, err := queries.GetLoroDoc(ctx, docID)
+		if err != nil {
+			return err
+		}
+		updates = append(updates, stored.LatestSnapshot)
+	}
+	snapshot, err := ExecBatch(ctx, bin, updates)
+	if err != nil {
+		return err
+	}
 	now := pgtype.Timestamptz{Time: time.Now().UTC(), Valid: true}
 	latest, err := queries.LatestSyncOp(ctx, db.LatestSyncOpParams{Collection: collectionPersonal, ScopeID: docID})
 	lsn := int64(0)

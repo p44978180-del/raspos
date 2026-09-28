@@ -21,6 +21,15 @@ const (
 )
 
 func (s *Service) Pull(ctx context.Context, req *connect.Request[syncv1.PullRequest], stream *connect.ServerStream[syncv1.PullResponse]) error {
+	if req.Msg.GetCollection() == collectionPersonal {
+		principal, err := session.Principal(ctx, s.Queries, req.Header().Get("Authorization"))
+		if err != nil || principal == uuid.Nil {
+			return connect.NewError(connect.CodeUnauthenticated, errors.New("session required"))
+		}
+		if req.Msg.GetScopeId() != principal.String() {
+			return connect.NewError(connect.CodePermissionDenied, errors.New("personal scope must match the session"))
+		}
+	}
 	if req.Msg.GetCollection() == "" || req.Msg.GetScopeId() == "" {
 		return connect.NewError(connect.CodeInvalidArgument, errors.New("collection and scope_id are required"))
 	}
@@ -42,7 +51,7 @@ func (s *Service) Pull(ctx context.Context, req *connect.Request[syncv1.PullRequ
 	if err != nil {
 		return err
 	}
-	if req.Msg.GetSinceLsn() > 0 && minimum > req.Msg.GetSinceLsn() {
+	if req.Msg.GetCollection() != collectionPersonal && req.Msg.GetSinceLsn() > 0 && minimum > req.Msg.GetSinceLsn() {
 		latest, err := s.Queries.LatestSyncOp(ctx, db.LatestSyncOpParams{
 			Collection: req.Msg.GetCollection(), ScopeID: req.Msg.GetScopeId(),
 		})
@@ -56,6 +65,7 @@ func (s *Service) Pull(ctx context.Context, req *connect.Request[syncv1.PullRequ
 	for _, row := range rows {
 		if err := stream.Send(&syncv1.PullResponse{
 			Lsn: row.Lsn, Op: row.Op, ServerTimeUnixMs: now, SnapshotVersion: "",
+			SnapshotReset: req.Msg.GetCollection() == collectionPersonal && req.Msg.GetSinceLsn() > 0 && minimum > req.Msg.GetSinceLsn() && row.Lsn == minimum,
 		}); err != nil {
 			return err
 		}

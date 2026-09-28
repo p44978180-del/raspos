@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use loro::{ExportMode, LoroDoc};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(uniffi::Record, Clone, Debug)]
 pub struct CompactedSnapshot {
@@ -9,13 +9,13 @@ pub struct CompactedSnapshot {
     pub json_v4: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct BackupFile {
     version: i32,
     data: StudentData,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct StudentData {
     group: String,
     name: String,
@@ -25,7 +25,7 @@ struct StudentData {
     favorites: Vec<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct TaskItem {
     id: String,
     title: String,
@@ -34,7 +34,7 @@ struct TaskItem {
     kind: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 struct PlanItem {
     id: String,
     title: String,
@@ -42,8 +42,135 @@ struct PlanItem {
     start: String,
     end: String,
     room: String,
-    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     cancelled: bool,
+}
+
+/// Snapshot and SQL projection are committed together by the mobile repository.
+/// Only `update` is queued for transport; importing remote updates never echoes them.
+#[derive(uniffi::Record, Clone, Debug)]
+pub struct PersonalState {
+    pub snapshot: Vec<u8>,
+    pub update: Vec<u8>,
+    pub json_v4: String,
+}
+
+#[derive(Debug, uniffi::Error)]
+pub enum PersonalError {
+    Invalid { reason: String },
+}
+
+impl std::fmt::Display for PersonalError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self { Self::Invalid { reason } => f.write_str(reason) }
+    }
+}
+impl std::error::Error for PersonalError {}
+
+fn invalid(error: impl ToString) -> PersonalError {
+    PersonalError::Invalid { reason: error.to_string() }
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum PersonalEdit {
+    SetNotes { text: String },
+    SaveTask { task: TaskItem },
+    DeleteTask { id: String },
+    SavePlan { plan: PlanItem },
+    DeletePlan { id: String },
+    ImportV4 { backup: BackupFile },
+}
+
+fn load_personal(snapshot: &[u8]) -> Result<LoroDoc, PersonalError> {
+    if snapshot.len() > 8 * 1024 * 1024 { return Err(invalid("personal snapshot exceeds 8 MiB")); }
+    let doc = LoroDoc::new();
+    if !snapshot.is_empty() { doc.import(snapshot).map_err(invalid)?; }
+    Ok(doc)
+}
+
+fn personal_state(doc: &LoroDoc, update: Vec<u8>) -> Result<PersonalState, PersonalError> {
+    let json_v4 = export_v4(doc).map_err(invalid)?;
+    let snapshot = doc.export(ExportMode::snapshot()).map_err(invalid)?;
+    if snapshot.len() > 8 * 1024 * 1024 { return Err(invalid("personal snapshot exceeds 8 MiB")); }
+    Ok(PersonalState { snapshot, update, json_v4 })
+}
+
+#[uniffi::export]
+pub fn core_personal_open(snapshot: Vec<u8>) -> Result<PersonalState, PersonalError> {
+    personal_state(&load_personal(&snapshot)?, Vec::new())
+}
+
+#[uniffi::export]
+pub fn core_personal_apply(snapshot: Vec<u8>, peer: u64, operation: String) -> Result<PersonalState, PersonalError> {
+    if operation.len() > 8 * 1024 * 1024 { return Err(invalid("personal operation exceeds 8 MiB")); }
+    let edit: PersonalEdit = serde_json::from_str(&operation).map_err(invalid)?;
+    let doc = load_personal(&snapshot)?;
+    doc.set_peer_id(peer).map_err(invalid)?;
+    let before = doc.oplog_vv();
+    match edit {
+        PersonalEdit::SetNotes { text } => {
+            if text.chars().count() > 100_000 { return Err(invalid("notes exceed the v4 limit")); }
+            doc.get_text("notes").update(&text, Default::default()).map_err(invalid)?;
+        }
+        PersonalEdit::SaveTask { task } => put_task(&doc, &task)?,
+        PersonalEdit::SavePlan { plan } => put_plan(&doc, &plan)?,
+        PersonalEdit::DeleteTask { id } => doc.get_map("tasks").delete(&id).map_err(invalid)?,
+        PersonalEdit::DeletePlan { id } => doc.get_map("plans").delete(&id).map_err(invalid)?,
+        PersonalEdit::ImportV4 { backup } => {
+            if backup.version != 4 { return Err(invalid("backup version must be 4")); }
+            let data = backup.data;
+            validate_v4(&data.group, &data.name, &data.notes, &data.tasks, &data.plans, &data.favorites).map_err(invalid)?;
+            let meta = doc.get_map("meta");
+            meta.insert("group", data.group).map_err(invalid)?;
+            meta.insert("name", data.name).map_err(invalid)?;
+            doc.get_text("notes").update(&data.notes, Default::default()).map_err(invalid)?;
+            doc.get_map("tasks").clear().map_err(invalid)?;
+            for task in data.tasks { put_task(&doc, &task)?; }
+            doc.get_map("plans").clear().map_err(invalid)?;
+            for plan in data.plans { put_plan(&doc, &plan)?; }
+            let favorites = doc.get_list("favorites");
+            favorites.clear().map_err(invalid)?;
+            for (index, value) in data.favorites.into_iter().enumerate() {
+                favorites.insert(index, value).map_err(invalid)?;
+            }
+        }
+    }
+    doc.commit();
+    let update = if before == doc.oplog_vv() { Vec::new() } else {
+        doc.export(ExportMode::updates(&before)).map_err(invalid)?
+    };
+    personal_state(&doc, update)
+}
+
+#[uniffi::export]
+pub fn core_personal_merge(snapshot: Vec<u8>, updates: Vec<Vec<u8>>) -> Result<PersonalState, PersonalError> {
+    if updates.iter().map(Vec::len).sum::<usize>() > 8 * 1024 * 1024 {
+        return Err(invalid("personal update batch exceeds 8 MiB"));
+    }
+    let doc = load_personal(&snapshot)?;
+    doc.import_batch(&updates).map_err(invalid)?;
+    personal_state(&doc, Vec::new())
+}
+
+fn put_task(doc: &LoroDoc, task: &TaskItem) -> Result<(), PersonalError> {
+    let item = doc.get_map("tasks").ensure_mergeable_map(&task.id).map_err(invalid)?;
+    item.insert("title", task.title.as_str()).map_err(invalid)?;
+    item.insert("date", task.date.as_str()).map_err(invalid)?;
+    item.insert("done", task.done).map_err(invalid)?;
+    item.insert("kind", task.kind.as_str()).map_err(invalid)?;
+    Ok(())
+}
+
+fn put_plan(doc: &LoroDoc, plan: &PlanItem) -> Result<(), PersonalError> {
+    let item = doc.get_map("plans").ensure_mergeable_map(&plan.id).map_err(invalid)?;
+    item.insert("title", plan.title.as_str()).map_err(invalid)?;
+    item.insert("date", plan.date.as_str()).map_err(invalid)?;
+    item.insert("start", plan.start.as_str()).map_err(invalid)?;
+    item.insert("end", plan.end.as_str()).map_err(invalid)?;
+    item.insert("room", plan.room.as_str()).map_err(invalid)?;
+    item.insert("cancelled", plan.cancelled).map_err(invalid)?;
+    Ok(())
 }
 
 pub fn compact_doc(doc_bytes: &[u8]) -> Result<CompactedSnapshot, String> {
@@ -60,6 +187,17 @@ pub fn compact_doc(doc_bytes: &[u8]) -> Result<CompactedSnapshot, String> {
     if restored_json != json_v4 {
         return Err("compacted snapshot changed the v4 document".into());
     }
+    Ok(CompactedSnapshot { snapshot, json_v4 })
+}
+
+/// Server log compaction must retain causal history for devices still editing offline.
+/// A shallow snapshot is only safe after every replica has acknowledged its frontier.
+pub fn compact_updates(updates: &[Vec<u8>]) -> Result<CompactedSnapshot, String> {
+    let doc = LoroDoc::new();
+    doc.import_batch(updates).map_err(|err| err.to_string())?;
+    let json_v4 = export_v4(&doc)?;
+    let snapshot = doc.export(ExportMode::snapshot()).map_err(|err| err.to_string())?;
+    if snapshot.len() > 8 * 1024 * 1024 { return Err("personal snapshot exceeds 8 MiB".into()); }
     Ok(CompactedSnapshot { snapshot, json_v4 })
 }
 
@@ -181,15 +319,22 @@ fn validate_v4(
 
 fn valid_date(value: &str) -> bool {
     let bytes = value.as_bytes();
-    bytes.len() == 10
+    if !(bytes.len() == 10
         && bytes[4] == b'-'
         && bytes[7] == b'-'
-        && bytes.iter().enumerate().all(|(index, byte)| index == 4 || index == 7 || byte.is_ascii_digit())
+        && bytes.iter().enumerate().all(|(index, byte)| index == 4 || index == 7 || byte.is_ascii_digit())) { return false; }
+    let year = value[..4].parse::<u32>().unwrap();
+    let month = value[5..7].parse::<usize>().unwrap();
+    let day = value[8..].parse::<u32>().unwrap();
+    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+    let days = [31, if leap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    year > 0 && (1..=12).contains(&month) && day > 0 && day <= days[month - 1]
 }
 
 fn valid_time(value: &str) -> bool {
     let bytes = value.as_bytes();
     bytes.len() == 5 && bytes[2] == b':' && bytes.iter().enumerate().all(|(index, byte)| index == 2 || byte.is_ascii_digit())
+        && &value[..2] < "24" && &value[3..] < "60"
 }
 
 fn meta_string(doc: &LoroDoc, key: &str) -> String {
@@ -254,6 +399,53 @@ mod tests {
 
     fn snapshot_of(doc: &LoroDoc) -> Vec<u8> {
         doc.export(ExportMode::Snapshot).unwrap()
+    }
+
+    #[test]
+    fn editing_api_merges_concurrent_devices_and_duplicate_delivery() {
+        let base = core_personal_apply(vec![], 11, r#"{"type":"set_notes","text":"Начало"}"#.into()).unwrap();
+        let left = core_personal_apply(base.snapshot.clone(), 11, r#"{"type":"set_notes","text":"Начало А"}"#.into()).unwrap();
+        let right = core_personal_apply(base.snapshot.clone(), 22, r#"{"type":"save_task","task":{"id":"t","title":"Отчёт","date":"2026-09-28","kind":"task","done":true}}"#.into()).unwrap();
+        let merged_left = core_personal_merge(left.snapshot, vec![right.update.clone(), right.update]).unwrap();
+        let merged_right = core_personal_merge(right.snapshot, vec![left.update]).unwrap();
+        assert_eq!(merged_left.json_v4, merged_right.json_v4);
+        assert!(merged_left.update.is_empty());
+        let parsed: serde_json::Value = serde_json::from_str(&merged_left.json_v4).unwrap();
+        assert_eq!(parsed["data"]["notes"], "Начало А");
+        assert_eq!(parsed["data"]["tasks"][0]["done"], true);
+        let removed = core_personal_apply(merged_left.snapshot, 11, r#"{"type":"delete_task","id":"t"}"#.into()).unwrap();
+        assert_eq!(core_personal_merge(merged_right.snapshot, vec![removed.update]).unwrap().json_v4, removed.json_v4);
+    }
+
+    #[test]
+    fn editing_api_imports_escaped_v4_and_rejects_invalid_edits() {
+        let state = core_personal_apply(vec![], 7, r#"{"type":"import_v4","backup": { "version": 4, "data": {"group":"А","name":"Я","notes":"Строка\n\t\"{текст}\"","tasks":[],"plans":[],"favorites":["А"]}}}"#.into()).unwrap();
+        assert_eq!(core_personal_open(state.snapshot.clone()).unwrap().json_v4, state.json_v4);
+        for (date, start) in [("2026-02-30", "09:00"), ("2026-09-28", "29:00")] {
+            let edit = serde_json::json!({"type":"save_plan","plan":{"id":"p","title":"План","date":date,"start":start,"end":"30:00","room":""}});
+            assert!(core_personal_apply(state.snapshot.clone(), 7, edit.to_string()).is_err());
+        }
+        assert!(core_personal_apply(state.snapshot.clone(), 7, "{}".into()).is_err());
+        assert!(core_personal_merge(state.snapshot.clone(), vec![vec![1,2,3]]).is_err());
+        assert_eq!(core_personal_open(state.snapshot).unwrap().json_v4, state.json_v4);
+        assert!(valid_date("2024-02-29"));
+        assert!(!valid_date("2026-02-29"));
+        assert!(!valid_time("09:60"));
+    }
+
+    #[test]
+    fn server_compaction_merges_all_deltas_and_accepts_late_offline_edits() {
+        let base = core_personal_apply(vec![], 1, r#"{"type":"set_notes","text":"Общее"}"#.into()).unwrap();
+        let online = core_personal_apply(base.snapshot.clone(), 1, r#"{"type":"set_notes","text":"Общее онлайн"}"#.into()).unwrap();
+        let offline = core_personal_apply(base.snapshot, 2, r#"{"type":"save_task","task":{"id":"t","title":"Офлайн","date":"","kind":"task","done":false}}"#.into()).unwrap();
+        let compacted = compact_updates(&[base.update, online.update.clone()]).unwrap();
+        assert_eq!(compacted.json_v4, online.json_v4);
+        let server = core_personal_merge(compacted.snapshot, vec![offline.update]).unwrap();
+        let device = core_personal_merge(offline.snapshot, vec![online.update]).unwrap();
+        assert_eq!(server.json_v4, device.json_v4);
+        let parsed: serde_json::Value = serde_json::from_str(&server.json_v4).unwrap();
+        assert_eq!(parsed["data"]["notes"], "Общее онлайн");
+        assert_eq!(parsed["data"]["tasks"][0]["title"], "Офлайн");
     }
 
     #[test]

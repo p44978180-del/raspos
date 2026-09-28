@@ -15,7 +15,7 @@ static TRACK_ALLOC: alloc_track::TrackAlloc = alloc_track::TrackAlloc;
 pub use miniapp::Sandbox;
 #[cfg(feature = "wasm")]
 pub use miniapp::run_wasm;
-pub use personal::{compact_doc, personal_fixture_bytes, CompactedSnapshot};
+pub use personal::{compact_doc, compact_updates, personal_fixture_bytes, CompactedSnapshot, PersonalError, PersonalState};
 
 pub use hash::{canonical_snapshot_hash, canonical_snapshot_hash_hex, CanonicalLesson};
 
