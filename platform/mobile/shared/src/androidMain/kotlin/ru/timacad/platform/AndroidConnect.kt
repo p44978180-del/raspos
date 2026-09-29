@@ -8,6 +8,7 @@ import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.websocket.webSocket
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.get
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsBytes
 import io.ktor.client.statement.bodyAsText
@@ -17,6 +18,9 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.readText
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import ru.timacad.platform.shared.BuildConfig
 
 val SYNC_BASE_URL = BuildConfig.API_URL
@@ -28,6 +32,12 @@ class KtorSyncTransport(
     private val session: () -> String? = { null },
 ) : SyncTransport {
     private val client = platformHttp()
+    fun accountId(): String = runBlocking {
+        val response = client.get(baseUrl + "/auth/session") {
+            header("Authorization", "Bearer ${requireNotNull(session())}")
+        }
+        Json.parseToJsonElement(response.bodyAsText()).jsonObject.getValue("principal_id").jsonPrimitive.content
+    }
     override fun bootstrap(replicaId: String, groupCode: String): List<BootstrapFrame> = runBlocking {
         val body = postBytes("$SYNC_SERVICE/Bootstrap", encodeEnvelope(encodeBootstrapRequest(replicaId, groupCode)), "application/connect+proto")
         decodeBootstrapFrames(body)

@@ -111,7 +111,7 @@ class Phase8ClientTest {
         schedule.replaceLessons("Д-А401", "hash", 4, listOf(LocalLesson("2026-09-29", "09:00", "10:35", "Ботаника", "lecture", "Петров", "2", "101", "")))
         val lesson = schedule.day("Д-А401", "2026-09-29").lessons.first()
         var widgets = 0
-        val personal = PersonalRepository(database)
+        val personal = PersonalRepository(database, NativePersonalEngine())
         val transport = FakeTransport(emptyList(), pull = { listOf(SyncFrame(8, changeOp("Д-А401", lessonFingerprint(lesson), "room", """{"room":"305","building":"3"}"""))) })
         val worker = LiveSyncWorker(schedule, personal, transport) { widgets += 1 }
         val result = worker.onHint(ScheduleHint("lesson_change", "Д-А401", 8))
@@ -249,11 +249,11 @@ class Phase8ClientTest {
             assertEquals("Д-А401", decodeDirectory(frames.single().op).single().code)
         }
         val driver = memory()
-        val personal = PersonalRepository(PlatformDatabase(driver))
-        personal.saveTask(PersonalTask("t1", "черновик", "2026-09-29", false, "note"))
+        val personal = PersonalRepository(PlatformDatabase(driver), NativePersonalEngine())
+        personal.saveTask(PersonalTask("t1", "черновик", "2026-09-29", false, "task"))
         personal.savePlan(PersonalPlan("p1", "пара", "2026-09-29", "09:00", "10:30", "101", true))
         val exported = personal.exportV4("Д-А401", "Анна", "заметка")
-        val restored = PersonalRepository(PlatformDatabase(memory()))
+        val restored = PersonalRepository(PlatformDatabase(memory()), NativePersonalEngine())
         assertTrue(restored.importV4(exported))
         assertEquals("заметка", restored.notes())
         assertEquals("черновик", restored.tasks().single().title)
@@ -277,7 +277,7 @@ class Phase8ClientTest {
     private fun open(): Pair<ScheduleRepository, PersonalRepository> {
         val driver = memory()
         val database = PlatformDatabase(driver)
-        return ScheduleRepository(database, driver) to PersonalRepository(database)
+        return ScheduleRepository(database, driver) to PersonalRepository(database, NativePersonalEngine())
     }
 }
 

@@ -46,20 +46,45 @@ class LiveSyncWorker(
         }
     }
 
-    fun flushOutbox(replicaId: String): Int {
+    fun flushOutbox(replicaId: String, personalScope: String? = null): Int {
         return try {
-            val rows = personal.pendingRows()
+            val rows = personal.pendingRows().filter { personalScope == null || it.scopeId == personalScope }
             if (rows.isEmpty()) return 0
-            val acks = transport.push(replicaId, rows)
-            acks.filter { it.accepted }.forEach { personal.acknowledge(it.clientSeq) }
+            var accepted = 0
+            var batch = mutableListOf<OutboxRow>()
+            var size = 0
+            fun send() {
+                if (batch.isEmpty()) return
+                val sequences = batch.map { it.clientSeq }.toSet()
+                val acks = transport.push(replicaId, batch)
+                acks.filter { it.accepted && it.clientSeq in sequences }.forEach {
+                    personal.acknowledge(it.clientSeq)
+                    accepted++
+                }
+                batch = mutableListOf()
+                size = 0
+            }
+            for (row in rows) {
+                require(row.payload.size <= 1024 * 1024) { "Personal update exceeds the server batch limit" }
+                if (size + row.payload.size > 1024 * 1024 || batch.size >= 128) send()
+                batch += row
+                size += row.payload.size
+            }
+            send()
             quietFailures = 0
-            acks.count { it.accepted }
+            accepted
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Throwable) {
             quietFailures += 1
             0
         }
+    }
+
+    fun pullPersonal(): Int {
+        val frames = transport.pull("personal", personal.scopeId(), personal.cursor())
+        personal.merge(frames)
+        return frames.size
     }
 
     fun nextDelayMillis(unit: Double): Long = backoffMillis(quietFailures, unit)

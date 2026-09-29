@@ -15,6 +15,9 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -169,12 +172,84 @@ fun PersonalNotesScreen(
     tasks: List<PersonalTask>,
     onNotes: (String) -> Unit,
     modifier: Modifier = Modifier,
+    plans: List<PersonalPlan> = emptyList(),
+    draft: PersonalDraft? = null,
+    notice: String? = null,
+    onNew: (PersonalEntryKind) -> Unit = {},
+    onEditTask: (PersonalTask) -> Unit = {},
+    onEditPlan: (PersonalPlan) -> Unit = {},
+    onToggleTask: (PersonalTask) -> Unit = {},
+    onDeleteTask: (String) -> Unit = {},
+    onDeletePlan: (String) -> Unit = {},
+    onDraft: (PersonalDraft) -> Unit = {},
+    onSave: () -> Unit = {},
+    onCancel: () -> Unit = {},
+    onImport: () -> Unit = {},
+    onExport: () -> Unit = {},
 ) {
-    Column(modifier = modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Личное", style = MaterialTheme.typography.headlineMedium)
-        BasicTextField(value = notes, onValueChange = onNotes, modifier = Modifier.fillMaxWidth())
-        tasks.forEach { task ->
-            Text("${task.date}  ${task.title}", textDecoration = if (task.done) TextDecoration.LineThrough else null)
+    LazyColumn(modifier = modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        item(key = "heading") { Text("Личное", style = MaterialTheme.typography.headlineMedium) }
+        item(key = "notes") { OutlinedTextField(value = notes, onValueChange = onNotes, label = { Text("Заметки") }, modifier = Modifier.fillMaxWidth(), minLines = 3) }
+        item(key = "actions") {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = { onNew(PersonalEntryKind.Task) }) { Text("Задача") }
+                Button(onClick = { onNew(PersonalEntryKind.Plan) }) { Text("План") }
+            }
+        }
+        if (notice != null) item(key = "notice") { Text(notice) }
+        if (draft != null) item(key = "editor") {
+            PersonalEntryEditor(draft, onDraft, onSave, onCancel)
+        }
+        items(tasks, key = { "task:${it.id}" }) { task ->
+            Column {
+                Row {
+                    Checkbox(checked = task.done, onCheckedChange = { onToggleTask(task) })
+                    Column {
+                        Text(task.title, textDecoration = if (task.done) TextDecoration.LineThrough else null)
+                        Text("${task.date} ${if (task.kind == "homework") "Домашнее задание" else "Задача"}", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                Row {
+                    TextButton(onClick = { onEditTask(task) }) { Text("Изменить") }
+                    TextButton(onClick = { onDeleteTask(task.id) }) { Text("Удалить") }
+                }
+            }
+        }
+        items(plans, key = { "plan:${it.id}" }) { plan ->
+            Column {
+                Text(plan.title, textDecoration = if (plan.cancelled) TextDecoration.LineThrough else null)
+                Text("${plan.date} · ${plan.start}–${plan.end} · ${plan.room}", style = MaterialTheme.typography.bodySmall)
+                Row {
+                    TextButton(onClick = { onEditPlan(plan) }) { Text("Изменить") }
+                    TextButton(onClick = { onDeletePlan(plan.id) }) { Text("Удалить") }
+                }
+            }
+        }
+        item(key = "backup") {
+            Row {
+                TextButton(onClick = onImport) { Text("Импорт v4") }
+                TextButton(onClick = onExport) { Text("Экспорт v4") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PersonalEntryEditor(draft: PersonalDraft, onChange: (PersonalDraft) -> Unit, onSave: () -> Unit, onCancel: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(draft.title, { onChange(draft.copy(title = it)) }, label = { Text("Название") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(draft.date, { onChange(draft.copy(date = it)) }, label = { Text("Дата ГГГГ-ММ-ДД") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        if (draft.kind == PersonalEntryKind.Plan) {
+            OutlinedTextField(draft.start, { onChange(draft.copy(start = it)) }, label = { Text("Начало ЧЧ:ММ") }, singleLine = true)
+            OutlinedTextField(draft.end, { onChange(draft.copy(end = it)) }, label = { Text("Конец ЧЧ:ММ") }, singleLine = true)
+            OutlinedTextField(draft.room, { onChange(draft.copy(room = it)) }, label = { Text("Место") })
+            Row { Checkbox(draft.cancelled, { onChange(draft.copy(cancelled = it)) }); Text("Отменено") }
+        } else {
+            Row { Checkbox(draft.homework, { onChange(draft.copy(homework = it)) }); Text("Домашнее задание") }
+        }
+        Row {
+            Button(onClick = onSave, enabled = draft.title.isNotBlank()) { Text("Сохранить") }
+            TextButton(onClick = onCancel) { Text("Отмена") }
         }
     }
 }

@@ -17,10 +17,13 @@ class TimacadRustPlugin : Plugin<Project> {
         val hostBuild = project.tasks.register<Exec>("cargoBuildHost") {
             group = "rust"
             workingDir = crate
-            commandLine(cargo, "build", "--lib", "--no-default-features")
+            // Match bindgen's features so it does not overwrite this output with
+            // a different host library and force both tasks to rebuild next time.
+            commandLine(cargo, "build", "--lib", "--no-default-features", "--features", "cli")
             environment("PATH", cargoPath())
             inputs.dir(crate.resolve("src"))
             inputs.file(crate.resolve("Cargo.toml"))
+            inputs.file(crate.resolve("Cargo.lock"))
             outputs.file(hostLibrary)
         }
 
@@ -30,7 +33,7 @@ class TimacadRustPlugin : Plugin<Project> {
             workingDir = crate
             val output = generated.get().asFile
             commandLine(
-                cargo, "run", "--quiet", "--features", "cli", "--bin", "uniffi-bindgen", "--",
+                cargo, "run", "--quiet", "--no-default-features", "--features", "cli", "--bin", "uniffi-bindgen", "--",
                 "generate", "--library", hostLibrary.absolutePath, "--language", "kotlin", "--out-dir", output.absolutePath,
             )
             environment("PATH", cargoPath())
@@ -38,15 +41,21 @@ class TimacadRustPlugin : Plugin<Project> {
             outputs.dir(output)
         }
 
-        val androidBuilds = androidAbis(project).map { abi ->
+        val androidBuilds = listOf("Debug", "Release").associateWith { variant ->
+          androidAbis(project).map { abi ->
             val androidTarget = androidTarget(abi)
-            project.tasks.register<Exec>("cargoBuildAndroid${abi.replace("-", "")}") {
+            val profile = variant.lowercase()
+            val suffix = if (variant == "Debug") "" else variant
+            project.tasks.register<Exec>("cargoBuildAndroid$suffix${abi.replace("-", "")}") {
                 group = "rust"
                 workingDir = crate
                 commandLine(cargo, "--version")
-                val so = crate.resolve("target/$androidTarget/debug/libtimacad_core.so")
+                val so = crate.resolve("target/$androidTarget/$profile/libtimacad_core.so")
+                val dest = jniLibs.get().asFile.resolve("$profile/$abi")
                 inputs.dir(crate.resolve("src"))
-                outputs.file(so)
+                inputs.file(crate.resolve("Cargo.toml"))
+                inputs.file(crate.resolve("Cargo.lock"))
+                outputs.files(so, dest.resolve("libtimacad_core.so"))
                 doFirst {
                     val ndk = resolveNdk()
                     val prebuilt = ndk.resolve("toolchains/llvm/prebuilt").listFiles()?.firstOrNull { it.isDirectory }
@@ -55,21 +64,28 @@ class TimacadRustPlugin : Plugin<Project> {
                     val linker = prebuilt.resolve("bin/$toolPrefix.cmd").takeIf { it.exists() }
                         ?: prebuilt.resolve("bin/$toolPrefix")
                     val envKey = "CARGO_TARGET_${androidTarget.uppercase().replace('-', '_')}_LINKER"
-                    commandLine(cargo, "build", "--lib", "--target", androidTarget, "--no-default-features")
+                    val args = mutableListOf(cargo, "build", "--lib", "--target", androidTarget, "--no-default-features", "--jobs", "2")
+                    if (variant == "Release") {
+                        args += "--release"
+                        environment("CARGO_PROFILE_RELEASE_STRIP", "symbols")
+                    }
+                    commandLine(args)
                     environment("PATH", cargoPath())
                     environment(envKey, linker.absolutePath)
                     environment("RUSTFLAGS", "-C link-arg=-Wl,-z,max-page-size=16384")
                 }
                 doLast {
-                    val dest = jniLibs.get().asFile.resolve(abi)
                     dest.mkdirs()
                     so.copyTo(dest.resolve("libtimacad_core.so"), overwrite = true)
                 }
             }
+          }
         }
-        val androidBuild = project.tasks.register("cargoBuildAndroidDebug") {
-            group = "rust"
-            dependsOn(androidBuilds)
+        val androidBuild = androidBuilds.mapValues { (variant, builds) ->
+            project.tasks.register("cargoBuildAndroid$variant") {
+                group = "rust"
+                dependsOn(builds)
+            }
         }
 
         project.afterEvaluate {
@@ -83,8 +99,8 @@ class TimacadRustPlugin : Plugin<Project> {
             project.tasks.findByName("compileKotlinJvm")?.dependsOn(bindgen)
             project.tasks.findByName("compileDebugKotlinAndroid")?.dependsOn(bindgen)
             project.tasks.findByName("compileReleaseKotlinAndroid")?.dependsOn(bindgen)
-            project.tasks.findByName("mergeDebugJniLibFolders")?.dependsOn(androidBuild)
-            project.tasks.findByName("mergeReleaseJniLibFolders")?.dependsOn(androidBuild)
+            project.tasks.findByName("mergeDebugJniLibFolders")?.dependsOn(androidBuild.getValue("Debug"))
+            project.tasks.findByName("mergeReleaseJniLibFolders")?.dependsOn(androidBuild.getValue("Release"))
             (project.tasks.findByName("jvmTest") as? org.gradle.api.tasks.testing.Test)?.let { test ->
                 test.dependsOn(hostBuild)
                 test.systemProperty("jna.library.path", hostLibrary.parentFile.absolutePath)

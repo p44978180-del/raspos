@@ -34,6 +34,9 @@ kotlin {
     }
 
     sourceSets {
+        listOf("jvmMain", "androidMain").forEach { name ->
+            getByName(name).kotlin.srcDir("src/jvmAndAndroidMain/kotlin")
+        }
         commonMain.dependencies {
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines)
@@ -66,7 +69,8 @@ kotlin {
 
 android {
     namespace = "ru.timacad.platform.shared"
-    sourceSets.getByName("main").jniLibs.srcDir(layout.buildDirectory.dir("generated/jniLibs"))
+    sourceSets.getByName("debug").jniLibs.srcDir(layout.buildDirectory.dir("generated/jniLibs/debug"))
+    sourceSets.getByName("release").jniLibs.srcDir(layout.buildDirectory.dir("generated/jniLibs/release"))
     compileSdk = libs.versions.android.compileSdk.get().toInt()
     buildFeatures { buildConfig = true }
     defaultConfig {

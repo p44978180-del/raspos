@@ -17,6 +17,7 @@ data class PlatformView(
     val group: String? = null, val date: String? = null, val dates: List<String> = emptyList(),
     val subgroup: Int = 0, val rows: List<DayRow> = emptyList(),
     val notes: String = "", val tasks: List<PersonalTask> = emptyList(),
+    val plans: List<PersonalPlan> = emptyList(), val draft: PersonalDraft? = null, val personalNotice: String? = null,
     val session: String? = null, val notice: String? = null, val authenticating: Boolean = false,
     val picker: GroupPickerView = GroupPickerView(),
 )
@@ -35,11 +36,15 @@ class PlatformController(
     private val writes = Mutex()
     private var sync: Job? = null
     private var observer: Job? = null
+    private var personalSync: Job? = null
 
     init { scope.launch {
-        state.update { it.copy(session = vault.load(), notes = personal.notes(), tasks = personal.tasks()) }
+        val session = vault.load()
+        if (session == null) personal.activateAccount(null)
+        state.update { it.copy(session = session, notes = personal.notes(), tasks = personal.tasks(), plans = personal.plans()) }
         reload()
         restartSync()
+        restartPersonalSync()
     } }
 
     private suspend fun reload() {
@@ -83,7 +88,6 @@ class PlatformController(
                             worker.bootstrap(replica, group)
                             check(worker.lastError == null) { "Schedule sync failed" }
                         }
-                        worker.flushOutbox(replica)
                         reload()
                         Log.i("TimSync", "groups=${groups.size} group=$group lessons=${group?.let(schedule::lessonCount) ?: 0}")
                     }
@@ -99,6 +103,27 @@ class PlatformController(
                     Log.w("TimSync", "retry=${attempt + 1} reason=${worker.lastError ?: error.javaClass.simpleName}")
                 }
                 delay(backoffMillis(attempt++, Random.nextDouble()))
+            }
+        }
+    }
+
+    private suspend fun restartPersonalSync() {
+        personalSync?.cancelAndJoin()
+        personalSync = scope.launch {
+            var attempt = 0
+            while (isActive && state.value.session != null) {
+                try {
+                    val account = transport.accountId()
+                    writes.withLock {
+                        personal.activateAccount(account)
+                        worker.flushOutbox(schedule.replicaId(), account)
+                        worker.pullPersonal()
+                        state.update { it.copy(notes = personal.notes(), tasks = personal.tasks(), plans = personal.plans()) }
+                    }
+                    attempt = 0
+                    delay(10_000)
+                } catch (cancelled: CancellationException) { throw cancelled
+                } catch (_: Exception) { delay(backoffMillis(attempt++, Random.nextDouble())) }
             }
         }
     }
@@ -119,9 +144,44 @@ class PlatformController(
         observeDay()
     } } }
     fun notes(text: String) {
+        if (text.length > 100_000) { state.update { it.copy(personalNotice = "Заметка не должна превышать 100 000 символов") }; return }
         state.update { it.copy(notes = text) }
-        scope.launch { writes.withLock { personal.saveNotes(state.value.notes) } }
+        personalWrite { personal.saveNotes(text) }
     }
+    private fun personalWrite(edit: () -> Unit) { scope.launch { writes.withLock {
+        try {
+            edit()
+            state.update { it.copy(tasks = personal.tasks(), plans = personal.plans(), personalNotice = null) }
+        } catch (cancelled: CancellationException) { throw cancelled
+        } catch (_: Exception) {
+            state.update { it.copy(personalNotice = "Не удалось сохранить. Проверьте название, дату и время. Предыдущие данные сохранены.") }
+        }
+    } } }
+    fun newPersonal(kind: PersonalEntryKind) { state.update { it.copy(draft = PersonalDraft(java.util.UUID.randomUUID().toString(), kind, date = it.date.orEmpty()), personalNotice = null) } }
+    fun editTask(task: PersonalTask) { state.update { it.copy(draft = PersonalDraft(task.id, PersonalEntryKind.Task, task.title, task.date, homework = task.kind == "homework", done = task.done)) } }
+    fun editPlan(plan: PersonalPlan) { state.update { it.copy(draft = PersonalDraft(plan.id, PersonalEntryKind.Plan, plan.title, plan.date, plan.start, plan.end, plan.room, cancelled = plan.cancelled)) } }
+    fun draft(value: PersonalDraft) { state.update { it.copy(draft = value) } }
+    fun cancelPersonal() { state.update { it.copy(draft = null, personalNotice = null) } }
+    fun savePersonal() {
+        val draft = state.value.draft ?: return
+        personalWrite {
+            if (draft.kind == PersonalEntryKind.Task) personal.saveTask(PersonalTask(draft.id, draft.title.trim(), draft.date, draft.done, if (draft.homework) "homework" else "task"))
+            else personal.savePlan(PersonalPlan(draft.id, draft.title.trim(), draft.date, draft.start, draft.end, draft.room, draft.cancelled))
+            state.update { if (it.draft == draft) it.copy(draft = null) else it }
+        }
+    }
+    fun toggleTask(task: PersonalTask) = personalWrite { personal.saveTask(task.copy(done = !task.done)) }
+    fun deleteTask(id: String) = personalWrite { personal.deleteTask(id) }
+    fun deletePlan(id: String) = personalWrite { personal.deletePlan(id) }
+
+    fun importBackup(read: () -> String) { personalWrite {
+        check(personal.importV4(read()))
+        state.update { it.copy(notes = personal.notes()) }
+    } }
+    fun exportBackup(ready: (String) -> Unit) { scope.launch {
+        val json = writes.withLock { personal.exportV4(group = state.value.group.orEmpty(), notes = state.value.notes) }
+        withContext(Dispatchers.Main) { ready(json) }
+    } }
     private fun filterGroups() {
         val current = state.value
         val matches = if (current.picker.query.isBlank()) emptyList() else schedule.search(current.picker.query)
@@ -148,8 +208,16 @@ class PlatformController(
                 is PasskeyOutcome.Session -> old.copy(session = outcome.token, notice = "Вы вошли", authenticating = false)
                 is PasskeyOutcome.Quiet -> old.copy(notice = outcome.detail, authenticating = false)
             } }
+            if (outcome is PasskeyOutcome.Session) restartPersonalSync()
         }
     }
-    fun logout() { scope.launch { vault.clear(); state.update { it.copy(session = null, notice = "Вы вышли на этом устройстве") } } }
+    fun logout() { scope.launch {
+        personalSync?.cancelAndJoin()
+        writes.withLock {
+            vault.clear()
+            personal.activateAccount(null)
+            state.update { it.copy(session = null, notice = "Вы вышли на этом устройстве", notes = personal.notes(), tasks = personal.tasks(), plans = personal.plans(), draft = null) }
+        }
+    } }
     fun close() { transport.close(); passkeyHttp.close() }
 }

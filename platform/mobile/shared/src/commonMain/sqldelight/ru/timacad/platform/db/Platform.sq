@@ -183,3 +183,23 @@ SELECT lsn, fingerprint, kind, payload_json
 FROM local_lesson_change
 WHERE group_code = ? AND status = 'published'
 ORDER BY lsn;
+
+CREATE TABLE personal_document (
+    scope_id TEXT NOT NULL PRIMARY KEY,
+    snapshot BLOB NOT NULL
+);
+
+personalSnapshot:
+SELECT snapshot FROM personal_document WHERE scope_id = ?;
+
+savePersonalSnapshot:
+INSERT OR REPLACE INTO personal_document(scope_id, snapshot) VALUES (?, ?);
+
+deleteTasks:
+DELETE FROM personal_task;
+
+deletePlans:
+DELETE FROM personal_plan;
+
+nextOutboxSequence:
+SELECT coalesce(max(client_seq), 0) + 1 FROM outbox;

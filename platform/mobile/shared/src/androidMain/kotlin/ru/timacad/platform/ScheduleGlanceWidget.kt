@@ -14,12 +14,14 @@ import androidx.glance.text.Text
 import androidx.glance.text.TextDecoration
 import androidx.glance.text.TextStyle
 import ru.timacad.platform.db.PlatformDatabase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.LocalTime
 
 class ScheduleGlanceWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val face = readWidgetFace(context)
+        val face = withContext(Dispatchers.IO) { readWidgetFace(context) }
         provideContent { ScheduleFace(face) }
     }
 }
