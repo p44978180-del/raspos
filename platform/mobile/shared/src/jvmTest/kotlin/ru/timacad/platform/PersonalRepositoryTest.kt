@@ -8,8 +8,41 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.assertFails
 import kotlin.test.assertContentEquals
+import kotlinx.serialization.json.*
+import kotlin.random.Random
 
 class PersonalRepositoryTest {
+    @Test
+    fun largeV4ImportQueuesNativeChunksAndRecoversOnAnotherReplica() {
+        val (leftDriver, leftDb) = memory()
+        val (rightDriver, rightDb) = memory()
+        val left = PersonalRepository(leftDb, NativePersonalEngine())
+        val right = PersonalRepository(rightDb, NativePersonalEngine())
+        val random = Random(41)
+        val tasks = List(10_000) { index -> buildJsonObject {
+            put("id", "task-$index")
+            put("title", buildString { repeat(240) { append(('a'.code + random.nextInt(26)).toChar()) } })
+            put("date", "2026-09-29"); put("done", index % 2 == 0); put("kind", "task")
+        } }
+        val backup = buildJsonObject {
+            put("version", 4)
+            put("data", buildJsonObject {
+                put("group", "A"); put("name", "Student"); put("notes", "large backup")
+                put("tasks", JsonArray(tasks)); put("plans", JsonArray(emptyList())); put("favorites", JsonArray(emptyList()))
+            })
+        }.toString()
+        assertTrue(left.importV4(backup))
+        val pending = left.pendingRows()
+        assertTrue(pending.size > 1, "large import must be split")
+        assertTrue(pending.all { it.payload.size <= 1024 * 1024 })
+        assertEquals(pending.size, pending.map { it.clientSeq }.distinct().size)
+        right.merge(pending.map { SyncFrame(it.clientSeq, it.payload) })
+        assertEquals(left.exportV4(), right.exportV4())
+        assertEquals(10_000, right.tasks().size)
+        assertTrue(right.pending().isEmpty())
+        leftDriver.close(); rightDriver.close()
+    }
+
     @Test
     fun offlineOutboxFlushUsesBoundedBatchesAndOnlyTheActiveAccount() {
         val (driver, db) = memory()

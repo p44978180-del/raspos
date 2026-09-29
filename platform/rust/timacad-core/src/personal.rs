@@ -153,6 +153,38 @@ pub fn core_personal_merge(snapshot: Vec<u8>, updates: Vec<Vec<u8>>) -> Result<P
     personal_state(&doc, Vec::new())
 }
 
+/// Export complete Loro operation ranges, never arbitrary byte slices. The receiver
+/// can import these chunks with ordinary Loro import and preserve causal identities.
+#[uniffi::export]
+pub fn core_personal_split_update(snapshot: Vec<u8>, update: Vec<u8>, max_bytes: u32) -> Result<Vec<Vec<u8>>, PersonalError> {
+    let limit = max_bytes as usize;
+    if !(1024..=1024 * 1024).contains(&limit) { return Err(invalid("invalid update chunk limit")); }
+    if update.is_empty() { return Ok(Vec::new()); }
+    let meta = LoroDoc::decode_import_blob_meta(&update, true).map_err(invalid)?;
+    if update.len() <= limit { return Ok(vec![update]); }
+    let doc = load_personal(&snapshot)?;
+    let mut chunks = Vec::new();
+    fn split(doc: &LoroDoc, peer: u64, start: i32, end: i32, limit: usize, chunks: &mut Vec<Vec<u8>>) -> Result<(), PersonalError> {
+        if start >= end { return Ok(()); }
+        let bytes = doc.export(ExportMode::updates_in_range(vec![loro::IdSpan::new(peer, start, end)])).map_err(invalid)?;
+        if bytes.len() <= limit { chunks.push(bytes); return Ok(()); }
+        if end - start == 1 { return Err(invalid("one personal operation exceeds the chunk limit")); }
+        let mid = start + (end - start) / 2;
+        split(doc, peer, start, mid, limit, chunks)?;
+        split(doc, peer, mid, end, limit, chunks)
+    }
+    let mut ranges: Vec<_> = meta.partial_end_vv.iter().map(|(&peer, &end)| {
+        (peer, meta.partial_start_vv.get(&peer).copied().unwrap_or(0), end)
+    }).collect();
+    ranges.sort_unstable();
+    let available = doc.oplog_vv();
+    for (peer, start, end) in ranges {
+        if available.get(&peer).copied().unwrap_or(0) < end { return Err(invalid("snapshot does not contain update")); }
+        split(&doc, peer, start, end, limit, &mut chunks)?;
+    }
+    Ok(chunks)
+}
+
 fn put_task(doc: &LoroDoc, task: &TaskItem) -> Result<(), PersonalError> {
     let item = doc.get_map("tasks").ensure_mergeable_map(&task.id).map_err(invalid)?;
     item.insert("title", task.title.as_str()).map_err(invalid)?;
@@ -415,6 +447,30 @@ mod tests {
         assert_eq!(parsed["data"]["tasks"][0]["done"], true);
         let removed = core_personal_apply(merged_left.snapshot, 11, r#"{"type":"delete_task","id":"t"}"#.into()).unwrap();
         assert_eq!(core_personal_merge(merged_right.snapshot, vec![removed.update]).unwrap().json_v4, removed.json_v4);
+    }
+
+    #[test]
+    fn large_backup_chunks_preserve_causal_history_and_v4_data() {
+        let tasks: Vec<_> = (0..10_000).map(|index| serde_json::json!({
+            "id": format!("task-{index}"), "title": format!("Task {index}: {}", "abcdefghijklmno".repeat(12)),
+            "date": "2026-09-29", "done": index % 2 == 0, "kind": "task"
+        })).collect();
+        let operation = serde_json::json!({"type":"import_v4", "backup":{"version":4,"data":{
+            "group":"A", "name":"Student", "notes":"Notes", "tasks":tasks, "plans":[], "favorites":[]
+        }}});
+        let source = core_personal_apply(vec![], 41, operation.to_string()).unwrap();
+        assert!(source.update.len() > 1024 * 1024, "fixture must exceed Push limit: {}", source.update.len());
+        let mut chunks = core_personal_split_update(source.snapshot.clone(), source.update, 1024 * 1024).unwrap();
+        assert!(chunks.len() > 1);
+        assert!(chunks.iter().all(|chunk| chunk.len() <= 1024 * 1024));
+        let forward = core_personal_merge(vec![], chunks.clone()).unwrap();
+        assert_eq!(forward.json_v4, source.json_v4);
+        chunks.reverse();
+        chunks.extend(chunks.clone());
+        let replayed = core_personal_merge(vec![], chunks).unwrap();
+        assert_eq!(replayed.json_v4, source.json_v4);
+        let edited = core_personal_apply(replayed.snapshot, 42, r#"{"type":"delete_task","id":"task-7"}"#.into()).unwrap();
+        assert_eq!(core_personal_merge(source.snapshot, vec![edited.update]).unwrap().json_v4, edited.json_v4);
     }
 
     #[test]

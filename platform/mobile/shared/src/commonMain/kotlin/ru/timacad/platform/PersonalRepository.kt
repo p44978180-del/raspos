@@ -92,7 +92,12 @@ class PersonalRepository(private val database: PlatformDatabase, private val eng
         queries.upsertMeta("personal_group", data.text("group"))
         queries.upsertMeta("personal_name", data.text("name"))
         queries.upsertMeta("personal_favorites", data.getValue("favorites").toString())
-        if (doc.update.isNotEmpty()) enqueue(queries.nextOutboxSequence().executeAsOne(), scopeId(), doc.update)
+        if (doc.update.isNotEmpty()) {
+            val limit = 1024 * 1024
+            val chunks = if (doc.update.size <= limit) listOf(doc.update) else engine.splitUpdate(doc.snapshot, doc.update, limit)
+            var sequence = queries.nextOutboxSequence().executeAsOne()
+            chunks.forEach { enqueue(sequence++, scopeId(), it) }
+        }
     }
 
     fun importV4(json: String): Boolean = try {

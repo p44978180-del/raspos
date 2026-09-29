@@ -7,4 +7,5 @@ interface PersonalEngine {
     fun open(snapshot: ByteArray): PersonalDocument
     fun apply(snapshot: ByteArray, peer: ULong, operation: String): PersonalDocument
     fun merge(snapshot: ByteArray, updates: List<ByteArray>): PersonalDocument
+    fun splitUpdate(snapshot: ByteArray, update: ByteArray, maxBytes: Int): List<ByteArray>
 }
