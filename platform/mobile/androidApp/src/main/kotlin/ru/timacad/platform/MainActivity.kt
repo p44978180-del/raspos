@@ -8,20 +8,24 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.animation.core.spring
+import com.arkivanov.decompose.defaultComponentContext
+import com.arkivanov.decompose.extensions.compose.subscribeAsState
+import com.arkivanov.decompose.extensions.compose.stack.Children
+import com.arkivanov.decompose.extensions.compose.stack.animation.fade
+import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import androidx.compose.ui.Modifier
 import app.cash.sqldelight.db.SqlDriver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -63,7 +67,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         driver = platformDriver(applicationContext)
         val database = PlatformDatabase(driver)
-        controller = PlatformController(this, ScheduleRepository(database, driver), PersonalRepository(database, NativePersonalEngine()), work)
+        controller = PlatformController(this, ScheduleRepository(database, driver), PersonalRepository(database, NativePersonalEngine())) { driver.close() }
+        val root = PlatformRoot(defaultComponentContext())
         if (intent.getBooleanExtra("pin_widget", false)) {
             val widgets = AppWidgetManager.getInstance(this)
             if (widgets.isRequestPinAppWidgetSupported) {
@@ -72,33 +77,34 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             val state by controller.view.collectAsState()
-            var oled by remember { mutableStateOf(false) }
-            var tab by remember { mutableStateOf(HomeTab.Day) }
-            TimTheme(oled) {
-                Column(Modifier.fillMaxSize()) {
-                    when (tab) {
+            val stack by root.stack.subscribeAsState()
+            TimTheme(state.oled) {
+                Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+                    Children(root.stack, Modifier.weight(1f), animation = stackAnimation(fade(spring(stiffness = 400f, dampingRatio = 0.8f)))) { child ->
+                    when (child.instance.tab) {
                         HomeTab.Day -> DayScheduleScreen(state.rows, state.group, state.date, state.subgroup,
-                            controller::subgroup, controller::swipe, Modifier.weight(1f))
+                            controller::subgroup, controller::swipe, Modifier.fillMaxSize())
                         HomeTab.Groups -> GroupPickerScreen(state.picker, state.favorites, {
-                            controller.select(it); tab = HomeTab.Day
-                        }, controller::favorite, Modifier.weight(1f), controller::query, controller::institute, controller::course)
-                        HomeTab.Notes -> PersonalNotesScreen(state.notes, state.tasks, controller::notes, Modifier.weight(1f),
+                            controller.select(it); root.select(HomeTab.Day)
+                        }, controller::favorite, Modifier.fillMaxSize(), controller::query, controller::institute, controller::course)
+                        HomeTab.Notes -> PersonalNotesScreen(state.notes, state.tasks, controller::notes, Modifier.fillMaxSize(),
                             plans = state.plans, draft = state.draft, notice = state.personalNotice,
                             onNew = controller::newPersonal, onEditTask = controller::editTask, onEditPlan = controller::editPlan,
                             onToggleTask = controller::toggleTask, onDeleteTask = controller::deleteTask, onDeletePlan = controller::deletePlan,
                             onDraft = controller::draft, onSave = controller::savePersonal, onCancel = controller::cancelPersonal,
                             onImport = { importDocument.launch(arrayOf("application/json", "text/plain")) },
                             onExport = { exportDocument.launch("tim-backup-v4.json") })
-                        HomeTab.Campus -> Column(Modifier.weight(1f)) {
+                        HomeTab.Campus -> Column(Modifier.fillMaxSize()) {
                             Text("Схема территории")
                             CampusMap()
                         }
-                        HomeTab.Settings -> SettingsScreen(oled, state.session, state.notice, { oled = it },
-                            { controller.authenticate(false) }, Modifier.weight(1f),
+                        HomeTab.Settings -> SettingsScreen(state.oled, state.session, state.notice, controller::theme,
+                            { controller.authenticate(false) }, Modifier.fillMaxSize(),
                             onRegister = { controller.authenticate(true) }, onLogout = controller::logout,
                             busy = state.authenticating)
                     }
-                    NavigationBar {
+                    }
+                    NavigationBar(containerColor = MaterialTheme.colorScheme.background) {
                         HomeTab.entries.forEach { item ->
                             val label = when (item) {
                                 HomeTab.Day -> "День"
@@ -107,7 +113,7 @@ class MainActivity : ComponentActivity() {
                                 HomeTab.Campus -> "Кампус"
                                 HomeTab.Settings -> "Настройки"
                             }
-                            NavigationBarItem(selected = tab == item, onClick = { tab = item },
+                            NavigationBarItem(selected = stack.active.instance.tab == item, onClick = { root.select(item) },
                                 icon = { Text(label.take(1)) }, label = { Text(label) })
                         }
                     }
@@ -119,9 +125,6 @@ class MainActivity : ComponentActivity() {
     override fun onDestroy() {
         work.cancel()
         controller.close()
-        // Queries may still be unwinding after cancellation; close only once all
-        // activity-owned work has completed.
-        work.coroutineContext[Job]?.invokeOnCompletion { driver.close() }
         super.onDestroy()
     }
 }

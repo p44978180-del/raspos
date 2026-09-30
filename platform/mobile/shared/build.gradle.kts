@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.sqldelight)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinSerialization)
     id("timacad.rust")
 }
 
@@ -38,6 +39,11 @@ kotlin {
             getByName(name).kotlin.srcDir("src/jvmAndAndroidMain/kotlin")
         }
         commonMain.dependencies {
+            api(libs.decompose)
+            api(libs.decompose.compose)
+            api(libs.mvikotlin)
+            api(libs.mvikotlin.main)
+            api(libs.mvikotlin.coroutines)
             implementation(libs.sqldelight.runtime)
             implementation(libs.sqldelight.coroutines)
             implementation(libs.kotlinx.coroutines.core)

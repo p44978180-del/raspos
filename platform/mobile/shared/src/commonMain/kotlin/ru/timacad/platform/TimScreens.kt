@@ -48,6 +48,9 @@ private val Oled = darkColorScheme(
     background = Color.Black,
     surface = Color.Black,
     primary = Color(0xFF8FCBB8),
+    onPrimary = Color(0xFF071C15),
+    primaryContainer = Color(0xFF163D30),
+    onPrimaryContainer = Color(0xFFBBEBD9),
     onBackground = Color(0xFFF4F1EA),
     onSurface = Color(0xFFF4F1EA),
 )
@@ -196,6 +199,12 @@ fun PersonalNotesScreen(
                 Button(onClick = { onNew(PersonalEntryKind.Plan) }) { Text("План") }
             }
         }
+        item(key = "backup") {
+            Row {
+                TextButton(onClick = onImport) { Text("Импорт v4") }
+                TextButton(onClick = onExport) { Text("Экспорт v4") }
+            }
+        }
         if (notice != null) item(key = "notice") { Text(notice) }
         if (draft != null) item(key = "editor") {
             PersonalEntryEditor(draft, onDraft, onSave, onCancel)
@@ -223,12 +232,6 @@ fun PersonalNotesScreen(
                     TextButton(onClick = { onEditPlan(plan) }) { Text("Изменить") }
                     TextButton(onClick = { onDeletePlan(plan.id) }) { Text("Удалить") }
                 }
-            }
-        }
-        item(key = "backup") {
-            Row {
-                TextButton(onClick = onImport) { Text("Импорт v4") }
-                TextButton(onClick = onExport) { Text("Экспорт v4") }
             }
         }
     }
@@ -280,4 +283,5 @@ fun SettingsScreen(
     }
 }
 
+@kotlinx.serialization.Serializable
 enum class HomeTab { Day, Groups, Notes, Campus, Settings }
