@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -115,6 +116,7 @@ fun DayScheduleScreen(
 
 @Composable
 private fun LessonCard(row: LessonRow) {
+    val uriHandler = LocalUriHandler.current
     val tint = when (row.kind) {
         "lecture" -> Color(0xFF2F5D50)
         "practice" -> Color(0xFF8A5A2A)
@@ -125,6 +127,9 @@ private fun LessonCard(row: LessonRow) {
         Text("${row.startsAt}–${row.endsAt}  ${row.subject}", color = tint, textDecoration = if (row.mark == LessonMark.Cancelled) TextDecoration.LineThrough else null)
         Text("${row.teacher} · ${row.place}", style = MaterialTheme.typography.bodySmall)
         if (row.badge != null) Text(row.badge, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelMedium)
+        row.sourceUrl?.let { url ->
+            TextButton(onClick = { runCatching { uriHandler.openUri(url) } }) { Text("Источник расписания") }
+        }
     }
 }
 

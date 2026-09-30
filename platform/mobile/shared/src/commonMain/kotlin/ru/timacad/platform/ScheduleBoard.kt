@@ -16,6 +16,7 @@ data class LessonRow(
     val place: String,
     val mark: LessonMark,
     val badge: String?,
+    val sourceUrl: String? = null,
 ) : DayRow
 
 @Immutable
@@ -26,54 +27,67 @@ sealed interface DayRow {
     val key: String
 }
 
-fun subgroupOf(subject: String): Int = when {
-    subject.contains("п/г 2") || subject.contains("подгруппа 2") -> 2
-    subject.contains("п/г 1") || subject.contains("подгруппа 1") -> 1
-    else -> 0
+private val sourceLink = Regex("""https?://[^\s/?#]+[^\s]*""", RegexOption.IGNORE_CASE)
+private val subgroupAfter = Regex("""(?:п\s*/\s*г|подгрупп[аы]?)\s*[:№]?\s*([12](?!\d)(?:\s*(?:[,/;&+–-]|и)\s*[12](?!\d))*)""", RegexOption.IGNORE_CASE)
+private val subgroupBefore = Regex("""(?<!\d)([12](?:\s*(?:[,/;&+–-]|и)\s*[12])*)\s*(?:-?я\s+)?(?:подгрупп[аы]?|п\s*/\s*г)""", RegexOption.IGNORE_CASE)
+
+/** Zero means the whole group, including an explicit combined 1/2 lesson. */
+fun subgroupOf(subject: String): Int {
+    val numbers = (subgroupAfter.findAll(subject) + subgroupBefore.findAll(subject))
+        .flatMap { match -> match.groupValues[1].filter { it == '1' || it == '2' }.asSequence() }.toSet()
+    return if (numbers.size == 1) numbers.single().digitToInt() else 0
 }
 
 fun composeDayRows(lessons: List<LocalLesson>, changes: List<StoredChange>, subgroup: Int): List<DayRow> {
-    val visible = lessons.filter { lesson ->
+    val overlays = latestLessonChanges(changes)
+    val identityCounts = lessons.groupingBy(::lessonFingerprint).eachCount()
+    val occurrences = mutableMapOf<String, Int>()
+    // The published overlay protocol uses date/time/subject. Official data also
+    // contains distinct parallel classes with that identity; preserve each card.
+    val identified = lessons.map { original ->
+        val fingerprint = lessonFingerprint(original)
+        val base = if (identityCounts.getValue(fingerprint) == 1) fingerprint else {
+            val variant = listOf(original.endsAt, original.kind, original.teacher, original.building, original.room, original.sourceUrl)
+                .joinToString("") { "${it.length}:$it" }
+            "$fingerprint|variant:$variant"
+        }
+        val ordinal = occurrences[base] ?: 0
+        occurrences[base] = ordinal + 1
+        original to if (ordinal == 0) base else "$base|copy:$ordinal"
+    }
+    val visible = identified.filter { (lesson, _) ->
         val group = subgroupOf(lesson.subject)
         subgroup == 0 || group == 0 || group == subgroup
-    }.sortedBy { minutesOf(it.startsAt) }
-    val rows = mutableListOf<DayRow>()
-    visible.forEachIndexed { index, lesson ->
-        if (index > 0) {
-            val previous = visible[index - 1]
-            val gap = minutesOf(lesson.startsAt) - minutesOf(previous.endsAt)
-            if (gap >= 45) {
-                rows += GapRow("gap|${previous.endsAt}|${lesson.startsAt}", gapLabel(gap))
-            }
-        }
-        val overlay = changes.filter { it.fingerprint == lessonFingerprint(lesson) }.maxByOrNull { it.lsn }
-        val mark = when (overlay?.kind) {
-            "cancel" -> LessonMark.Cancelled
-            "move" -> LessonMark.Moved
-            "room" -> LessonMark.RoomChanged
-            else -> LessonMark.AsScheduled
-        }
-        val starts = if (mark == LessonMark.Moved) payloadField(overlay?.payloadJson, "starts_at") ?: lesson.startsAt else lesson.startsAt
-        val ends = if (mark == LessonMark.Moved) payloadField(overlay?.payloadJson, "ends_at") ?: lesson.endsAt else lesson.endsAt
-        val room = if (mark == LessonMark.RoomChanged) payloadField(overlay?.payloadJson, "room") ?: lesson.room else lesson.room
-        val building = if (mark == LessonMark.RoomChanged) payloadField(overlay?.payloadJson, "building") ?: lesson.building else lesson.building
-        val badge = when (mark) {
-            LessonMark.Cancelled -> "Отменена"
-            LessonMark.Moved -> "Перенос"
-            LessonMark.RoomChanged -> "Аудитория"
-            LessonMark.AsScheduled -> null
-        }
-        rows += LessonRow(
-            key = lessonFingerprint(lesson),
-            startsAt = starts,
-            endsAt = ends,
-            subject = lesson.subject,
-            kind = lesson.kind,
-            teacher = lesson.teacher,
-            place = "$building · $room",
+    }.map { (original, key) ->
+        val (lesson, mark) = applyLessonChange(original, overlays[lessonFingerprint(original)])
+        LessonRow(
+            key = key, startsAt = lesson.startsAt, endsAt = lesson.endsAt,
+            subject = lesson.subject, kind = lesson.kind, teacher = lesson.teacher,
+            place = listOf(lesson.building, lesson.room).filter { it.isNotBlank() }.joinToString(" · "),
             mark = mark,
-            badge = badge,
+            badge = when (mark) {
+                LessonMark.Cancelled -> "Отменена"
+                LessonMark.Moved -> "Перенос"
+                LessonMark.RoomChanged -> "Аудитория"
+                LessonMark.AsScheduled -> null
+            },
+            sourceUrl = lesson.sourceUrl.takeIf { it.matches(sourceLink) },
         )
+    }.sortedWith(compareBy<LessonRow> { minutesOf(it.startsAt) }.thenBy { it.key })
+    val rows = mutableListOf<DayRow>()
+    var occupiedUntil: Int? = null
+    visible.forEach { lesson ->
+        // Cancelled cards remain visible but do not occupy teaching time.
+        // Use the furthest end, so overlapping subgroup lessons cannot create a false gap.
+        if (lesson.mark != LessonMark.Cancelled) {
+            val start = minutesOf(lesson.startsAt)
+            val end = minutesOf(lesson.endsAt)
+            occupiedUntil?.let { previous ->
+                if (start - previous >= 45) rows += GapRow("gap|$previous|${lesson.key}", gapLabel(start - previous))
+            }
+            occupiedUntil = maxOf(occupiedUntil ?: end, end)
+        }
+        rows += lesson
     }
     return rows
 }

@@ -38,8 +38,15 @@ The phase is **not accepted yet**. This ledger distinguishes observed behavior f
 - Shared Decompose Child Stack owns screen lifecycle, saved navigation state and Android Back behavior. A regression test exercises tab reuse, inactive-child lifecycle, restoration and Back. All 30 JVM tests passed, including the native 10,000-task Loro repository round-trip.
 - Initial navigation APK `e3f48b9ff09daa903d033ec6170e06ed65e06245f5d270c7b42213895c74833f`: actual Android Back returned Settings→Personal; OLED theme and an offline note survived force-stop/relaunch in airplane mode. Cold launch measured 639 ms, still above the 100 ms gate. Existing-task editing and plan cancellation passed. Screenshots: [Back](evidence/phase8-mvi-back.png), [offline](evidence/phase8-mvi-offline.png), [editing](evidence/phase8-mvi-edit.png).
 - Latest APK adds revision guards, safe screen insets and backup controls before the task list. Release build succeeded (107 tasks); 30 JVM tests passed. APK: 39,612,727 bytes, SHA-256 `6d525ef13e8622a04972cb3edbad667e447996e5fdfc4eea1cc2efcaa2c095a1`. V2/V3 signatures and 16 KiB ZIP alignment passed. All ten packaged native libraries match the individually verified `0x4000` ELF files. Installation and launch succeeded on API 35 x86_64.
-- That latest APK exported the previously imported 10,000-task fixture through Android's system file dialog. The resulting 2,782,918-byte v4 file contains all 10,000 unique IDs and 5,000 completed tasks; every title, date, completion flag and kind matches the source by ID, and the note matches. This is a local Android persistence/export check, not a live authenticated cross-device sync check. The small synthetic backup was restored afterward.
-- iOS [run 36603404241](https://github.com/p44978180-del/raspos/actions/runs/36603404241) succeeded at `9815bbb`, including personal chunking. Both iosApp and WidgetKit jobs passed. The subsequent navigation/state changes require their own iOS run.
+- That latest APK exported the previously imported 10,000-task fixture through Android's system file dialog. The resulting 2,782,918-byte v4 file contains all 10,000 unique IDs and 5,000 completed tasks; every title, date, completion flag and kind matches the source by ID, and the note matches. [Check details and hashes](evidence/phase8-large-personal-roundtrip.json). This is a local Android persistence/export check, not a live authenticated cross-device sync check. The small synthetic backup was restored afterward.
+- iOS [run 36603404241](https://github.com/p44978180-del/raspos/actions/runs/36603404241) succeeded at `9815bbb`, including personal chunking. Both iosApp and WidgetKit jobs passed. Navigation/state commit `fe24039` then passed both jobs in [run 36766192119](https://github.com/p44978180-del/raspos/actions/runs/36766192119).
+
+## Schedule projection — 30 September
+
+- Source audit found 47,068 lessons across 805 groups and 181 repeated date/start/subject identities within groups. Distinct parallel classes are retained with distinct stable display keys; the published-change protocol identity is unchanged. Regression coverage includes the parallel foreign-language case, input reordering, overlays and exact duplicate rows.
+- Subgroup parsing supports combined 1/2 lessons, repeated markers, case/spacing variants and the source's `1 п/г`/`2 п/г` notation. Move overlays are applied before sorting and gap calculation. Cancelled cards remain visible but do not occupy time; overlapping lessons use the furthest occupied end. A source link is available on cards with an HTTP(S) source.
+- Card and widget overlays share the same projection and structural JSON decoding. Malformed/non-string/nested fields cannot accidentally become displayed values. Schedule/widget flow projection explicitly runs on the supplied IO context.
+- All 35 JVM tests passed after these changes. Final release assembly and direct Android checks of the new source-link/list behavior are pending; the APK/runtime evidence in the preceding section covers `fe24039`.
 
 ## Remaining requirements and evidence gaps
 
@@ -49,7 +56,7 @@ The phase is **not accepted yet**. This ledger distinguishes observed behavior f
 | Production endpoint | Release defaults are local emulator endpoints. HTTPS/Caddy templates exist, but no user-selected public domain is deployed or verified. |
 | Bootstrap of directory, schedule and campus graph atomically | Directory and selected schedule are requested separately; server campus graph bootstrap and one combined transaction are not implemented. |
 | Full personal Loro flow | Native editing, atomic persistence, v4 parsing, account separation and large-update chunking are implemented and covered by tests above. Android CRUD, cancellation and small/10,000-task backup checks passed. Live authenticated account sync and recovery after compaction still need runtime checks. |
-| Decompose Child Stack and MVIKotlin | Integrated and checked on Android/JVM as above; newest iOS compilation and reactive network/widget regression checks remain. |
+| Decompose Child Stack and MVIKotlin | Integrated and checked on Android/JVM; both iOS compilation jobs passed at `fe24039`. Reactive network/widget regression checks after the refactor remain. |
 | Campus route rendering | Local MapLibre scheme is displayed, but routing is not connected to the displayed map and real synced campus graph. |
 | Offline cold start ≤100 ms | Not demonstrated. Observed release launches on this host exceed the limit. A JVM in-memory read test is not an application startup measurement. |
 | FTS5 ≤3 ms on Android | JVM search test passes; actual Android timing with the real 805-group dataset is still required. |
@@ -57,7 +64,7 @@ The phase is **not accepted yet**. This ledger distinguishes observed behavior f
 | Full semester data | Imported source window is 14 September–2 November, not proof of all semester dates. 342 catalog groups have an empty electronic source. Do not invent lessons. |
 | ARM64 device installation | ELF and APK contents checked; no ARM64 runtime installation log yet. |
 | Native release build | Optimized Release packaging, signatures, both ABI ELF alignments and x86_64 note/task/plan runtime verified above. ARM64 runtime remains unverified. |
-| UI completeness | Source links, subgroup edge cases and route interaction need further work. |
+| UI completeness | Schedule source links, subgroup parsing, stable parallel-class keys and corrected gaps are implemented and tested as above; direct Android checks and campus route interaction remain. |
 | Security scan | Immutable server diff `4eb6de0..2ab88ab`, scan `5540fb80-4ab5-4d2b-94aa-23442a5a6ab4`, remains incomplete. Service usage limits and a later cyber-risk block interrupted finalization; no clean security verdict is claimed. |
 | Legacy / entrypoint | Legacy directories were removed in prior commit `b170137`. Root README now points exclusively to `platform/` for development, with v4 identified as historical parity data. |
 | 120 FPS | Physical 120 Hz measurement explicitly deferred by the user; code must still keep DB/network work out of composition. |

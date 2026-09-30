@@ -152,7 +152,8 @@ class Phase8ClientTest {
         val rows = composeDayRows(lessons, emptyList(), subgroup = 1)
         assertEquals(listOf("2026-09-29|09:00|Ботаника"), rows.filterIsInstance<LessonRow>().map { it.key })
         val both = composeDayRows(lessons, listOf(StoredChange(1, lessonFingerprint(lessons[0]), "cancel", "{}")), 0)
-        assertEquals("Окно: 1 ч 35 мин", both.filterIsInstance<GapRow>().single().label)
+        assertTrue(both.none { it is GapRow })
+        assertEquals("Окно: 1 ч 35 мин", composeDayRows(lessons, emptyList(), 0).filterIsInstance<GapRow>().single().label)
         assertEquals(LessonMark.Cancelled, both.filterIsInstance<LessonRow>().first().mark)
         assertTrue(composeDayRows(listOf(lessons[0], lessons[1].copy(startsAt = "11:00", subject = "Физика")), emptyList(), 0).none { it is GapRow })
     }

@@ -1,0 +1,22 @@
+{
+  "checkedOn": "2026-09-30",
+  "apkSha256": "6d525ef13e8622a04972cb3edbad667e447996e5fdfc4eea1cc2efcaa2c095a1",
+  "device": "API 35 Google APIs x86_64; timacad_phase8_network",
+  "procedure": "Import synthetic v4 backup via Android OpenDocument; install subsequent release preserving application data; export via CreateDocument; compare every task by ID. Restore the small synthetic backup afterward.",
+  "sourceSha256": "20b978be60664264073509385463df07c7ccc43fd8e4ec260647f95f86a84895",
+  "exportSha256": "e0e9e4de24d51470592ecdfd1a2bc718b0a619209c374bb901fdd313314b9804",
+  "exportBytes": 2782918,
+  "version": 4,
+  "tasks": 10000,
+  "uniqueTaskIds": 10000,
+  "completedTasks": 5000,
+  "comparedTaskFields": [
+    "id",
+    "title",
+    "date",
+    "done",
+    "kind"
+  ],
+  "noteMatches": true,
+  "scope": "Local persistence and system-file export only; no authenticated cross-device or biometric claim."
+}

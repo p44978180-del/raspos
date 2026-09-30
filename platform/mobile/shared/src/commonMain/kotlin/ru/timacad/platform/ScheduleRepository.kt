@@ -6,6 +6,7 @@ import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOn
 import ru.timacad.platform.db.PlatformDatabase
 import kotlin.coroutines.CoroutineContext
 import androidx.compose.runtime.Immutable
@@ -114,7 +115,7 @@ class ScheduleRepository(
                 changeRows.map { StoredChange(it.lsn, it.fingerprint, it.kind, it.payload_json) },
                 subgroup,
             )
-        }
+        }.flowOn(context)
     }
 
     private fun rebuildFts(groups: List<LocalGroup>) {
@@ -211,6 +212,6 @@ class ScheduleRepository(
                 changeRows.map { StoredChange(it.lsn, it.fingerprint, it.kind, it.payload_json) },
                 nowMinutes,
             )
-        }
+        }.flowOn(context)
     }
 }
