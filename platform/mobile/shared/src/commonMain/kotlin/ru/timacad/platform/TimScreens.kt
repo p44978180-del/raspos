@@ -41,6 +41,8 @@ private val Paper = lightColorScheme(
     background = Color(0xFFF7F3EA),
     surface = Color(0xFFFFFBF4),
     primary = Color(0xFF2F5D50),
+    secondary = Color(0xFF3D4C7A),
+    tertiary = Color(0xFF8A5A2A),
     onBackground = Color(0xFF1C1915),
     onSurface = Color(0xFF1C1915),
 )
@@ -49,6 +51,10 @@ private val Oled = darkColorScheme(
     background = Color.Black,
     surface = Color.Black,
     primary = Color(0xFF8FCBB8),
+    secondary = Color(0xFFB7C8FF),
+    tertiary = Color(0xFFFFCA8A),
+    secondaryContainer = Color(0xFF163D30),
+    onSecondaryContainer = Color(0xFFBBEBD9),
     onPrimary = Color(0xFF071C15),
     primaryContainer = Color(0xFF163D30),
     onPrimaryContainer = Color(0xFFBBEBD9),
@@ -118,9 +124,9 @@ fun DayScheduleScreen(
 private fun LessonCard(row: LessonRow) {
     val uriHandler = LocalUriHandler.current
     val tint = when (row.kind) {
-        "lecture" -> Color(0xFF2F5D50)
-        "practice" -> Color(0xFF8A5A2A)
-        "lab" -> Color(0xFF3D4C7A)
+        "lecture" -> MaterialTheme.colorScheme.primary
+        "practice" -> MaterialTheme.colorScheme.tertiary
+        "lab" -> MaterialTheme.colorScheme.secondary
         else -> MaterialTheme.colorScheme.onSurface
     }
     Column {
