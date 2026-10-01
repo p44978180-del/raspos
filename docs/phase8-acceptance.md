@@ -51,6 +51,13 @@ The phase is **not accepted yet**. This ledger distinguishes observed behavior f
 - Both iOS jobs for schedule commit `9db6146` succeeded in [run 36767545680](https://github.com/p44978180-del/raspos/actions/runs/36767545680).
 - OLED follow-up (1 October): lesson colors now come from the theme, with lighter green/gold/blue on black and a matching navigation indicator. Release assembly passed; APK SHA-256 `8bcab58e7930c28876d0f3106d602d1e5e8e57640446da890c4fc1e3c00a9a45`, V2/V3 and 16 KiB ZIP checks passed. It installed successfully and the corrected screen was inspected on Android: [OLED contrast](evidence/phase8-oled-contrast.png). During emulator startup, a System UI not-responding dialog appeared; choosing Wait recovered it. This is not claimed as a clean device-wide ANR result.
 
+## Campus data foundation — 1 October
+
+- Obtained a bounded OpenStreetMap API extract for the campus area after two Overpass instances failed. Retained only map geometry and relevant tags, with source URL, retrieval date, raw hash, attribution and ODbL license. University building-address research is recorded separately in [campus-addresses.json](evidence/campus-addresses.json).
+- `platform/campus/import_osm.py` reproducibly builds local vector geometry and TMG1: 5,392 routing nodes, 6,399 edges, 912 map features, with no inferred connections. It excludes explicit private access, conditional access, locked gates and pedestrian one-way paths that TMG1 cannot represent. Five Python tests passed, covering restrictions, clipping, polygon joining and rebuilding the committed pack.
+- A JVM integration test passed against the real Rust library: the mapped building 15 entrance reaches the building 5 approach with grid cost 412. Building 18 correctly has no route from that entrance because its approach crosses a gate marked private in OSM. Preset labels distinguish mapped entrances from approaches. Cost is a grid metric, not travel time.
+- This is a tested data/engine foundation only. The pack has not yet been wired into server Bootstrap, mobile SQLite or MapLibre route rendering. The installed APK still uses the previous campus screen.
+
 ## Remaining requirements and evidence gaps
 
 | Requirement | Current limitation / required proof |
