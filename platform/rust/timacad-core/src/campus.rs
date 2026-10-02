@@ -484,39 +484,26 @@ mod tests {
     }
 
     #[test]
-    fn scheme_pack_keeps_room_labels_offline() {
+    fn scheme_pack_uses_local_sources_without_rewriting_assets() {
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../mobile/shared/src/androidMain/assets/campus");
-        std::fs::create_dir_all(root.join("glyphs/TimCampus")).unwrap();
-        std::fs::write(root.join("style.json"), CAMPUS_STYLE).unwrap();
-        let latin = glyph_range_pbf("TimCampus", 0);
-        let cyrillic = glyph_range_pbf("TimCampus", 1024);
-        std::fs::write(root.join("glyphs/TimCampus/0-255.pbf"), &latin).unwrap();
-        std::fs::write(root.join("glyphs/TimCampus/1024-1279.pbf"), &cyrillic).unwrap();
         let style = std::fs::read_to_string(root.join("style.json")).unwrap();
         let lowered = style.to_ascii_lowercase();
-        assert!(!lowered.contains("http://") && !lowered.contains("https://"), "style points at the network");
-        assert!(style.contains("\"name\": \"Схема территории\""));
-        assert!(style.contains("asset://campus/glyphs/{fontstack}/{range}.pbf"));
-        assert!(style.contains("\"text-font\": [\"Sans Regular\"]"));
-        assert!(style.contains("\"text-allow-overlap\": true"));
-        assert!(style.contains("\"text-ignore-placement\": true"));
-        assert!(style.contains("\"text-halo-color\": \"#000000\""));
-        assert!(style.contains("\"text-halo-width\": 1.5"));
-        assert!(style.contains("\"zoom\": 16.5"));
-        assert!(style.contains("\"minzoom\": 0"));
-        assert!(style.contains("\"maxzoom\": 24"));
-        assert!(style.contains("\"filter\": [\"==\", [\"get\", \"kind\"], \"room\"]"));
-        let names = ["Корпус 2", "101", "102", "201", "Лестница"];
-        for name in names {
-            assert!(style.contains(name), "{name}");
-            for ch in name.chars() {
-                let code = ch as u32;
-                let file = if code < 256 { &latin } else { &cyrillic };
-                let bitmap = glyph_bitmap(file, code).unwrap_or_else(|| panic!("missing glyph {ch}"));
-                if ch != ' ' {
-                    assert!(bitmap.iter().any(|pixel| *pixel > 0), "blank glyph {ch}");
-                }
-            }
+        assert!(!lowered.contains("http://") && !lowered.contains("https://"));
+        let parsed: serde_json::Value = serde_json::from_str(&style).unwrap();
+        assert_eq!(parsed["name"], "Схема территории");
+        assert_eq!(parsed["glyphs"], "asset://campus/glyphs/{fontstack}/{range}.pbf");
+        for source in ["scheme", "route", "endpoints"] {
+            assert_eq!(parsed["sources"][source]["type"], "geojson");
+            assert!(parsed["sources"][source]["data"]["features"].as_array().unwrap().is_empty());
+        }
+        let latin = std::fs::read(root.join("glyphs/Sans Regular/0-255.pbf")).unwrap();
+        let cyrillic = std::fs::read(root.join("glyphs/Sans Regular/1024-1279.pbf")).unwrap();
+        for ch in "Корпус 15 · вход".chars() {
+            if ch == ' ' { continue; } // Space has an advance but no bitmap.
+            let code = ch as u32;
+            let file = if code < 256 { &latin } else { &cyrillic };
+            let bitmap = glyph_bitmap(file, code).unwrap_or_else(|| panic!("missing glyph {ch}"));
+            assert!(bitmap.iter().any(|pixel| *pixel > 0), "blank glyph {ch}");
         }
     }
 

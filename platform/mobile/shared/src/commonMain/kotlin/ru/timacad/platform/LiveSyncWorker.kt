@@ -16,13 +16,11 @@ class LiveSyncWorker(
     fun bootstrap(replicaId: String, groupCode: String): Int {
         return try {
             val frames = transport.bootstrap(replicaId, groupCode)
-            schedule.transaction {
-                frames.forEach { frame -> apply(frame.collection, frame.scopeId, SyncFrame(frame.lsn, frame.op)) }
-            }
+            val applied = applyBootstrapBundle(schedule, frames, groupCode)
             quietFailures = 0
             lastError = null
-            if (frames.isNotEmpty()) onWidget()
-            frames.size
+            onWidget()
+            applied
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Throwable) {
@@ -33,15 +31,19 @@ class LiveSyncWorker(
     }
 
     fun onHint(hint: ScheduleHint): HintResult {
-        val pump = HintPump(schedule, transport.asPull(), onWidget = onWidget)
+        val pump = HintPump(schedule, transport.asPull(), onReset = {
+            val group = schedule.selectedGroup().orEmpty()
+            applyBootstrapBundle(schedule, transport.bootstrap(schedule.replicaId(), group), group)
+        }, onWidget = onWidget)
         return try {
             val result = pump.deliver(hint)
-            if (result.finishedInline) quietFailures = 0
+            if (result.finishedInline) { quietFailures = 0; lastError = null }
             result
         } catch (cancelled: CancellationException) {
             throw cancelled
-        } catch (_: Throwable) {
+        } catch (error: Throwable) {
             quietFailures += 1
+            lastError = error.message
             HintResult(0, 0, 0, true)
         }
     }
@@ -89,20 +91,6 @@ class LiveSyncWorker(
 
     fun nextDelayMillis(unit: Double): Long = backoffMillis(quietFailures, unit)
 
-    private fun apply(collection: String, scopeId: String, frame: SyncFrame) {
-        when (collection) {
-            "group_directory" -> schedule.replaceDirectory(decodeDirectory(frame.op), frame.lsn)
-            "lesson" -> {
-                val snapshot = decodeLessonSnapshot(frame.op)
-                schedule.replaceLessons(snapshot.groupCode.ifEmpty { scopeId }, snapshot.snapshotHash, frame.lsn, snapshot.lessons)
-            }
-            "lesson_change" -> {
-                val change = decodeLessonChange(frame.op)
-                require(change.groupCode == scopeId)
-                schedule.applyPublishedChange(scopeId, frame.lsn, change.fingerprint, change.kind, change.payloadJson)
-            }
-        }
-    }
 }
 
 private fun SyncTransport.asPull(): SyncPull = SyncPull { collection, scopeId, since ->

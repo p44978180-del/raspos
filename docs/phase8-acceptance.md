@@ -64,16 +64,24 @@ The phase is **not accepted yet**. This ledger distinguishes observed behavior f
 - Bootstrap resolves directory, selected schedule (or the first current group) and campus graph in one read-only PostgreSQL Repeatable Read transaction, then sends the three frames. A missing snapshot produces NotFound before any frame is sent. All frames share the same server time.
 - PostgreSQL integration coverage passed for the 805-group directory, selected schedule, graph hash, idempotent reimport, first-start bundle and missing-campus failure. Full `go test -p 2 ./...` passed after these changes. Mobile persistence, reset handling and map rendering of the bundle remain in progress.
 
+## Mobile campus bundle — 2 October
+
+- Mobile Bootstrap now requires exactly one directory, selected schedule and campus snapshot, all with reset flags and positive LSNs. It validates the whole bundle before one SQLDelight transaction persists all snapshots, cursors and selected group. Reset Pull requests refetch this complete bundle before one widget notification.
+- The campus SHA-256, bounded JSON/topology counts, coordinates, unique IDs and TMG1 edge costs are checked before native routing. The local schema migration preserves cached schedule and personal history. Tests cover missing/duplicate/wrong-scope frames, graph corruption, a late SQL failure and a failed reset retry; directory FTS and cursors roll back together.
+- The screen now selects mapped entrances/approaches and renders real Rust route coordinates in MapLibre with local glyphs, linked OSM attribution and ODbL. Native routing and map projection run on IO, with stale-result guards. The Rust asset test reads the checked-in style instead of overwriting it with the former demo.
+- All 40 JVM tests passed. Signed release assembly succeeded in 2m 18s. APK SHA-256 `827b66675e4b0f3d3766de74b4251d99398aa6b847e23478ef356076905865d9`, 39,645,575 bytes. V2/V3 signatures and 16 KiB ZIP alignment passed; all ten native libraries match the individually verified `0x4000` ELF files. Android network/offline map runtime checks are still pending at this checkpoint.
+- Both iOS jobs for campus-source commit `9a83134` passed in [run 36917979504](https://github.com/p44978180-del/raspos/actions/runs/36917979504). The new mobile bundle/map changes have not yet completed iOS CI.
+
 ## Remaining requirements and evidence gaps
 
 | Requirement | Current limitation / required proof |
 |---|---|
 | Real Credential Manager fingerprint registration and login | No completed system biometric ceremony, no confirmed real passkey-backed session. User setup of device/provider and a working HTTPS RP/Digital Asset Links domain remain needed. |
 | Production endpoint | Release defaults are local emulator endpoints. HTTPS/Caddy templates exist, but no user-selected public domain is deployed or verified. |
-| Bootstrap of directory, schedule and campus graph atomically | Directory and selected schedule are requested separately; server campus graph bootstrap and one combined transaction are not implemented. |
+| Bootstrap of directory, schedule and campus graph atomically | Implemented and covered by server/JVM integration tests. The new bundle still needs direct Android network persistence proof. |
 | Full personal Loro flow | Native editing, atomic persistence, v4 parsing, account separation and large-update chunking are implemented and covered by tests above. Android CRUD, cancellation and small/10,000-task backup checks passed. Live authenticated account sync and recovery after compaction still need runtime checks. |
 | Decompose Child Stack and MVIKotlin | Integrated and checked on Android/JVM; both iOS compilation jobs passed at `fe24039`. Reactive network/widget regression checks after the refactor remain. |
-| Campus route rendering | Local MapLibre scheme is displayed, but routing is not connected to the displayed map and real synced campus graph. |
+| Campus route rendering | Real synced graph and Rust route rendering are implemented; direct Android online/offline interaction proof is pending. |
 | Offline cold start ≤100 ms | Not demonstrated. Observed release launches on this host exceed the limit. A JVM in-memory read test is not an application startup measurement. |
 | FTS5 ≤3 ms on Android | JVM search test passes; actual Android timing with the real 805-group dataset is still required. |
 | Glance after package update | Emulator previously reported an ANR for `androidx.glance.appwidget.MyPackageReplacedReceiver`. SQLite reads in `provideGlance` now run on IO and compile successfully; final widget runtime verification remains. |

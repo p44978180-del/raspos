@@ -94,10 +94,7 @@ class MainActivity : ComponentActivity() {
                             onDraft = controller::draft, onSave = controller::savePersonal, onCancel = controller::cancelPersonal,
                             onImport = { importDocument.launch(arrayOf("application/json", "text/plain")) },
                             onExport = { exportDocument.launch("tim-backup-v4.json") })
-                        HomeTab.Campus -> Column(Modifier.fillMaxSize()) {
-                            Text("Схема территории")
-                            CampusMap()
-                        }
+                        HomeTab.Campus -> CampusSchemeScreen(state.campus, controller::campusEndpoint, Modifier.fillMaxSize()) { view, modifier -> CampusMap(view, modifier) }
                         HomeTab.Settings -> SettingsScreen(state.oled, state.session, state.notice, controller::theme,
                             { controller.authenticate(false) }, Modifier.fillMaxSize(),
                             onRegister = { controller.authenticate(true) }, onLogout = controller::logout,

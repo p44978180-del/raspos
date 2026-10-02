@@ -26,6 +26,7 @@ data class PlatformView(
     val plans: List<PersonalPlan> = emptyList(), val draft: PersonalDraft? = null, val personalNotice: String? = null,
     val session: String? = null, val notice: String? = null, val authenticating: Boolean = false,
     val oled: Boolean = false, val picker: GroupPickerView = GroupPickerView(),
+    val campus: CampusView? = null,
 )
 
 private sealed interface PlatformIntent {
@@ -50,6 +51,7 @@ private sealed interface PlatformIntent {
     data class Course(val value: Int) : PlatformIntent
     data class Authenticate(val create: Boolean) : PlatformIntent
     data class Theme(val oled: Boolean) : PlatformIntent
+    data class CampusEndpoint(val from: Boolean, val id: Int) : PlatformIntent
     data object Logout : PlatformIntent
 }
 private class ViewUpdate(val reduce: (PlatformView) -> PlatformView)
@@ -87,6 +89,7 @@ class PlatformController(context: Context, schedule: ScheduleRepository, persona
     fun authenticate(create: Boolean) = store.accept(PlatformIntent.Authenticate(create))
     fun theme(oled: Boolean) = store.accept(PlatformIntent.Theme(oled))
     fun logout() = store.accept(PlatformIntent.Logout)
+    fun campusEndpoint(from: Boolean, id: Int) = store.accept(PlatformIntent.CampusEndpoint(from, id))
     fun close() { store.dispose(); observation.cancel() }
 }
 
@@ -108,6 +111,9 @@ private class PlatformExecutor(
     private var scheduleRevision = 0L
     private var observationRevision = 0L
     private var themeChanged = false
+    private var campusGraph: CampusGraph? = null
+    private var campusRevision = 0L
+    private var routeJob: Job? = null
     private var pendingEdits = 0
     private val edits = Channel<Edit>(Channel.UNLIMITED)
     private data class Edit(val scope: String?, val action: () -> Unit, val after: () -> Unit)
@@ -136,6 +142,10 @@ private class PlatformExecutor(
     }
     override fun executeIntent(intent: PlatformIntent) {
         when (intent) {
+            is PlatformIntent.CampusEndpoint -> {
+                val current = state().campus ?: return
+                routeCampus(if (intent.from) intent.id else current.from, if (intent.from) current.to else intent.id)
+            }
             is PlatformIntent.Select -> {
                 val revision = ++scheduleRevision
                 scope.launch {
@@ -214,7 +224,29 @@ private class PlatformExecutor(
         }
         if (revision != scheduleRevision) return
         update { it.copy(groups = loaded.groups, favorites = loaded.favorites, group = loaded.group, date = loaded.date, dates = loaded.dates) }
-        filterGroups(); observeDay()
+        filterGroups(); observeDay(); loadCampus()
+    }
+    private suspend fun loadCampus() {
+        val hash = database { schedule.campusHash() } ?: return
+        if (hash == campusGraph?.hash) return
+        val revision = ++campusRevision
+        val graph = database { schedule.campusGraph() } ?: return
+        val current = state().campus
+        val view = withContext(Dispatchers.IO) { graph.view(current?.from, current?.to, NativeCampusRouter()) }
+        if (revision != campusRevision) return
+        campusGraph = graph
+        update { it.copy(campus = view) }
+        Log.i("TimCampus", "cached hash=${graph.hash} nodes=${graph.nodeCount}")
+    }
+    private fun routeCampus(from: Int, to: Int) {
+        val graph = campusGraph ?: return
+        val revision = ++campusRevision
+        routeJob?.cancel()
+        update { it.copy(campus = it.campus?.copy(from = from, to = to, message = "Строим маршрут…")) }
+        routeJob = scope.launch {
+            val view = withContext(Dispatchers.IO) { graph.view(from, to, NativeCampusRouter()) }
+            if (revision == campusRevision) update { it.copy(campus = view) }
+        }
     }
     private suspend fun filterGroups() {
         val current = state()
@@ -244,12 +276,9 @@ private class PlatformExecutor(
                 try {
                     val replica = database { schedule.replicaId() }
                     // Network waits never hold the local-write mutex.
-                    withContext(Dispatchers.IO) { worker.bootstrap(replica, "") }; check(worker.lastError == null)
-                    val group = database {
-                        val groups = schedule.allGroups()
-                        (schedule.selectedGroup()?.takeIf { code -> groups.any { it.code == code } } ?: groups.firstOrNull()?.code)?.also(schedule::select)
-                    }
-                    if (group != null) { withContext(Dispatchers.IO) { worker.bootstrap(replica, group) }; check(worker.lastError == null) }
+                    val requestedGroup = database { schedule.selectedGroup().orEmpty() }
+                    withContext(Dispatchers.IO) { worker.bootstrap(replica, requestedGroup) }; check(worker.lastError == null)
+                    val group = database { schedule.selectedGroup() }
                     reload()
                     Log.i("TimSync", "groups=${state().groups.size} group=$group lessons=${database { group?.let(schedule::lessonCount) ?: 0 }}")
                     val connectedAt = System.nanoTime()

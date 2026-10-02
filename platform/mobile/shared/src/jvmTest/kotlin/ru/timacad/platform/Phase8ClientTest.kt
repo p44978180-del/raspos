@@ -97,10 +97,12 @@ class Phase8ClientTest {
         assertEquals(9, decodeBootstrapFrames(wire).single().lsn)
         val opened = open()
         val repository = opened.first
-        val worker = LiveSyncWorker(repository, opened.second, FakeTransport(listOf(frame)))
-        assertEquals(1, worker.bootstrap("11111111-1111-4111-8111-111111111111", ""))
+        val worker = LiveSyncWorker(repository, opened.second, FakeTransport(listOf(frame, lessonBootstrapFrame("Д-А401", 9), campusBootstrapFrame(9))))
+        assertEquals(3, worker.bootstrap("11111111-1111-4111-8111-111111111111", ""))
         assertEquals(2, repository.allGroups().size)
         assertEquals(9, repository.cursorLsn("group_directory", "catalog"))
+        assertEquals(9, repository.cursorLsn("campus_graph", "campus"))
+        assertEquals("Д-А401", repository.selectedGroup())
     }
 
     @Test

@@ -203,3 +203,18 @@ DELETE FROM personal_plan;
 
 nextOutboxSequence:
 SELECT coalesce(max(client_seq), 0) + 1 FROM outbox;
+
+CREATE TABLE local_campus (
+    scope_id TEXT NOT NULL PRIMARY KEY,
+    snapshot_hash TEXT NOT NULL,
+    pack_json BLOB NOT NULL
+);
+
+saveCampus:
+INSERT OR REPLACE INTO local_campus(scope_id, snapshot_hash, pack_json) VALUES ('campus', ?, ?);
+
+campusSnapshot:
+SELECT snapshot_hash, pack_json FROM local_campus WHERE scope_id = 'campus';
+
+campusHash:
+SELECT snapshot_hash FROM local_campus WHERE scope_id = 'campus';

@@ -1,0 +1,5 @@
+CREATE TABLE local_campus (
+    scope_id TEXT NOT NULL PRIMARY KEY,
+    snapshot_hash TEXT NOT NULL,
+    pack_json BLOB NOT NULL
+);

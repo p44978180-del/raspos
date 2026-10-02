@@ -20,6 +20,7 @@ class HintPump(
     private val burst: UpdateBurst = UpdateBurst(),
     private val budgetMs: Long = 10_000,
     private val clock: () -> Long = { 0 },
+    private val onReset: (() -> Int)? = null,
     private val onWidget: () -> Unit,
 ) {
     fun deliver(hint: ScheduleHint): HintResult {
@@ -32,6 +33,11 @@ class HintPump(
         if (elapsed() > budgetMs) return HintResult(0, 0, elapsed(), false)
         val frames = pull.pull(hint.collection, hint.scopeId, since)
         if (elapsed() > budgetMs) return HintResult(0, 0, elapsed(), false)
+        if (frames.any { it.reset }) {
+            val applied = requireNotNull(onReset) { "Reset requires a complete bootstrap bundle" }.invoke()
+            val updates = if (applied > 0) { onWidget(); 1 } else 0
+            return HintResult(applied, updates, elapsed(), elapsed() <= budgetMs)
+        }
         var applied = 0
         for (frame in frames.sortedBy { it.lsn }) {
             if (!frame.reset && frame.lsn <= since) continue
@@ -52,6 +58,11 @@ class HintPump(
                 }
                 "group_directory" -> {
                     repository.replaceDirectory(decodeDirectory(frame.op), frame.lsn)
+                    applied += 1
+                }
+                "campus_graph" -> {
+                    require(hint.scopeId == "campus")
+                    repository.replaceCampus(decodeCampusSnapshot(frame.op), frame.lsn)
                     applied += 1
                 }
             }

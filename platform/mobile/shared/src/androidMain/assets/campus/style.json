@@ -2,47 +2,179 @@
   "version": 8,
   "name": "Схема территории",
   "glyphs": "asset://campus/glyphs/{fontstack}/{range}.pbf",
-  "center": [37.5502, 55.8334],
+  "center": [
+    37.5527,
+    55.8326
+  ],
   "zoom": 16.5,
   "sources": {
     "scheme": {
       "type": "geojson",
       "data": {
         "type": "FeatureCollection",
-        "features": [
-          {
-            "type": "Feature",
-            "properties": {"name": "Корпус 2", "kind": "building"},
-            "geometry": {"type": "Polygon", "coordinates": [[[37.5496, 55.8330], [37.5508, 55.8330], [37.5508, 55.8338], [37.5496, 55.8338], [37.5496, 55.8330]]]}
-          },
-          {
-            "type": "Feature",
-            "properties": {"name": "101", "kind": "room"},
-            "geometry": {"type": "Point", "coordinates": [37.5499, 55.8332]}
-          },
-          {
-            "type": "Feature",
-            "properties": {"name": "102", "kind": "room"},
-            "geometry": {"type": "Point", "coordinates": [37.5505, 55.8332]}
-          },
-          {
-            "type": "Feature",
-            "properties": {"name": "201", "kind": "room"},
-            "geometry": {"type": "Point", "coordinates": [37.5499, 55.8336]}
-          },
-          {
-            "type": "Feature",
-            "properties": {"name": "Лестница", "kind": "stair"},
-            "geometry": {"type": "Point", "coordinates": [37.5502, 55.8334]}
-          }
-        ]
+        "features": []
+      }
+    },
+    "route": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": []
+      }
+    },
+    "endpoints": {
+      "type": "geojson",
+      "data": {
+        "type": "FeatureCollection",
+        "features": []
       }
     }
   },
   "layers": [
-    {"id": "paper", "type": "background", "paint": {"background-color": "#f3efe4"}},
-    {"id": "footprint", "type": "fill", "source": "scheme", "filter": ["==", ["geometry-type"], "Polygon"], "paint": {"fill-color": "#d9c7a6", "fill-outline-color": "#6b5a45"}},
-    {"id": "rooms", "type": "circle", "source": "scheme", "filter": ["==", ["get", "kind"], "room"], "paint": {"circle-radius": 6, "circle-color": "#2f5d50"}},
-    {"id": "labels", "type": "symbol", "source": "scheme", "minzoom": 0, "maxzoom": 24, "filter": ["==", ["get", "kind"], "room"], "layout": {"text-field": ["get", "name"], "text-font": ["Sans Regular"], "text-size": 18, "text-anchor": "top", "text-offset": [0, 0.4], "text-allow-overlap": true, "text-ignore-placement": true}, "paint": {"text-color": "#ffffff", "text-halo-color": "#000000", "text-halo-width": 1.5}}
+    {
+      "id": "paper",
+      "type": "background",
+      "paint": {
+        "background-color": "#f3efe4"
+      }
+    },
+    {
+      "id": "paths",
+      "type": "line",
+      "source": "scheme",
+      "filter": [
+        "==",
+        [
+          "get",
+          "kind"
+        ],
+        "path"
+      ],
+      "paint": {
+        "line-color": "#b8ad96",
+        "line-width": 3
+      }
+    },
+    {
+      "id": "footprint",
+      "type": "fill",
+      "source": "scheme",
+      "filter": [
+        "==",
+        [
+          "geometry-type"
+        ],
+        "Polygon"
+      ],
+      "paint": {
+        "fill-color": "#d9c7a6",
+        "fill-outline-color": "#6b5a45"
+      }
+    },
+    {
+      "id": "building-labels",
+      "type": "symbol",
+      "source": "scheme",
+      "minzoom": 16,
+      "filter": [
+        "==",
+        [
+          "get",
+          "kind"
+        ],
+        "building"
+      ],
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Sans Regular"
+        ],
+        "text-size": 12,
+        "text-max-width": 10
+      },
+      "paint": {
+        "text-color": "#493e32",
+        "text-halo-color": "#f3efe4",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "route-border",
+      "type": "line",
+      "source": "route",
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#ffffff",
+        "line-width": 8
+      }
+    },
+    {
+      "id": "route",
+      "type": "line",
+      "source": "route",
+      "layout": {
+        "line-cap": "round",
+        "line-join": "round"
+      },
+      "paint": {
+        "line-color": "#2563eb",
+        "line-width": 5
+      }
+    },
+    {
+      "id": "endpoint-circles",
+      "type": "circle",
+      "source": "endpoints",
+      "paint": {
+        "circle-radius": 7,
+        "circle-color": [
+          "match",
+          [
+            "get",
+            "role"
+          ],
+          "from",
+          "#2f5d50",
+          "#b45309"
+        ],
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 2
+      }
+    },
+    {
+      "id": "endpoint-labels",
+      "type": "symbol",
+      "source": "endpoints",
+      "minzoom": 0,
+      "maxzoom": 24,
+      "layout": {
+        "text-field": [
+          "get",
+          "name"
+        ],
+        "text-font": [
+          "Sans Regular"
+        ],
+        "text-size": 14,
+        "text-anchor": "top",
+        "text-offset": [
+          0,
+          0.8
+        ],
+        "text-allow-overlap": true,
+        "text-ignore-placement": true
+      },
+      "paint": {
+        "text-color": "#ffffff",
+        "text-halo-color": "#000000",
+        "text-halo-width": 1.5
+      }
+    }
   ]
 }

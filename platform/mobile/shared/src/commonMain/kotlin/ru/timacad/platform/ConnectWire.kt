@@ -68,7 +68,9 @@ internal class WireReader(private val data: ByteArray) {
         var shift = 0
         var result = 0L
         while (shift < 64) {
+            check(index < data.size) { "varint is truncated" }
             val byte = data[index++].toLong() and 0xff
+            check(shift != 63 || byte <= 1) { "varint overflows" }
             result = result or ((byte and 0x7f) shl shift)
             if (byte and 0x80L == 0L) return result
             shift += 7
@@ -77,8 +79,9 @@ internal class WireReader(private val data: ByteArray) {
     }
 
     fun bytes(): ByteArray {
-        val size = varint().toInt()
-        if (size < 0 || index + size > data.size) error("length-delimited field is truncated")
+        val length = varint()
+        check(length >= 0 && length <= (data.size - index).toLong()) { "length-delimited field is truncated" }
+        val size = length.toInt()
         val out = data.copyOfRange(index, index + size)
         index += size
         return out

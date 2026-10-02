@@ -192,6 +192,19 @@ class ScheduleRepository(
         return database.platformQueries.selectCursor(collection, scopeId).executeAsOneOrNull()?.lsn ?: 0
     }
 
+    fun replaceCampus(snapshot: CampusSnapshot, lsn: Long) {
+        database.transaction {
+            database.platformQueries.saveCampus(snapshot.hash, snapshot.bytes)
+            database.platformQueries.upsertCursor("campus_graph", "campus", snapshot.hash, lsn)
+        }
+    }
+
+    fun campusHash(): String? = database.platformQueries.campusHash().executeAsOneOrNull()
+
+    fun campusGraph(): CampusGraph? = database.platformQueries.campusSnapshot().executeAsOneOrNull()?.let {
+        decodeCampusPack(it.pack_json, it.snapshot_hash)
+    }
+
     fun storeChange(groupCode: String, lsn: Long, fingerprint: String, kind: String, payloadJson: String, status: String) {
         database.platformQueries.insertLessonChange(groupCode, lsn, fingerprint, kind, payloadJson, status)
     }

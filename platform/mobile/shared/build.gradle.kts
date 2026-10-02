@@ -48,6 +48,7 @@ kotlin {
             implementation(libs.sqldelight.coroutines)
             implementation(libs.kotlinx.coroutines.core)
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
+            implementation("com.squareup.okio:okio:3.10.2")
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
