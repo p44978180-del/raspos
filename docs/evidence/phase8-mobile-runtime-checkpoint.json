@@ -116,5 +116,6 @@
     "maximumUs": 179435,
     "allSamplesAtMost3ms": false,
     "scope": "Elapsed search on IO inside the database mutex, including SQLite and Kotlin result projection. Keystroke-to-display latency is not measured."
-  }
+  },
+  "lastAnrSinceBoot": "none"
 }
