@@ -27,6 +27,8 @@ data class PlatformView(
     val session: String? = null, val notice: String? = null, val authenticating: Boolean = false,
     val oled: Boolean = false, val picker: GroupPickerView = GroupPickerView(),
     val campus: CampusView? = null,
+    val localContentReady: Boolean = false,
+    val personalContentReady: Boolean = false,
 )
 
 private sealed interface PlatformIntent {
@@ -127,17 +129,21 @@ private class PlatformExecutor(
         update { it.copy(
             notes = if (changedAccount || (revision == notesRevision && pendingEdits == 0)) content.notes else it.notes,
             tasks = content.tasks, plans = content.plans, draft = if (changedAccount) null else it.draft,
+            personalContentReady = true,
         ) }
     }
     override fun executeAction(action: Unit) {
         scope.launch {
-            token = withContext(Dispatchers.IO) { vault.load() }
             val oled = withContext(Dispatchers.IO) { context.getSharedPreferences("ui", Context.MODE_PRIVATE).getBoolean("oled", false) }
+            update { it.copy(oled = if (themeChanged) it.oled else oled) }
+            reload()
+            restartSync()
+            token = withContext(Dispatchers.IO) { vault.load() }
             val content = database { if (token == null) personal.activateAccount(null); personalContent() }
-            update { it.copy(session = token, oled = if (themeChanged) it.oled else oled) }
+            update { it.copy(session = token) }
             showPersonal(content)
             scope.launch { consumeEdits() }
-            reload(); restartSync(); restartPersonalSync()
+            restartPersonalSync()
         }
     }
     override fun executeIntent(intent: PlatformIntent) {
@@ -217,14 +223,20 @@ private class PlatformExecutor(
     }
     private suspend fun reload() {
         val revision = scheduleRevision
-        val date = state().date
+        val current = state()
+        val date = current.date
         val loaded = database {
             val group = schedule.selectedGroup(); val day = schedule.day(group, date)
-            PlatformView(groups = schedule.allGroups(), favorites = schedule.favorites(), group = group, date = day.date, dates = group?.let(schedule::dates).orEmpty())
+            val rows = composeDayRows(day.lessons, group?.let(schedule::publishedChanges).orEmpty(), current.subgroup)
+            PlatformView(groups = schedule.allGroups(), favorites = schedule.favorites(), group = group, date = day.date,
+                dates = group?.let(schedule::dates).orEmpty(), rows = rows)
         }
         if (revision != scheduleRevision) return
-        update { it.copy(groups = loaded.groups, favorites = loaded.favorites, group = loaded.group, date = loaded.date, dates = loaded.dates) }
-        filterGroups(); observeDay(); loadCampus()
+        update { it.copy(groups = loaded.groups, favorites = loaded.favorites, group = loaded.group, date = loaded.date, dates = loaded.dates,
+            rows = if (it.subgroup == current.subgroup) loaded.rows else it.rows,
+            localContentReady = it.localContentReady || it.subgroup == current.subgroup) }
+        filterGroups(); observeDay()
+        scope.launch { loadCampus() }
     }
     private suspend fun loadCampus() {
         val hash = database { schedule.campusHash() } ?: return
@@ -252,10 +264,11 @@ private class PlatformExecutor(
         val current = state()
         val picker = withContext(Dispatchers.IO) {
             val matches = if (current.picker.query.isBlank()) emptyList() else database {
+                val stages = mutableListOf<Pair<String, Long>>()
                 val started = System.nanoTime()
-                val found = schedule.search(current.picker.query)
+                val found = schedule.search(current.picker.query) { step, elapsedUs -> stages += step to elapsedUs }
                 val elapsedUs = (System.nanoTime() - started) / 1_000
-                Log.i("TimFts", "search_us=$elapsedUs matches=${found.size} groups=${current.groups.size}")
+                Log.i("TimFts", "search_us=$elapsedUs matches=${found.size} groups=${current.groups.size} " + stages.joinToString(" ") { (step, time) -> "${step}_us=$time" })
                 found
             }
             groupPickerView(current.groups, current.picker, matches)
@@ -267,10 +280,10 @@ private class PlatformExecutor(
         observer?.cancelAndJoin()
         if (revision != observationRevision) return
         val current = state(); val group = current.group; val date = current.date
-        if (group == null || date == null) { update { it.copy(rows = emptyList()) }; return }
+        if (group == null || date == null) { update { it.copy(rows = emptyList(), localContentReady = true) }; return }
         observer = scope.launch {
             schedule.watchDay(group, date, current.subgroup, Dispatchers.IO).collect { rows ->
-                update { if (it.group == group && it.date == date && it.subgroup == current.subgroup) it.copy(rows = rows) else it }
+                update { if (it.group == group && it.date == date && it.subgroup == current.subgroup) it.copy(rows = rows, localContentReady = true) else it }
             }
         }
     }

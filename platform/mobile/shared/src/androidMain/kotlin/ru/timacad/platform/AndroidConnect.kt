@@ -31,7 +31,8 @@ class KtorSyncTransport(
     private val realtimeUrl: String = REALTIME_URL,
     private val session: () -> String? = { null },
 ) : SyncTransport {
-    private val client = platformHttp()
+    private val http = DeferredPlatformHttp()
+    private val client get() = http.client
     fun accountId(): String = runBlocking {
         val response = client.get(baseUrl + "/auth/session") {
             header("Authorization", "Bearer ${requireNotNull(session())}")
@@ -59,12 +60,10 @@ class KtorSyncTransport(
             send(Frame.Text("""{"id":2,"subscribe":{"channel":"$channel"}}"""))
             incoming.receiveAsFlow().collect { frame ->
                 if (frame is Frame.Text) {
-                    val payload = frame.readText()
-                    if (payload == "{}") send(Frame.Text("{}"))
-                    else {
-                        check(!payload.contains("\"error\"")) { "Realtime subscription failed" }
-                        parseRealtimeHint(payload)?.let(onHint)
-                    }
+                    decodeRealtimeFrame(frame.readText()).forEach { message -> when (message) {
+                        RealtimeMessage.Ping -> send(Frame.Text("{}"))
+                        is RealtimeMessage.Publication -> onHint(message.hint)
+                    } }
                 }
             }
         }
@@ -79,13 +78,14 @@ class KtorSyncTransport(
         }.bodyAsBytes()
     }
 
-    fun close() = client.close()
+    fun close() = http.close()
 }
 
 class KtorPasskeyHttp(
     private val baseUrl: String = SYNC_BASE_URL,
 ) : PasskeyHttp {
-    private val client = platformHttp()
+    private val http = DeferredPlatformHttp()
+    private val client get() = http.client
     override fun post(path: String, body: String, headers: Map<String, String>): PasskeyResponse = runBlocking {
         val response = client.post(baseUrl + path) {
             contentType(ContentType.Application.Json)
@@ -96,11 +96,26 @@ class KtorPasskeyHttp(
         PasskeyResponse(response.status.value, response.bodyAsText(), echoed)
     }
 
-    fun close() = client.close()
+    fun close() = http.close()
 }
 
 fun refreshScheduleWidget(context: android.content.Context) {
     kotlinx.coroutines.runBlocking { ScheduleGlanceWidget().updateAll(context) }
+}
+
+/** Creating Ktor/OkHttp must wait for an IO request, including the first launch. */
+private class DeferredPlatformHttp {
+    private val lock = Any()
+    private var closed = false
+    private val initialized = lazy { platformHttp() }
+    val client: HttpClient get() = synchronized(lock) {
+        check(!closed) { "HTTP transport is closed" }
+        initialized.value
+    }
+    fun close() = synchronized(lock) {
+        closed = true
+        if (initialized.isInitialized()) initialized.value.close()
+    }
 }
 
 private fun platformHttp(): HttpClient = HttpClient(OkHttp) {

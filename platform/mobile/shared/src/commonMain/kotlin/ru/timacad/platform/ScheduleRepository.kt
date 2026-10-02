@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.flowOn
 import ru.timacad.platform.db.PlatformDatabase
 import kotlin.coroutines.CoroutineContext
 import androidx.compose.runtime.Immutable
+import kotlin.time.TimeSource
 
 @Immutable
 data class LocalGroup(val code: String, val institute: String, val course: Int, val status: String)
@@ -38,6 +39,8 @@ class ScheduleRepository(
     private val database: PlatformDatabase,
     private val driver: SqlDriver? = null,
 ) {
+    private var ftsInitialized = false
+
     fun transaction(block: () -> Unit) { database.transaction { block() } }
 
     fun replaceDirectory(groups: List<LocalGroup>, lsn: Long = 0) {
@@ -75,8 +78,8 @@ class ScheduleRepository(
         }
     }
 
-    fun search(query: String): List<LocalGroup> {
-        val fts = ftsGroups(query)
+    fun search(query: String, trace: ((String, Long) -> Unit)? = null): List<LocalGroup> {
+        val fts = ftsGroups(query, trace)
         if (fts != null) return fts
         return database.platformQueries.searchGroups(query, query).executeAsList().map {
             LocalGroup(it.group_code, it.institute_name, it.course.toInt(), it.status)
@@ -120,39 +123,63 @@ class ScheduleRepository(
 
     private fun rebuildFts(groups: List<LocalGroup>) {
         val sql = driver ?: return
-        sql.execute(null, "CREATE VIRTUAL TABLE IF NOT EXISTS group_fts USING fts5(group_code, institute_name)", 0, null)
+        ensureFts(sql)
         sql.execute(null, "DELETE FROM group_fts", 0, null)
         groups.forEach { group ->
             sql.execute(null, "INSERT INTO group_fts(group_code, institute_name) VALUES (?, ?)", 2) {
                 bindString(0, group.code)
                 // Also index the numeric part separately: a student searching
                 // for 401 should find Д-А401 without knowing its letter prefix.
-                val numbers = Regex("[0-9]+").findAll(group.code).joinToString(" ") { it.value }
+                val numbers = numberPattern.findAll(group.code).joinToString(" ") { it.value }
                 bindString(1, "${group.institute} $numbers")
             }
         }
     }
 
-    private fun ftsGroups(query: String): List<LocalGroup>? {
+    private fun ftsGroups(query: String, trace: ((String, Long) -> Unit)?): List<LocalGroup>? {
         val sql = driver ?: return null
+        val tokensStarted = if (trace != null) TimeSource.Monotonic.markNow() else null
         // Match unicode61's word boundaries, including hyphenated group codes.
         // Quote tokens so user input never becomes an FTS expression.
-        val tokens = query.split(Regex("[^\\p{L}\\p{N}]+" )).filter { it.isNotEmpty() }
+        val tokens = query.split(tokenBoundary).filter { it.isNotEmpty() }
         if (tokens.isEmpty()) return emptyList()
         val match = tokens.joinToString(" AND ") { "\"$it\"*" }
-        sql.execute(null, "CREATE VIRTUAL TABLE IF NOT EXISTS group_fts USING fts5(group_code, institute_name)", 0, null)
-        return sql.executeQuery(null, """
-            SELECT g.group_code, g.institute_name, g.course, g.status
-            FROM group_fts JOIN local_group g ON g.group_code = group_fts.group_code
-            WHERE group_fts MATCH ? ORDER BY g.group_code
-        """.trimIndent(), { cursor ->
+        tokensStarted?.let { trace?.invoke("tokenize", it.elapsedNow().inWholeMicroseconds) }
+        val tableStarted = if (trace != null) TimeSource.Monotonic.markNow() else null
+        ensureFts(sql)
+        tableStarted?.let { trace?.invoke("ensure_table", it.elapsedNow().inWholeMicroseconds) }
+        val queryStarted = if (trace != null) TimeSource.Monotonic.markNow() else null
+        var rowsUs = 0L
+        val found = sql.executeQuery(ftsMatchSql.hashCode(), ftsMatchSql, { cursor ->
+            val rowsStarted = if (trace != null) TimeSource.Monotonic.markNow() else null
             val groups = mutableListOf<LocalGroup>()
             while (cursor.next().value) groups += LocalGroup(
                 cursor.getString(0).orEmpty(), cursor.getString(1).orEmpty(),
                 cursor.getLong(2)!!.toInt(), cursor.getString(3).orEmpty(),
             )
+            rowsUs = rowsStarted?.elapsedNow()?.inWholeMicroseconds ?: 0
             QueryResult.Value(groups)
         }, 1) { bindString(0, match) }.value
+        queryStarted?.let { trace?.invoke("execute_query", it.elapsedNow().inWholeMicroseconds); trace?.invoke("read_rows", rowsUs) }
+        return found
+    }
+
+    private fun ensureFts(sql: SqlDriver) {
+        if (ftsInitialized) return
+        sql.execute(null, "CREATE VIRTUAL TABLE IF NOT EXISTS group_fts USING fts5(group_code, institute_name)", 0, null)
+        // Bootstrap can roll back CREATE along with the catalog. Only remember
+        // initialization after a standalone, committed statement.
+        if (sql.currentTransaction() == null) ftsInitialized = true
+    }
+
+    private companion object {
+        val tokenBoundary = Regex("[^\\p{L}\\p{N}]+")
+        val numberPattern = Regex("[0-9]+")
+        val ftsMatchSql = """
+            SELECT g.group_code, g.institute_name, g.course, g.status
+            FROM group_fts JOIN local_group g ON g.group_code = group_fts.group_code
+            WHERE group_fts MATCH ? ORDER BY g.group_code
+        """.trimIndent()
     }
 
     fun day(groupCode: String?, preferredDate: String?): DayView {

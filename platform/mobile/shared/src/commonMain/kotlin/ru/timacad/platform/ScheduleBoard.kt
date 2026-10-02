@@ -143,14 +143,6 @@ fun centrifugoChannel(scopeId: String): String {
     return "group:$hex"
 }
 
-fun parseRealtimeHint(payload: String): ScheduleHint? {
-    val collection = jsonString(payload, "collection") ?: return null
-    val scope = jsonString(payload, "scope_id") ?: return null
-    val lsn = Regex(""""lsn"\s*:\s*(\d+)""").find(payload)?.groupValues?.get(1)?.toLongOrNull() ?: return null
-    if (collection.isEmpty() || scope.isEmpty() || lsn < 1) return null
-    return ScheduleHint(collection, scope, lsn)
-}
-
 fun randomUuid(nextByte: () -> Int): String {
     val bytes = ByteArray(16) { nextByte().and(0xff).toByte() }
     bytes[6] = ((bytes[6].toInt() and 0x0f) or 0x40).toByte()

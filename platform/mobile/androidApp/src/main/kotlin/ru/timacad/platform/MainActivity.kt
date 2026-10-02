@@ -3,6 +3,8 @@ package ru.timacad.platform
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.os.Bundle
+import android.os.SystemClock
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
@@ -15,6 +17,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.animation.core.spring
 import com.arkivanov.decompose.defaultComponentContext
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
@@ -64,11 +68,17 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val activityStarted = SystemClock.elapsedRealtimeNanos()
+        fun stage(name: String) = Log.i("TimStartup", "stage=$name activity_us=${(SystemClock.elapsedRealtimeNanos() - activityStarted) / 1_000}")
         super.onCreate(savedInstanceState)
+        stage("super")
         driver = platformDriver(applicationContext)
         val database = PlatformDatabase(driver)
+        stage("database")
         controller = PlatformController(this, ScheduleRepository(database, driver), PersonalRepository(database, NativePersonalEngine())) { driver.close() }
+        stage("store")
         val root = PlatformRoot(defaultComponentContext())
+        stage("navigation")
         if (intent.getBooleanExtra("pin_widget", false)) {
             val widgets = AppWidgetManager.getInstance(this)
             if (widgets.isRequestPinAppWidgetSupported) {
@@ -78,6 +88,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             val state by controller.view.collectAsState()
             val stack by root.stack.subscribeAsState()
+            LaunchedEffect(state.localContentReady) {
+                if (state.localContentReady) {
+                    withFrameNanos { }
+                    stage("local_content_frame")
+                    reportFullyDrawn()
+                }
+            }
             TimTheme(state.oled) {
                 Column(Modifier.fillMaxSize().safeDrawingPadding()) {
                     Children(root.stack, Modifier.weight(1f), animation = stackAnimation(fade(spring(stiffness = 400f, dampingRatio = 0.8f)))) { child ->
@@ -87,7 +104,7 @@ class MainActivity : ComponentActivity() {
                         HomeTab.Groups -> GroupPickerScreen(state.picker, state.favorites, {
                             controller.select(it); root.select(HomeTab.Day)
                         }, controller::favorite, Modifier.fillMaxSize(), controller::query, controller::institute, controller::course)
-                        HomeTab.Notes -> PersonalNotesScreen(state.notes, state.tasks, controller::notes, Modifier.fillMaxSize(),
+                        HomeTab.Notes -> if (!state.personalContentReady) Text("Загружаем личные записи…") else PersonalNotesScreen(state.notes, state.tasks, controller::notes, Modifier.fillMaxSize(),
                             plans = state.plans, draft = state.draft, notice = state.personalNotice,
                             onNew = controller::newPersonal, onEditTask = controller::editTask, onEditPlan = controller::editPlan,
                             onToggleTask = controller::toggleTask, onDeleteTask = controller::deleteTask, onDeletePlan = controller::deletePlan,
@@ -117,6 +134,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        stage("set_content")
     }
 
     override fun onDestroy() {
