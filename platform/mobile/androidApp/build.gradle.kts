@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlinAndroid)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.baselineProfile)
 }
 
 android {
@@ -61,6 +62,8 @@ kotlin {
 }
 
 dependencies {
+    baselineProfile(project(":baselineprofile"))
+    implementation(libs.androidx.profileinstaller)
     implementation(project(":shared"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.sqldelight.android.driver)
@@ -71,4 +74,10 @@ dependencies {
     implementation(libs.maplibre.android)
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play)
+}
+
+baselineProfile {
+    mergeIntoMain = true
+    saveInSrc = true
+    automaticGenerationDuringBuild = false
 }

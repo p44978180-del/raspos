@@ -34,6 +34,34 @@ class Phase8ClientTest {
     }
 
     @Test
+    fun pickerCodeSearchKeepsLiteralMatchingAcrossDirectoryReplaceAndRollback() {
+        val driver = memory()
+        val repository = ScheduleRepository(PlatformDatabase(driver), driver)
+        repository.replaceDirectory(listOf(
+            LocalGroup("ДА 01-24", "Институт агробиотехнологии", 3, "current"),
+            LocalGroup("Д-А401", "Институт агробиотехнологии", 4, "current"),
+            LocalGroup("Д-Э401", "Институт экономики", 4, "current"),
+        ))
+        assertEquals(setOf("ДА 01-24"), repository.searchCodes("01-24"))
+        assertEquals(setOf("Д-А401", "Д-Э401"), repository.searchCodes("401"))
+        assertEquals(setOf("ДА 01-24", "Д-А401"), repository.searchCodes("АГРОБИО"))
+        assertTrue(repository.searchCodes("missing OR экономика").isEmpty())
+        assertTrue(repository.searchCodes("\"*:()").isEmpty())
+        repository.replaceDirectory(listOf(LocalGroup("NEW-25", "Новый институт", 1, "current")))
+        assertTrue(repository.searchCodes("401").isEmpty())
+        assertEquals(setOf("NEW-25"), repository.searchCodes("нов"))
+        assertFailsWith<IllegalStateException> {
+            repository.transaction {
+                repository.replaceDirectory(listOf(LocalGroup("ROLLED-BACK", "Откат", 2, "current")))
+                error("Rollback")
+            }
+        }
+        assertEquals(setOf("NEW-25"), repository.searchCodes("25"))
+        assertTrue(repository.searchCodes("откат").isEmpty())
+        driver.close()
+    }
+
+    @Test
     fun partialOrFailedConnectStreamsNeverCommitBootstrap() {
         val directory = encodeDirectoryOp("v4", listOf(LocalGroup("NEW", "Institute", 1, "current")))
         val opened = open()

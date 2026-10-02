@@ -26,6 +26,9 @@ import com.arkivanov.decompose.extensions.compose.stack.Children
 import com.arkivanov.decompose.extensions.compose.stack.animation.fade
 import com.arkivanov.decompose.extensions.compose.stack.animation.stackAnimation
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import app.cash.sqldelight.db.SqlDriver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -96,7 +99,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
             TimTheme(state.oled) {
-                Column(Modifier.fillMaxSize().safeDrawingPadding()) {
+                Column(Modifier.fillMaxSize().safeDrawingPadding().semantics { testTagsAsResourceId = true }) {
                     Children(root.stack, Modifier.weight(1f), animation = stackAnimation(fade(spring(stiffness = 400f, dampingRatio = 0.8f)))) { child ->
                     when (child.instance.tab) {
                         HomeTab.Day -> DayScheduleScreen(state.rows, state.group, state.date, state.subgroup,
@@ -128,6 +131,7 @@ class MainActivity : ComponentActivity() {
                                 HomeTab.Settings -> "Настройки"
                             }
                             NavigationBarItem(selected = stack.active.instance.tab == item, onClick = { root.select(item) },
+                                modifier = Modifier.testTag("nav_${item.name.lowercase()}"),
                                 icon = { Text(label.take(1)) }, label = { Text(label) })
                         }
                     }

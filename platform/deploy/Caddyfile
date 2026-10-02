@@ -3,10 +3,22 @@
 }
 
 :8080 {
+	@public_internal {
+		path /ingest /fixtures/*
+		not host localhost 127.0.0.1 10.0.2.2
+	}
+	handle @public_internal {
+		respond 404
+	}
 	handle /.well-known/assetlinks.json {
 		root * /srv/well-known
 		rewrite * /assetlinks.json
 		file_server
 	}
-	reverse_proxy h2c://server:8080
+	handle /connection/websocket {
+		reverse_proxy centrifugo:8000
+	}
+	handle {
+		reverse_proxy h2c://server:8080
+	}
 }

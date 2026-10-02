@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -109,7 +110,7 @@ fun DayScheduleScreen(
                 Button(onClick = { onSubgroup(value) }) { Text(if (subgroup == value) "· $label" else label) }
             }
         }
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth().testTag("day_schedule_list")) {
             items(rows, key = { it.key }) { row ->
                 when (row) {
                     is GapRow -> Text(row.label, color = MaterialTheme.colorScheme.primary)
@@ -152,7 +153,7 @@ fun GroupPickerScreen(
 ) {
     Column(modifier = modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text("Группа", style = MaterialTheme.typography.headlineMedium)
-        BasicTextField(value = picker.query, onValueChange = onQuery, modifier = Modifier.fillMaxWidth())
+        BasicTextField(value = picker.query, onValueChange = onQuery, modifier = Modifier.fillMaxWidth().testTag("group_search"))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(picker.institutes, key = { it }) { name ->
                 Button(onClick = { onInstitute(name) }) { Text(name.take(28)) }

@@ -266,7 +266,10 @@ private class PlatformExecutor(
             val matches = if (current.picker.query.isBlank()) emptyList() else database {
                 val stages = mutableListOf<Pair<String, Long>>()
                 val started = System.nanoTime()
-                val found = schedule.search(current.picker.query) { step, elapsedUs -> stages += step to elapsedUs }
+                val codes = schedule.searchCodes(current.picker.query) { step, elapsedUs -> stages += step to elapsedUs }
+                // Preserve catalog order and reuse its immutable models. The state
+                // revision guard below discards this result after a catalog reload.
+                val found = current.groups.filter { it.code in codes }
                 val elapsedUs = (System.nanoTime() - started) / 1_000
                 Log.i("TimFts", "search_us=$elapsedUs matches=${found.size} groups=${current.groups.size} " + stages.joinToString(" ") { (step, time) -> "${step}_us=$time" })
                 found

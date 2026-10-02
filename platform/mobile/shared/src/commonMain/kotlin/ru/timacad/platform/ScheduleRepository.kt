@@ -3,6 +3,7 @@ package ru.timacad.platform
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import app.cash.sqldelight.db.QueryResult
+import app.cash.sqldelight.db.SqlCursor
 import app.cash.sqldelight.db.SqlDriver
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -79,12 +80,20 @@ class ScheduleRepository(
     }
 
     fun search(query: String, trace: ((String, Long) -> Unit)? = null): List<LocalGroup> {
-        val fts = ftsGroups(query, trace)
+        val fts = ftsMatches(query, ftsMatchSql, trace) { cursor -> LocalGroup(
+            cursor.getString(0).orEmpty(), cursor.getString(1).orEmpty(),
+            cursor.getLong(2)!!.toInt(), cursor.getString(3).orEmpty(),
+        ) }
         if (fts != null) return fts
         return database.platformQueries.searchGroups(query, query).executeAsList().map {
             LocalGroup(it.group_code, it.institute_name, it.course.toInt(), it.status)
         }
     }
+
+    /** The picker already owns the immutable catalog; only matching IDs cross JNI. */
+    fun searchCodes(query: String, trace: ((String, Long) -> Unit)? = null): Set<String> =
+        (ftsMatches(query, ftsCodeSql, trace) { it.getString(0).orEmpty() }
+            ?: search(query).map { it.code }).toHashSet()
 
     fun allGroups(): List<LocalGroup> = database.platformQueries.listGroups().executeAsList().map {
         LocalGroup(it.group_code, it.institute_name, it.course.toInt(), it.status)
@@ -136,7 +145,7 @@ class ScheduleRepository(
         }
     }
 
-    private fun ftsGroups(query: String, trace: ((String, Long) -> Unit)?): List<LocalGroup>? {
+    private fun <T> ftsMatches(query: String, statement: String, trace: ((String, Long) -> Unit)?, map: (SqlCursor) -> T): List<T>? {
         val sql = driver ?: return null
         val tokensStarted = if (trace != null) TimeSource.Monotonic.markNow() else null
         // Match unicode61's word boundaries, including hyphenated group codes.
@@ -150,13 +159,10 @@ class ScheduleRepository(
         tableStarted?.let { trace?.invoke("ensure_table", it.elapsedNow().inWholeMicroseconds) }
         val queryStarted = if (trace != null) TimeSource.Monotonic.markNow() else null
         var rowsUs = 0L
-        val found = sql.executeQuery(ftsMatchSql.hashCode(), ftsMatchSql, { cursor ->
+        val found = sql.executeQuery(statement.hashCode(), statement, { cursor ->
             val rowsStarted = if (trace != null) TimeSource.Monotonic.markNow() else null
-            val groups = mutableListOf<LocalGroup>()
-            while (cursor.next().value) groups += LocalGroup(
-                cursor.getString(0).orEmpty(), cursor.getString(1).orEmpty(),
-                cursor.getLong(2)!!.toInt(), cursor.getString(3).orEmpty(),
-            )
+            val groups = mutableListOf<T>()
+            while (cursor.next().value) groups += map(cursor)
             rowsUs = rowsStarted?.elapsedNow()?.inWholeMicroseconds ?: 0
             QueryResult.Value(groups)
         }, 1) { bindString(0, match) }.value
@@ -180,6 +186,7 @@ class ScheduleRepository(
             FROM group_fts JOIN local_group g ON g.group_code = group_fts.group_code
             WHERE group_fts MATCH ? ORDER BY g.group_code
         """.trimIndent()
+        const val ftsCodeSql = "SELECT group_code FROM group_fts WHERE group_fts MATCH ?"
     }
 
     fun day(groupCode: String?, preferredDate: String?): DayView {

@@ -1,6 +1,7 @@
 package ru.timacad.platform
 
 import android.content.Context
+import android.util.Log
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
@@ -62,9 +63,13 @@ class KeystoreVault(context: Context) : SessionVault {
 
     override fun save(token: String) {
         check(prefs.edit().putString("sealed", seal(token)).commit()) { "Cannot save session" }
+        check(prefs.getString("sealed", null)?.let(::open) == token) { "Cannot restore saved session" }
+        Log.i("TimPasskey", "session=stored vault=AndroidKeyStore")
     }
 
-    override fun load(): String? = prefs.getString("sealed", null)?.let(::open)
+    override fun load(): String? = prefs.getString("sealed", null)?.let(::open).also { token ->
+        if (token != null) Log.i("TimPasskey", "session=restored vault=AndroidKeyStore")
+    }
 
     override fun clear() {
         check(prefs.edit().remove("sealed").commit()) { "Cannot clear session" }
