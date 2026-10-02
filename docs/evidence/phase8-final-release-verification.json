@@ -1,0 +1,104 @@
+{
+  "checked_at_utc": "2026-10-02T16:23:07.2464486Z",
+  "origin": "https://plain-sites-matter.loca.lt",
+  "rp_id": "plain-sites-matter.loca.lt",
+  "user_verification": "required",
+  "resident_key": "required",
+  "android_package": "ru.timacad.platform",
+  "signing_certificate_sha256": "9D:6F:B9:00:CF:24:F6:DA:F7:9F:BE:13:AD:35:43:B5:2F:80:86:4F:E3:5A:7A:98:54:40:9A:E4:C2:B7:DA:A2",
+  "google_dal_linked": true,
+  "physical_device": {
+    "model": "TECNO AD8",
+    "sdk": 34,
+    "primary_abi": "arm64-v8a"
+  },
+  "completed_biometric_ceremony": false,
+  "baseline_profile": {
+    "device": "API 35 x86_64 dedicated AVD",
+    "airplane_mode": true,
+    "cached_dataset": "805 groups / 47,068 canonical lessons; selected ДА 01-24",
+    "tests": 2,
+    "failures": 0,
+    "test_duration_seconds": 174.63,
+    "build_duration": "6m30s",
+    "source_commit": "5da5c283435d1014a275c7d01055b3d9ed64f9d0",
+    "baseline": {
+      "rules": 25120,
+      "sha256": "12dc5ca4f1032dee4641db40ee5abaf57533ffd1d184e05771f4ab41880a55f1"
+    },
+    "startup": {
+      "rules": 21821,
+      "sha256": "4d66e36e2d17252cd833f0a94efa3f7be96bcc1d58d136094cce8ee44fb5b24f"
+    },
+    "packaged": true
+  },
+  "source_commit": "5da5c283435d1014a275c7d01055b3d9ed64f9d0",
+  "websocket_tls_handshake": "Open",
+  "public_ingest_status": 404,
+  "jvm_tests": {
+    "tests": 44,
+    "failures": 0,
+    "errors": 0
+  },
+  "ios_ci": {
+    "run_id": 37034004294,
+    "status": "completed",
+    "url": "https://github.com/p44978180-del/raspos/actions/runs/37034004294",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "name": "iosApp",
+        "conclusion": "success"
+      },
+      {
+        "name": "widgetkit",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "release_build": {
+    "duration": "4m15s",
+    "r8": true,
+    "resource_shrinking": true,
+    "apk": {
+      "sha256": "e861c262f5abf8251e98ccaa574a37223a28d5df8346fca09fdb39ba4247e24a",
+      "bytes": 39879093,
+      "signature_v2": true,
+      "signature_v3": true,
+      "zip_alignment_16k": true
+    },
+    "aab": {
+      "sha256": "2c82ac178d7a3f527f0330340913eb198b7a0cd765b3280bf808729da413c47d",
+      "bytes": 22372100,
+      "jar_signature_verified": true
+    },
+    "abis": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "native_libraries": 10,
+    "elf_alignment": "0x4000, byte-identical to directly verified ELF files",
+    "packaged_profile_bytes": 12267,
+    "packaged_profile_metadata_bytes": 478
+  },
+  "arm64_avd_attempt": {
+    "image": "system-images;android-27;default;arm64-v8a",
+    "emulator_version": "37.1.11.0",
+    "started": false,
+    "error": "QEMU2 emulator does not support arm64 CPU architecture",
+    "arm64_installation_verified": false
+  },
+  "startup_benchmark": {
+    "producer_and_target_built": true,
+    "build_duration": "2m7s",
+    "measured": false,
+    "reason": "Physical device disconnected before installation"
+  },
+  "physical_runtime": {
+    "installed": false,
+    "reason": "Device disappeared from ADB before installation",
+    "biometric_registration_verified": false,
+    "biometric_login_verified": false,
+    "keystore_session_restoration_verified": false
+  }
+}

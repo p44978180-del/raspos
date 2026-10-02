@@ -1,6 +1,14 @@
 # Phase 8 acceptance — work in progress
 
-The phase is **not accepted yet**. This ledger distinguishes observed behavior from requirements still missing or unverified. The source of scope is the user's Phase 8 objective, including the explicit deferral of 120 Hz physical-device profiling.
+The final release is **not accepted yet**. This ledger distinguishes observed behavior from requirements still missing or unverified. The source of scope is the user's Phase 8 objective and their subsequent acceptance decisions.
+
+## Final acceptance scope — 2 October
+
+The user accepted the Windows emulator's cold-start and FTS5 outliers as JIT-runtime limitations, accepted **805 groups / 47,068 lessons** as the final reference fixture, and deferred physical 120 Hz profiling. The historical measurements below remain unchanged; these decisions are acceptance exceptions, not new passing measurements.
+
+Three final gates remain before creating `v8.0.0-platform`: successful ARM64 installation and native startup with visible lessons; actual Credential Manager fingerprint registration/login over trusted HTTPS, with a persisted Android Keystore session; and generated Baseline Profile rules for startup, GroupPicker and DaySchedule packaged in the signed APK/AAB.
+
+The connected TECNO AD8 reports `arm64-v8a` and Android API 34. The user-provided temporary HTTPS origin is `https://plain-sites-matter.loca.lt`. Its public Digital Asset Links match the release certificate; Google's Digital Asset Links check returned `linked: true`. Caddy forwards WebSocket traffic and rejects external `/ingest` and `/fixtures/*` requests. The server's WebAuthn RP is the tunnel hostname, requires user verification and accepts the release certificate's Android origin. These checks alone do not prove a completed biometric ceremony. This temporary origin is not a permanent production endpoint.
 
 ## Verified on 27–28 September 2026
 
@@ -92,21 +100,33 @@ The phase is **not accepted yet**. This ledger distinguishes observed behavior f
 - A real publication through Docker produced `hint=lesson lsn=10 applied=1 widgets=1`. Both the [card](evidence/phase8-realtime-decoder-card.png) and [Glance widget](evidence/phase8-realtime-decoder-widget.png) displayed the synthetic E lesson, with PID 3429 unchanged. Multi-reply batching is covered by the JVM tests; this publication is not proof of a batched server frame. A later SocketException and repeated connect timeouts recovered automatically in the same process at 15:36:55, loading the ordinary 113-lesson selected schedule. The test HTML was deleted and ordinary v4 data reimported (805 groups, 47,068 lessons). The subsequent cleanup launch displayed ordinary lessons, and no ANR was recorded since boot.
 - Both iOS jobs at `913a691` passed in [run 37026913907](https://github.com/p44978180-del/raspos/actions/runs/37026913907). [Portable startup/search/release evidence](evidence/phase8-startup-search-profile.json).
 
+## Final profile and HTTPS build — 2 October
+
+- Mobile commit `5da5c283435d1014a275c7d01055b3d9ed64f9d0` adds `:baselineprofile`, ProfileInstaller, stable UI selectors and an identifier-only FTS5 picker query. All 44 JVM tests passed, including directory replacement/rollback for the new query.
+- Two actual Baseline Profile instrumentation tests passed on the dedicated API 35 x86_64 AVD in airplane mode, using its real cached schedule: startup and GroupPicker → DaySchedule. Test time was 174.63 seconds; Gradle generation took 6m 30s. Saved rules: 25,120 baseline and 21,821 startup, including MainActivity, group selection, day rendering and ScheduleRepository. No synthetic profile rules were written.
+- Signed R8/resource-shrunk APK and AAB with explicit HTTPS API/WebSocket addresses built in 4m 15s. APK: 39,879,093 bytes, SHA-256 `e861c262f5abf8251e98ccaa574a37223a28d5df8346fca09fdb39ba4247e24a`. AAB: 22,372,100 bytes, SHA-256 `2c82ac178d7a3f527f0330340913eb198b7a0cd765b3280bf808729da413c47d`. Both package the generated binary profile (12,267 bytes) and metadata (478 bytes). APK V2/V3 signatures and 16 KiB ZIP alignment passed; all ten native libraries in each artifact byte-match the directly verified `0x4000` ELF files.
+- The trusted WSS endpoint completed a real WebSocket handshake. Public `/ingest` returns 404, whereas local `/ingest` returns 405 for GET. Google's Digital Asset Links check passed as documented above.
+- Both iOS jobs passed for this exact mobile commit in [run 37034004294](https://github.com/p44978180-del/raspos/actions/runs/37034004294): iosApp compilation and SharedCore/WidgetKit.
+- Physical ARM64 installation, real fingerprint ceremony/session restoration and controlled cold-start measurements remain pending. The previously connected phone disappeared from ADB before installation. The official API 27 ARM64 image was installed, but the Windows emulator terminated before boot with `QEMU2 emulator does not support arm64 CPU architecture`; that attempt provides no APK installation/runtime evidence. Benchmark target and producer builds succeeded in 2m 7s and are ready for the physical device.
+
+[Portable final-release verification](evidence/phase8-final-release-verification.json).
+
 ## Remaining requirements and evidence gaps
 
 | Requirement | Current limitation / required proof |
 |---|---|
-| Real Credential Manager fingerprint registration and login | No completed system biometric ceremony, no confirmed real passkey-backed session. User setup of device/provider and a working HTTPS RP/Digital Asset Links domain remain needed. |
-| Production endpoint | Release defaults are local emulator endpoints. HTTPS/Caddy templates exist, but no user-selected public domain is deployed or verified. |
+| Real Credential Manager fingerprint registration and login | HTTPS RP and Google's Digital Asset Links verification passed for the user-supplied temporary tunnel. The ARM64 API 34 device was connected but disappeared before APK installation; the actual biometric ceremony and persisted session remain pending. |
+| Production endpoint | Temporary trusted HTTPS tunnel verified for final acceptance. A permanent deployment remains operational follow-up; release defaults still use local development endpoints unless explicitly configured at build time. |
 | Bootstrap of directory, schedule and campus graph atomically | Implemented, tested for rollback/reset and verified through Android network load plus SQLite restoration in airplane mode. |
 | Full personal Loro flow | Native editing, atomic persistence, v4 parsing, account separation and large-update chunking are implemented and covered by tests above. Android CRUD, cancellation and small/10,000-task backup checks passed. Live authenticated account sync and recovery after compaction still need runtime checks. |
-| Decompose Child Stack and MVIKotlin | Integrated and checked on Android/JVM. Both iOS jobs passed at `913a691`; the reactive card/Glance checks passed as above. |
+| Decompose Child Stack and MVIKotlin | Integrated and checked on Android/JVM. Both iOS jobs passed at `5da5c28`; the reactive card/Glance checks passed as above. |
 | Campus route rendering | Real synced graph, native routes, offline restoration and unreachable-endpoint framing passed Android checks above. |
-| Offline cold start ≤100 ms | Not demonstrated. Observed release launches on this host exceed the limit. A JVM in-memory read test is not an application startup measurement. |
-| FTS5 ≤3 ms on Android | Latest actual 805-group measurements include 27.859 ms on the first broad prefix and later 4.882/3.388 ms outliers. Cold cursor reads remain to be investigated; the gate is not passed. |
+| Offline cold start ≤100 ms | Historical emulator measurements exceed the limit; the user accepted the Windows/JIT limitation. Baseline Profile is generated and packaged; the physical runtime measurement remains pending. |
+| FTS5 ≤3 ms on Android | Historical emulator measurements include 27.859 ms on the first prefix and later 4.882/3.388 ms outliers. The user accepted these emulator limitations; identifier-only SQL now avoids repeated full-row projection. |
 | Glance after package update | Latest APK update and reactive widget rendering passed on API 35; no ANR was recorded since that boot. The prior emulator package-receiver ANR remains historical evidence, not a guarantee for other devices. |
-| Full semester data | Imported source window is 14 September–2 November, not proof of all semester dates. 342 catalog groups have an empty electronic source. Do not invent lessons. |
+| Reference data | The user accepted 805 groups / 47,068 lessons as the final fixture. Its source window and 342 groups with empty electronic sources remain documented; no lessons were invented. |
 | ARM64 device installation | ELF and APK contents checked; no ARM64 runtime installation log yet. |
+| Baseline Profile | Actual rules generated and packaged in the signed APK/AAB; controlled physical cold-start comparison remains pending. |
 | Native release build | Optimized Release packaging, signatures, both ABI ELF alignments and x86_64 note/task/plan runtime verified above. ARM64 runtime remains unverified. |
 | UI completeness | Schedule/source/subgroup/parallel-card/OLED checks and real campus route interaction passed on Android as documented above. |
 | Security scan | Immutable server diff `4eb6de0..2ab88ab`, scan `5540fb80-4ab5-4d2b-94aa-23442a5a6ab4`, remains incomplete. Service usage limits and a later cyber-risk block interrupted finalization; no clean security verdict is claimed. |
