@@ -72,6 +72,15 @@ The phase is **not accepted yet**. This ledger distinguishes observed behavior f
 - All 40 JVM tests and the focused Rust local-style/glyph test passed. Signed release assembly succeeded in 2m 18s. APK SHA-256 `827b66675e4b0f3d3766de74b4251d99398aa6b847e23478ef356076905865d9`, 39,645,575 bytes. V2/V3 signatures and 16 KiB ZIP alignment passed; all ten native libraries match the individually verified `0x4000` ELF files. Installation succeeded on API 35 x86_64. Through actual Caddy/Connect Bootstrap, Android logged 805 groups, ДА 01-25/130 lessons and the source-matching campus hash with 5,392 nodes. MapLibre visibly drew the native 15→5 route and cleared it for the blocked 15→18 route. After force-stop/relaunch in airplane mode with Wi-Fi disabled, SQLite restored the graph and the route remained visible. [Runtime details](evidence/phase8-campus-runtime.json), [online route](evidence/phase8-campus-route.png), [offline route](evidence/phase8-campus-offline.png). Offline cold launch was 801 ms, still above 100 ms.
 - Both iOS jobs for campus-source commit `9a83134` passed in [run 36917979504](https://github.com/p44978180-del/raspos/actions/runs/36917979504). The new mobile bundle/map changes have not yet completed iOS CI.
 
+## Mobile release regression — 2 October
+
+- Follow-up camera framing keeps both selected endpoints visible when the graph has no route. This was inspected on Android for the private-gate 15→18 case: [framed endpoints](evidence/phase8-campus-private-framed.png).
+- All 40 JVM tests passed; release assembly succeeded in 3m 51s, rebuilding optimized Rust for both Android ABIs after the test-source change. Latest APK SHA-256 `ca14629d521618b1349231767cd39d99805799395102150e439890e1c0b30d0a`, 39,645,575 bytes. V2/V3, 16 KiB ZIP alignment and direct `llvm-readelf -lW` checks of all LOAD segments in all ten extracted native libraries passed. Installation succeeded on x86_64.
+- Repeated the post-MVI network/widget check using a temporary synthetic all-day lesson. The first A→B attempt encountered realtime/backend connection timeouts. After restarting the task's bridge and Centrifugo, the app showed B; publishing C produced `hint=lesson lsn=8 applied=1 widgets=1`, and both the card and existing Glance widget displayed C. PID remained 2767. [Card](evidence/phase8-mvi-live-card.png), [widget](evidence/phase8-mvi-live-widget.png). Later connection loss recovered automatically by Bootstrap; this is not a claim of an uninterrupted connection.
+- Deleted the temporary HTML and reimported the ordinary v4 data (`groups=805 lessons=47068`). Android subsequently logged the ordinary ДА 01-24 schedule with 113 lessons.
+- Actual Android FTS5 measurements on 805 groups mostly took 0.717–1.419 ms. The first prefix query took 179.435 ms and another took 28.853 ms. The ≤3 ms gate is therefore **not passed**; the cold/contended path needs further investigation. These measurements include SQL execution and Kotlin result projection, not keystroke-to-display latency.
+- Both iOS jobs passed at mobile commit `ed97b49`: [run 37020518886](https://github.com/p44978180-del/raspos/actions/runs/37020518886). [Portable checkpoint details](evidence/phase8-mobile-runtime-checkpoint.json).
+
 ## Remaining requirements and evidence gaps
 
 | Requirement | Current limitation / required proof |
@@ -80,15 +89,15 @@ The phase is **not accepted yet**. This ledger distinguishes observed behavior f
 | Production endpoint | Release defaults are local emulator endpoints. HTTPS/Caddy templates exist, but no user-selected public domain is deployed or verified. |
 | Bootstrap of directory, schedule and campus graph atomically | Implemented, tested for rollback/reset and verified through Android network load plus SQLite restoration in airplane mode. |
 | Full personal Loro flow | Native editing, atomic persistence, v4 parsing, account separation and large-update chunking are implemented and covered by tests above. Android CRUD, cancellation and small/10,000-task backup checks passed. Live authenticated account sync and recovery after compaction still need runtime checks. |
-| Decompose Child Stack and MVIKotlin | Integrated and checked on Android/JVM; both iOS compilation jobs passed at `fe24039`. Reactive network/widget regression checks after the refactor remain. |
-| Campus route rendering | Real synced graph and Rust route rendering passed Android online/offline checks. Follow-up camera framing for unreachable endpoints remains to be verified. |
+| Decompose Child Stack and MVIKotlin | Integrated and checked on Android/JVM. Both iOS jobs passed at `ed97b49`; the post-refactor reactive card/Glance check passed as above. |
+| Campus route rendering | Real synced graph, native routes, offline restoration and unreachable-endpoint framing passed Android checks above. |
 | Offline cold start ≤100 ms | Not demonstrated. Observed release launches on this host exceed the limit. A JVM in-memory read test is not an application startup measurement. |
-| FTS5 ≤3 ms on Android | JVM search test passes; actual Android timing with the real 805-group dataset is still required. |
+| FTS5 ≤3 ms on Android | Actual 805-group queries usually take about 1 ms, but 179.435/28.853 ms outliers exceed the gate. Cold/contended execution remains to be investigated. |
 | Glance after package update | Emulator previously reported an ANR for `androidx.glance.appwidget.MyPackageReplacedReceiver`. SQLite reads in `provideGlance` now run on IO and compile successfully; final widget runtime verification remains. |
 | Full semester data | Imported source window is 14 September–2 November, not proof of all semester dates. 342 catalog groups have an empty electronic source. Do not invent lessons. |
 | ARM64 device installation | ELF and APK contents checked; no ARM64 runtime installation log yet. |
 | Native release build | Optimized Release packaging, signatures, both ABI ELF alignments and x86_64 note/task/plan runtime verified above. ARM64 runtime remains unverified. |
-| UI completeness | Schedule source links, subgroup parsing, stable parallel-class keys and corrected gaps are implemented and tested as above. Parallel-class scrolling, source-link navigation and the OLED contrast correction passed on Android; campus route interaction remains. |
+| UI completeness | Schedule/source/subgroup/parallel-card/OLED checks and real campus route interaction passed on Android as documented above. |
 | Security scan | Immutable server diff `4eb6de0..2ab88ab`, scan `5540fb80-4ab5-4d2b-94aa-23442a5a6ab4`, remains incomplete. Service usage limits and a later cyber-risk block interrupted finalization; no clean security verdict is claimed. |
 | Legacy / entrypoint | Legacy directories were removed in prior commit `b170137`. Root README now points exclusively to `platform/` for development, with v4 identified as historical parity data. |
 | 120 FPS | Physical 120 Hz measurement explicitly deferred by the user; code must still keep DB/network work out of composition. |

@@ -1,0 +1,120 @@
+{
+  "apkSha256": "ca14629d521618b1349231767cd39d99805799395102150e439890e1c0b30d0a",
+  "codeCommit": "ed97b492365276c027d2fd5bdc7ba2a7b388eef8",
+  "device": "API 35 Google APIs x86_64",
+  "jvmTests": 40,
+  "elfLoadAlign": "0x4000 in all 10 native libraries",
+  "zipAlign16KiB": true,
+  "signatureSchemes": [
+    "v2",
+    "v3"
+  ],
+  "iosRun": "https://github.com/p44978180-del/raspos/actions/runs/37020518886",
+  "iosConclusion": "success",
+  "realtime": {
+    "group": "ДА 01-24",
+    "appBefore": "Phase8 MVI network B",
+    "appAfter": "Phase8 MVI network C",
+    "widgetAfter": "Phase8 MVI network C",
+    "lsn": 8,
+    "applied": 1,
+    "widgetUpdates": 1,
+    "pidBefore": 2767,
+    "pidAfter": 2767,
+    "cardScreenshot": "phase8-mvi-live-card.png",
+    "widgetScreenshot": "phase8-mvi-live-widget.png",
+    "limits": "Synthetic all-day lesson tests delivery; it is not academic schedule data. The first A→B attempt encountered backend/realtime outages; after restarting bridge/Centrifugo, B→C was delivered by a hint."
+  },
+  "cleanup": {
+    "temporaryHtmlDeleted": true,
+    "v4Reimport": {
+      "groups": 805,
+      "lessons": 47068
+    },
+    "androidRestoredLessons": 113
+  },
+  "campusUnreachableEndpoints": {
+    "bothVisible": true,
+    "routeLineCleared": true,
+    "screenshot": "phase8-campus-private-framed.png"
+  },
+  "fts": {
+    "datasetGroups": 805,
+    "samples": [
+      {
+        "searchUs": 179435,
+        "matches": 188,
+        "groups": 805
+      },
+      {
+        "searchUs": 1370,
+        "matches": 28,
+        "groups": 805
+      },
+      {
+        "searchUs": 1307,
+        "matches": 28,
+        "groups": 805
+      },
+      {
+        "searchUs": 28853,
+        "matches": 28,
+        "groups": 805
+      },
+      {
+        "searchUs": 895,
+        "matches": 10,
+        "groups": 805
+      },
+      {
+        "searchUs": 1039,
+        "matches": 10,
+        "groups": 805
+      },
+      {
+        "searchUs": 1246,
+        "matches": 10,
+        "groups": 805
+      },
+      {
+        "searchUs": 985,
+        "matches": 10,
+        "groups": 805
+      },
+      {
+        "searchUs": 1030,
+        "matches": 10,
+        "groups": 805
+      },
+      {
+        "searchUs": 1105,
+        "matches": 10,
+        "groups": 805
+      },
+      {
+        "searchUs": 717,
+        "matches": 10,
+        "groups": 805
+      },
+      {
+        "searchUs": 921,
+        "matches": 10,
+        "groups": 805
+      },
+      {
+        "searchUs": 1334,
+        "matches": 10,
+        "groups": 805
+      },
+      {
+        "searchUs": 1419,
+        "matches": 10,
+        "groups": 805
+      }
+    ],
+    "medianUs": 1175.5,
+    "maximumUs": 179435,
+    "allSamplesAtMost3ms": false,
+    "scope": "Elapsed search on IO inside the database mutex, including SQLite and Kotlin result projection. Keystroke-to-display latency is not measured."
+  }
+}
