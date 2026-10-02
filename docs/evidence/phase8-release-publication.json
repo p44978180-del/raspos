@@ -1,0 +1,62 @@
+{
+  "id": 402215288,
+  "tag_name": "v8.0.0-platform",
+  "target_commitish": "9a3925fa1247ae3625f88722ec5378bddcb8c554",
+  "html_url": "https://github.com/p44978180-del/raspos/releases/tag/v8.0.0-platform",
+  "draft": false,
+  "prerelease": false,
+  "immutable": false,
+  "assets": [
+    {
+      "id": 606689349,
+      "name": "androidApp-release.aab",
+      "size": 22387614,
+      "digest": "sha256:03183389b0e12bf9d84a4bc671679830eda3d8a76b87a71916241d527da4ac6e",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/p44978180-del/raspos/releases/download/v8.0.0-platform/androidApp-release.aab"
+    },
+    {
+      "id": 606689232,
+      "name": "androidApp-release.apk",
+      "size": 39879073,
+      "digest": "sha256:ab692cd23eba6de47e5560cb21e4556de776bdaa5e82c92ccd88ed1acd862d3d",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/p44978180-del/raspos/releases/download/v8.0.0-platform/androidApp-release.apk"
+    },
+    {
+      "id": 606689435,
+      "name": "SHA256SUMS.txt",
+      "size": 180,
+      "digest": "sha256:b73c952d4849c8db68bada70dc0c3baa1ebfbfefb8cad9e52c92b31210c3de6a",
+      "state": "uploaded",
+      "browser_download_url": "https://github.com/p44978180-del/raspos/releases/download/v8.0.0-platform/SHA256SUMS.txt"
+    }
+  ],
+  "source_commit": "9a3925fa1247ae3625f88722ec5378bddcb8c554",
+  "tag_object": "a2fb0c16821300d94da664df26fef028617ce812",
+  "published_at": "2026-10-02T23:14:12Z",
+  "phase": 8,
+  "phase_status": "fully_closed",
+  "accepted_by": "user final release instruction",
+  "checked_at_utc": "2026-10-02T23:16:41.906874+00:00",
+  "previous_tag": {
+    "object": "dc0b890723e9af23158364b07b272e31841da1c0",
+    "commit": "8179febff3f4257cc53cdde14e4c982f5a8a8d57",
+    "retargeting": "explicitly requested by user; pushed with exact old-tag lease"
+  },
+  "remote_readback": {
+    "release_api": true,
+    "latest_release_api": true,
+    "asset_sizes_and_sha256_match": true,
+    "exact_tag_target": "9a3925fa1247ae3625f88722ec5378bddcb8c554"
+  },
+  "removed_own_duplicate_draft": 402214256,
+  "validation": {
+    "jvm_tests": 47,
+    "failures": 0,
+    "errors": 0,
+    "ios_widgetkit_run": 37074361609,
+    "ios_widgetkit_conclusion": "success"
+  },
+  "build_api_rp": "plain-sites-matter.loca.lt"
+}

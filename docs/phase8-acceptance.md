@@ -1,6 +1,13 @@
-# Phase 8 acceptance — accepted with documented exceptions
+# Phase 8 acceptance — fully closed
 
-The user accepted the final physical checks on **3 October 2026**, including the measured **158 ms** offline cold-start median on the TECNO AD8. Phase 8 is accepted under the scope and exceptions below for release tag `v8.0.0-platform`. This ledger preserves failed measurements and follow-up evidence gaps; it does not turn them into passing results.
+The user fully closed Phase 8 on **3 October 2026**, accepted startup audit commit `9a3925fa1247ae3625f88722ec5378bddcb8c554`, and explicitly requested moving `v8.0.0-platform` to that exact commit and publishing its verified APK/AAB. The audited TECNO measurements and documented exceptions are accepted. This ledger preserves historical failures and follow-up evidence gaps without changing them into passing measurements.
+
+## Final audit and release closure — 3 October
+
+- The final release source is `9a3925fa1247ae3625f88722ec5378bddcb8c554`. Its signed APK SHA-256 is `ab692cd23eba6de47e5560cb21e4556de776bdaa5e82c92ccd88ed1acd862d3d`; AAB SHA-256 is `03183389b0e12bf9d84a4bc671679830eda3d8a76b87a71916241d527da4ac6e`. [Release and artifact ledger](phase8-release.md).
+- All ten physical offline cold launches showed cached lessons. TMG1, personal/Loro preparation and network transport started on IO after the cached-content commit; FTS5 warm-up followed 2001–2003 ms later. All 47 JVM tests passed. Both iOS jobs passed for this exact source in [run 37074361609](https://github.com/p44978180-del/raspos/actions/runs/37074361609).
+- The user accepted the audit in full and accepted the measured TECNO profile: first-window median 162 ms and diagnostic cached-content commit at 185–186 ms. The query `17` took 0.903 ms after warm-up; the broad intermediate prefix `1` took 4.216 ms. The original universal ≤100 ms/≤3 ms targets are not asserted as passing for every run. [Audit and measurement limits](phase8-startup-audit.md).
+- Phase 8 is **fully closed by acceptance**. Permanent endpoint configuration, universal hardware performance and the incomplete historical security scan retain their recorded operational scope; closing the phase does not invent a new deployment, runtime benchmark or clean security verdict.
 
 ## Final acceptance scope — 2 October
 
