@@ -76,6 +76,22 @@ ORDER BY starts_at, position;
 datesForGroup:
 SELECT DISTINCT occurs_on FROM local_lesson WHERE group_code = ? ORDER BY occurs_on;
 
+initialCachedDay:
+WITH chosen_day AS (
+    SELECT group_code, COALESCE(
+        (SELECT occurs_on FROM local_lesson WHERE group_code = selected_group.group_code AND occurs_on = ? LIMIT 1),
+        (SELECT MIN(occurs_on) FROM local_lesson WHERE group_code = selected_group.group_code),
+        ''
+    ) AS occurs_on
+    FROM selected_group WHERE id = 1
+)
+SELECT chosen_day.group_code, chosen_day.occurs_on,
+       lesson.starts_at, lesson.ends_at, lesson.subject, lesson.kind,
+       lesson.teacher, lesson.building, lesson.room, lesson.source_url
+FROM chosen_day LEFT JOIN local_lesson AS lesson
+ON lesson.group_code = chosen_day.group_code AND lesson.occurs_on = chosen_day.occurs_on
+ORDER BY lesson.starts_at, lesson.position;
+
 upsertCursor:
 INSERT OR REPLACE INTO local_cursor(collection, scope_id, snapshot_hash, lsn)
 VALUES (?, ?, ?, ?);

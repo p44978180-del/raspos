@@ -3,6 +3,7 @@ package ru.timacad.platform
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.os.Bundle
+import android.os.Build
 import android.os.SystemClock
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -18,7 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.withFrameNanos
+import android.view.ViewTreeObserver
 import androidx.compose.animation.core.spring
 import com.arkivanov.decompose.defaultComponentContext
 import com.arkivanov.decompose.extensions.compose.subscribeAsState
@@ -36,6 +37,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
 import ru.timacad.platform.db.PlatformDatabase
 
 class MainActivity : ComponentActivity() {
@@ -70,15 +73,16 @@ class MainActivity : ComponentActivity() {
         } }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) = startupSpan("activity_create") {
         val activityStarted = SystemClock.elapsedRealtimeNanos()
-        fun stage(name: String) = Log.i("TimStartup", "stage=$name activity_us=${(SystemClock.elapsedRealtimeNanos() - activityStarted) / 1_000}")
+        fun stage(name: String) { Log.i("TimStartup", "stage=$name activity_us=${(SystemClock.elapsedRealtimeNanos() - activityStarted) / 1_000} uptime_us=${SystemClock.elapsedRealtimeNanos() / 1_000}") }
         super.onCreate(savedInstanceState)
         stage("super")
         driver = platformDriver(applicationContext)
         val database = PlatformDatabase(driver)
         stage("database")
-        controller = PlatformController(this, ScheduleRepository(database, driver), PersonalRepository(database, NativePersonalEngine())) { driver.close() }
+        controller = PlatformController(this, ScheduleRepository(database, driver),
+            { PersonalRepository(database, NativePersonalEngine()) }) { driver.close() }
         stage("store")
         val root = PlatformRoot(defaultComponentContext())
         stage("navigation")
@@ -93,9 +97,10 @@ class MainActivity : ComponentActivity() {
             val stack by root.stack.subscribeAsState()
             LaunchedEffect(state.localContentReady) {
                 if (state.localContentReady) {
-                    withFrameNanos { }
+                    awaitDrawnFrame()
                     stage("local_content_frame")
                     reportFullyDrawn()
+                    controller.onContentDrawn()
                 }
             }
             TimTheme(state.oled) {
@@ -145,5 +150,26 @@ class MainActivity : ComponentActivity() {
         work.cancel()
         controller.close()
         super.onDestroy()
+    }
+
+    // Frame commit happens after render submission, unlike a vsync callback.
+    private suspend fun awaitDrawnFrame() = suspendCancellableCoroutine<Unit> { continuation ->
+        val view = window.decorView
+        val observer = view.viewTreeObserver
+        if (Build.VERSION.SDK_INT >= 29 && view.isHardwareAccelerated) {
+            val callback = Runnable { view.post { if (continuation.isActive) continuation.resume(Unit) } }
+            observer.registerFrameCommitCallback(callback)
+            continuation.invokeOnCancellation { view.post { if (observer.isAlive) observer.unregisterFrameCommitCallback(callback) } }
+        } else {
+            val listener = object : ViewTreeObserver.OnDrawListener {
+                override fun onDraw() { view.post {
+                    if (observer.isAlive) observer.removeOnDrawListener(this)
+                    if (continuation.isActive) continuation.resume(Unit)
+                } }
+            }
+            observer.addOnDrawListener(listener)
+            continuation.invokeOnCancellation { view.post { if (observer.isAlive) observer.removeOnDrawListener(listener) } }
+        }
+        view.invalidate()
     }
 }

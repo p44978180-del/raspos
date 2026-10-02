@@ -42,12 +42,14 @@ class Phase8ClientTest {
             LocalGroup("Д-А401", "Институт агробиотехнологии", 4, "current"),
             LocalGroup("Д-Э401", "Институт экономики", 4, "current"),
         ))
+        repository.warmupSearch()
         assertEquals(setOf("ДА 01-24"), repository.searchCodes("01-24"))
         assertEquals(setOf("Д-А401", "Д-Э401"), repository.searchCodes("401"))
         assertEquals(setOf("ДА 01-24", "Д-А401"), repository.searchCodes("АГРОБИО"))
         assertTrue(repository.searchCodes("missing OR экономика").isEmpty())
         assertTrue(repository.searchCodes("\"*:()").isEmpty())
         repository.replaceDirectory(listOf(LocalGroup("NEW-25", "Новый институт", 1, "current")))
+        repository.warmupSearch()
         assertTrue(repository.searchCodes("401").isEmpty())
         assertEquals(setOf("NEW-25"), repository.searchCodes("нов"))
         assertFailsWith<IllegalStateException> {

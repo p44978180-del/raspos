@@ -16,8 +16,11 @@ android-minSdk = "26"
 android-targetSdk = "36"
 benchmark = "1.4.1"
 profileinstaller = "1.4.1"
+work = "2.7.1"
 
 [libraries]
+androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "work" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 androidx-benchmark-macro = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "benchmark" }
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "profileinstaller" }
 decompose = { module = "com.arkivanov.decompose:decompose", version.ref = "decompose" }

@@ -95,6 +95,22 @@ class ScheduleRepository(
         (ftsMatches(query, ftsCodeSql, trace) { it.getString(0).orEmpty() }
             ?: search(query).map { it.code }).toHashSet()
 
+    /** A bounded FTS read; the caller delays it until after the first UI frame. */
+    fun warmupSearch() { ftsMatches("ДА", "$ftsCodeSql LIMIT 1", null) { it.getString(0) } }
+
+    /** Only the selected day's rows cross JNI; directory/calendar load later. */
+    fun initialDay(today: String): DayView {
+        val rows = database.platformQueries.initialCachedDay(today).executeAsList()
+        val first = rows.firstOrNull() ?: return DayView(null, null, emptyList())
+        val date = first.occurs_on.orEmpty().takeIf { it.isNotEmpty() }
+        if (date == null) return DayView(first.group_code, null, emptyList())
+        return DayView(first.group_code, date, rows.mapNotNull { row ->
+            val start = row.starts_at ?: return@mapNotNull null
+            LocalLesson(date, start, row.ends_at.orEmpty(), row.subject.orEmpty(), row.kind.orEmpty(),
+                row.teacher.orEmpty(), row.building.orEmpty(), row.room.orEmpty(), row.source_url.orEmpty())
+        })
+    }
+
     fun allGroups(): List<LocalGroup> = database.platformQueries.listGroups().executeAsList().map {
         LocalGroup(it.group_code, it.institute_name, it.course.toInt(), it.status)
     }

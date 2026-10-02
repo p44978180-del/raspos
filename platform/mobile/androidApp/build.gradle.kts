@@ -64,6 +64,7 @@ kotlin {
 dependencies {
     baselineProfile(project(":baselineprofile"))
     implementation(libs.androidx.profileinstaller)
+    implementation(libs.androidx.work.runtime)
     implementation(project(":shared"))
     implementation(libs.androidx.activity.compose)
     implementation(libs.sqldelight.android.driver)

@@ -55,11 +55,12 @@ private sealed interface PlatformIntent {
     data class Theme(val oled: Boolean) : PlatformIntent
     data class CampusEndpoint(val from: Boolean, val id: Int) : PlatformIntent
     data object Logout : PlatformIntent
+    data object ContentDrawn : PlatformIntent
 }
 private class ViewUpdate(val reduce: (PlatformView) -> PlatformView)
 
 /** UI callbacks send intents; MVIKotlin owns state and executor lifetime. */
-class PlatformController(context: Context, schedule: ScheduleRepository, personal: PersonalRepository, onClosed: () -> Unit) {
+class PlatformController(context: Context, schedule: ScheduleRepository, personal: () -> PersonalRepository, onClosed: () -> Unit) {
     private val observation = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val store: Store<PlatformIntent, PlatformView, Nothing> = DefaultStoreFactory().create(
         name = "Platform", initialState = PlatformView(), bootstrapper = SimpleBootstrapper(Unit),
@@ -91,19 +92,24 @@ class PlatformController(context: Context, schedule: ScheduleRepository, persona
     fun authenticate(create: Boolean) = store.accept(PlatformIntent.Authenticate(create))
     fun theme(oled: Boolean) = store.accept(PlatformIntent.Theme(oled))
     fun logout() = store.accept(PlatformIntent.Logout)
+    fun onContentDrawn() = store.accept(PlatformIntent.ContentDrawn)
     fun campusEndpoint(from: Boolean, id: Int) = store.accept(PlatformIntent.CampusEndpoint(from, id))
     fun close() { store.dispose(); observation.cancel() }
 }
 
 private class PlatformExecutor(
     private val context: Context, private val schedule: ScheduleRepository,
-    private val personal: PersonalRepository, private val onClosed: () -> Unit,
+    personalFactory: () -> PersonalRepository, private val onClosed: () -> Unit,
 ) : CoroutineExecutor<PlatformIntent, Unit, PlatformView, ViewUpdate, Nothing>(Dispatchers.Main.immediate) {
-    private val vault = KeystoreVault(context)
+    private val startup = StartupWorkGate()
+    private val personal by lazy { startupSpan("personal_repository") { personalFactory() } }
+    private val vault by lazy { KeystoreVault(context) }
     @Volatile private var token: String? = null
-    private val transport = KtorSyncTransport(session = { token })
-    private val passkeyHttp = KtorPasskeyHttp()
-    private val worker = LiveSyncWorker(schedule, personal, transport) { refreshScheduleWidget(context) }
+    private val transportLazy = lazy { startupSpan("network_transport") { KtorSyncTransport(session = { token }) } }
+    private val transport by transportLazy
+    private val passkeyHttpLazy = lazy { KtorPasskeyHttp() }
+    private val passkeyHttp by passkeyHttpLazy
+    private val worker by lazy { LiveSyncWorker(schedule, personal, transport) { refreshScheduleWidget(context) } }
     private val writes = Mutex()
     private var sync: Job? = null
     private var observer: Job? = null
@@ -136,18 +142,27 @@ private class PlatformExecutor(
         scope.launch {
             val oled = withContext(Dispatchers.IO) { context.getSharedPreferences("ui", Context.MODE_PRIVATE).getBoolean("oled", false) }
             update { it.copy(oled = if (themeChanged) it.oled else oled) }
+            loadInitialDay()
+            startup.awaitContentDrawn()
             reload()
-            restartSync()
             token = withContext(Dispatchers.IO) { vault.load() }
             val content = database { if (token == null) personal.activateAccount(null); personalContent() }
             update { it.copy(session = token) }
             showPersonal(content)
             scope.launch { consumeEdits() }
+            restartSync()
             restartPersonalSync()
+        }
+        scope.launch {
+            startup.awaitSearchWarmup()
+            try { database { startupSpan("fts_warmup") { schedule.warmupSearch() } } }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (_: Exception) { Log.w("TimFts", "warmup=unavailable") }
         }
     }
     override fun executeIntent(intent: PlatformIntent) {
         when (intent) {
+            PlatformIntent.ContentDrawn -> startup.onContentDrawn()
             is PlatformIntent.CampusEndpoint -> {
                 val current = state().campus ?: return
                 routeCampus(if (intent.from) intent.id else current.from, if (intent.from) current.to else intent.id)
@@ -238,13 +253,25 @@ private class PlatformExecutor(
         filterGroups(); observeDay()
         scope.launch { loadCampus() }
     }
+    private suspend fun loadInitialDay() {
+        val revision = scheduleRevision
+        val current = state()
+        val loaded = database { startupSpan("cached_day_read") {
+            val day = schedule.initialDay(java.time.LocalDate.now().toString())
+            val changes = day.groupCode?.let(schedule::publishedChanges).orEmpty()
+            day to composeDayRows(day.lessons, changes, current.subgroup)
+        } }
+        if (revision != scheduleRevision) return
+        update { it.copy(group = loaded.first.groupCode, date = loaded.first.date, rows = loaded.second, localContentReady = true) }
+    }
     private suspend fun loadCampus() {
+        startup.awaitContentDrawn()
         val hash = database { schedule.campusHash() } ?: return
         if (hash == campusGraph?.hash) return
         val revision = ++campusRevision
-        val graph = database { schedule.campusGraph() } ?: return
+        val graph = database { startupSpan("campus_decode") { schedule.campusGraph() } } ?: return
         val current = state().campus
-        val view = withContext(Dispatchers.IO) { graph.view(current?.from, current?.to, NativeCampusRouter()) }
+        val view = withContext(Dispatchers.IO) { startupSpan("campus_native") { graph.view(current?.from, current?.to, NativeCampusRouter()) } }
         if (revision != campusRevision) return
         campusGraph = graph
         update { it.copy(campus = view) }
@@ -293,13 +320,14 @@ private class PlatformExecutor(
     private suspend fun restartSync() {
         sync?.cancelAndJoin()
         sync = scope.launch {
+            startup.awaitContentDrawn()
             var attempt = 0
             while (isActive) {
                 try {
                     val replica = database { schedule.replicaId() }
                     // Network waits never hold the local-write mutex.
                     val requestedGroup = database { schedule.selectedGroup().orEmpty() }
-                    withContext(Dispatchers.IO) { worker.bootstrap(replica, requestedGroup) }; check(worker.lastError == null)
+                    withContext(Dispatchers.IO) { startupSpan("network_bootstrap") { worker.bootstrap(replica, requestedGroup) } }; check(worker.lastError == null)
                     val group = database { schedule.selectedGroup() }
                     reload()
                     Log.i("TimSync", "groups=${state().groups.size} group=$group lessons=${database { group?.let(schedule::lessonCount) ?: 0 }}")
@@ -321,6 +349,7 @@ private class PlatformExecutor(
     private suspend fun restartPersonalSync() {
         personalSync?.cancelAndJoin()
         personalSync = scope.launch {
+            startup.awaitContentDrawn()
             var attempt = 0
             while (isActive && token != null) {
                 try {
@@ -352,6 +381,8 @@ private class PlatformExecutor(
     }
     override fun dispose() {
         scope.coroutineContext[Job]?.invokeOnCompletion { onClosed() }
-        super.dispose(); edits.close(); transport.close(); passkeyHttp.close()
+        super.dispose(); edits.close()
+        if (transportLazy.isInitialized()) transport.close()
+        if (passkeyHttpLazy.isInitialized()) passkeyHttp.close()
     }
 }

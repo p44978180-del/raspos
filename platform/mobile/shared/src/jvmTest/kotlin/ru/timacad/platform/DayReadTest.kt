@@ -8,6 +8,26 @@ import kotlin.test.assertTrue
 
 class DayReadTest {
     @Test
+    fun initialDayPrefersTodayAndFallsBackWithoutLoadingTheDirectory() {
+        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        PlatformDatabase.Schema.create(driver)
+        val repository = ScheduleRepository(PlatformDatabase(driver))
+        assertEquals(DayView(null, null, emptyList()), repository.initialDay("2026-10-03"))
+        repository.replaceLessons("A", "hash", 1, listOf(
+            LocalLesson("2026-10-01", "09:00", "10:35", "Earlier", "lecture", "Teacher", "1", "1", "https://example.com"),
+            LocalLesson("2026-10-03", "10:55", "12:30", "Today later", "practice", "Teacher", "1", "1", "https://example.com"),
+            LocalLesson("2026-10-03", "09:00", "10:35", "Today first", "lecture", "Teacher", "1", "1", "https://example.com"),
+        ))
+        // The day works even without a catalog: its load is deferred by the host.
+        assertTrue(repository.allGroups().isEmpty())
+        assertEquals(listOf("Today first", "Today later"), repository.initialDay("2026-10-03").lessons.map { it.subject })
+        assertEquals("2026-10-01", repository.initialDay("2026-10-04").date)
+        repository.select("EMPTY")
+        assertEquals(DayView("EMPTY", null, emptyList()), repository.initialDay("2026-10-03"))
+        driver.close()
+    }
+
+    @Test
     fun dayOpensFromSqliteWithoutASocket() {
         val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
         PlatformDatabase.Schema.create(driver)
