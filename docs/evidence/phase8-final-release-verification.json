@@ -1,5 +1,5 @@
 {
-  "checked_at_utc": "2026-10-02T16:23:07.2464486Z",
+  "checked_at_utc": "2026-10-02T21:57:21.2986545Z",
   "origin": "https://plain-sites-matter.loca.lt",
   "rp_id": "plain-sites-matter.loca.lt",
   "user_verification": "required",
@@ -12,7 +12,7 @@
     "sdk": 34,
     "primary_abi": "arm64-v8a"
   },
-  "completed_biometric_ceremony": false,
+  "completed_biometric_ceremony": true,
   "baseline_profile": {
     "device": "API 35 x86_64 dedicated AVD",
     "airplane_mode": true,
@@ -91,14 +91,156 @@
   "startup_benchmark": {
     "producer_and_target_built": true,
     "build_duration": "2m7s",
-    "measured": false,
-    "reason": "Physical device disconnected before installation"
+    "macrobenchmark_passed": false,
+    "macrobenchmark_reason": "Test helper PID 23237 was stuck in __refrigerator / freezer:/frozen and was force-stopped after no progress; instrumentation reported Process crashed, build failed in 10m45s",
+    "test_cleanup": {
+      "previous_uninstall_after_test": true,
+      "deleted_local_cache_and_session": true,
+      "fix": "android.injected.androidTest.leaveApksInstalledAfterRun=true",
+      "effective_keepInstalledApks_verified_for_both_variants": true,
+      "session_restored_by_new_real_fingerprint_login": true
+    },
+    "superseded_shell_samples_valid_for_cached_startup": false,
+    "measured": true,
+    "method": "adb am start -W after force-stop; UI source rows, native cached graph and Keystore restoration asserted in every new process",
+    "airplane_mode": true,
+    "wifi_enabled": false,
+    "samples_per_mode": 5,
+    "compilation_reset": {
+      "first_window_ms": [
+        213,
+        168,
+        167,
+        171,
+        161
+      ],
+      "median_first_window_ms": 168,
+      "activity_to_local_content_ms": [
+        161.442,
+        116.561,
+        126.097,
+        131.603,
+        117.737
+      ],
+      "median_activity_to_local_content_ms": 126.097
+    },
+    "baseline_profile": {
+      "installer_result": 1,
+      "art_status": "arm64: [status=speed-profile] [reason=cmdline] [primary-abi]",
+      "first_window_ms": [
+        158,
+        166,
+        156,
+        158,
+        159
+      ],
+      "median_first_window_ms": 158,
+      "activity_to_local_content_ms": [
+        104.482,
+        103.252,
+        105.45,
+        106.292,
+        104.727
+      ],
+      "median_activity_to_local_content_ms": 104.727
+    },
+    "sample_file": "phase8-arm64-startup-samples.json",
+    "scope": "Process-cold launches; kernel/page caches were not cleared. Activity-to-content timing begins at onCreate, not at the system launch request; it is not a replacement for TTID/TTFD.",
+    "target_ms": 100,
+    "target_met": false,
+    "network_restored": {
+      "airplane_mode": 0,
+      "wifi_enabled": 1
+    },
+    "perfetto_diagnostic": {
+      "cold_start_ms": 225.807,
+      "trace_enabled": true,
+      "systrace_parse_failures": 1169,
+      "used_for_acceptance_timing": false,
+      "file_kept_private": true
+    }
   },
   "physical_runtime": {
-    "installed": false,
-    "reason": "Device disappeared from ADB before installation",
-    "biometric_registration_verified": false,
-    "biometric_login_verified": false,
-    "keystore_session_restoration_verified": false
+    "installed": true,
+    "reason": "ARM64 release installation, native routing, fingerprint registration/login and current Keystore session restoration verified; physical 100 ms startup target not met",
+    "biometric_registration_verified": true,
+    "biometric_login_verified": true,
+    "keystore_session_restoration_verified": true,
+    "primary_abi": "arm64-v8a",
+    "android_sdk": 34,
+    "pid": 10537,
+    "bootstrap": {
+      "groups": 805,
+      "group": "Д-А401",
+      "lessons": 73,
+      "campus_nodes": 5392,
+      "campus_hash": "d0e2e4e9290866b000a804c5d4fcf39c82180983c5f62588733848052c75058d",
+      "transport": "HTTPS tunnel to Caddy/Connect",
+      "visible_lesson_rows": true
+    },
+    "native_core": "NativeCampusRouter.route called UniFFI routeCampus successfully before TimCampus cached log",
+    "first_install_launch": {
+      "state": "COLD",
+      "first_window_ms": 495,
+      "cached_offline_benchmark": false
+    },
+    "registration_ui": "com.google.android.gms.auth.api.credentials.fido.registration.ui.RegistrationActivity",
+    "registration": {
+      "system_ui": "Google Credential Manager RegistrationActivity",
+      "user_report": "Подтвердил отпечатком",
+      "server_credential_count": 1,
+      "server_flags": {
+        "userPresent": true,
+        "userVerified": true,
+        "backupEligible": true,
+        "backupState": true
+      },
+      "session_days": 30
+    },
+    "keystore_restoration": {
+      "before_pid": 10537,
+      "after_pid": 20617,
+      "force_stop": true,
+      "launch_state": "COLD",
+      "observed_log": "I/TimPasskey(20617): session=restored vault=AndroidKeyStore",
+      "authenticated_settings_visible": true
+    },
+    "login": {
+      "system_ui": "Google Credential Manager",
+      "user_report": "Вход подтверждён отпечатком",
+      "server_credential_count": 1,
+      "server_session_count": 2,
+      "distinct_principals": 1,
+      "observed_logs": [
+        "session=stored vault=AndroidKeyStore",
+        "session=restored vault=AndroidKeyStore"
+      ]
+    },
+    "current_keystore_session_verified": true,
+    "current_verification_pid": 31681,
+    "installed_apk_sha256": "e861c262f5abf8251e98ccaa574a37223a28d5df8346fca09fdb39ba4247e24a",
+    "login_after_test_cleanup": {
+      "user_report": "подтвердил",
+      "session_stored_and_read_back": true,
+      "server_credential_count": 1,
+      "server_session_count": 3,
+      "active_sessions": 3,
+      "distinct_principals": 1,
+      "force_stopped_process_restoration": true,
+      "authenticated_settings_visible": true
+    }
+  },
+  "release_acceptance": {
+    "status": "accepted_with_documented_exceptions",
+    "date_local": "2026-10-03",
+    "tag": "v8.0.0-platform",
+    "user_device_startup_decision": "Принять 158 мс для TECNO",
+    "accepted_first_window_median_ms": 158,
+    "original_target_ms": 100,
+    "original_target_met": false,
+    "physical_device": "TECNO AD8",
+    "scope": "Physical ARM64 install/native startup with real lessons, real HTTPS fingerprint registration/login with persisted Keystore session, and generated packaged ART profiles",
+    "permanent_https_endpoint": false,
+    "physical_120hz_profiling_deferred": true
   }
 }
