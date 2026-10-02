@@ -58,6 +58,12 @@ The phase is **not accepted yet**. This ledger distinguishes observed behavior f
 - A JVM integration test passed against the real Rust library: the mapped building 15 entrance reaches the building 5 approach with grid cost 412. Building 18 correctly has no route from that entrance because its approach crosses a gate marked private in OSM. Preset labels distinguish mapped entrances from approaches. Cost is a grid metric, not travel time.
 - This is a tested data/engine foundation only. The pack has not yet been wired into server Bootstrap, mobile SQLite or MapLibre route rendering. The installed APK still uses the previous campus screen.
 
+## Server campus bundle — 2 October
+
+- Server startup and v4 import publish the embedded, versioned campus pack idempotently under `campus_graph/campus`, using the same scope lock as the sync log. The protobuf SyncOp now has a CampusSnapshot arm containing the pack and its SHA-256 version.
+- Bootstrap resolves directory, selected schedule (or the first current group) and campus graph in one read-only PostgreSQL Repeatable Read transaction, then sends the three frames. A missing snapshot produces NotFound before any frame is sent. All frames share the same server time.
+- PostgreSQL integration coverage passed for the 805-group directory, selected schedule, graph hash, idempotent reimport, first-start bundle and missing-campus failure. Full `go test -p 2 ./...` passed after these changes. Mobile persistence, reset handling and map rendering of the bundle remain in progress.
+
 ## Remaining requirements and evidence gaps
 
 | Requirement | Current limitation / required proof |

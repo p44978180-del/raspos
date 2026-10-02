@@ -86,7 +86,13 @@ message SyncOp {
   oneof body {
     DirectorySnapshot directory = 1;
     LessonSnapshot lessons = 2;
+    CampusSnapshot campus = 3;
   }
+}
+
+message CampusSnapshot {
+  string snapshot_hash = 1;
+  bytes pack_json = 2;
 }
 
 message BootstrapRequest {

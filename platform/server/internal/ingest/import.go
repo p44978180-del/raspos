@@ -80,6 +80,9 @@ func Import(ctx context.Context, pool *pgxpool.Pool, publicRoot string) (Result,
 	if int(groups) != catalog.Meta.TotalGroups || int(lessons) != catalog.Meta.TotalClasses {
 		return Result{}, fmt.Errorf("imported groups %d lessons %d, catalog groups %d lessons %d", groups, lessons, catalog.Meta.TotalGroups, catalog.Meta.TotalClasses)
 	}
+	if err := ImportCampus(ctx, pool); err != nil {
+		return Result{}, err
+	}
 	return Result{Groups: int(groups), Lessons: int(lessons)}, nil
 }
 

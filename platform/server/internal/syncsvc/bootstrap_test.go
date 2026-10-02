@@ -2,6 +2,8 @@ package syncsvc
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"net/http"
@@ -97,6 +99,14 @@ func TestImportAndGuestBootstrap(t *testing.T) {
 	if !stream.Receive() {
 		t.Fatal(stream.Err())
 	}
+	directory := stream.Msg()
+	var directoryOp syncv1.SyncOp
+	if directory.GetCollection() != ingest.CollectionDirectory || proto.Unmarshal(directory.GetOp(), &directoryOp) != nil || len(directoryOp.GetDirectory().GetGroups()) != 805 {
+		t.Fatal("bootstrap did not begin with the full directory")
+	}
+	if !stream.Receive() {
+		t.Fatal(stream.Err())
+	}
 	frame := stream.Msg()
 	if frame.GetCollection() != ingest.CollectionLesson || !frame.GetSnapshotReset() || frame.GetLsn() < 1 {
 		t.Fatalf("frame %+v", frame)
@@ -109,8 +119,26 @@ func TestImportAndGuestBootstrap(t *testing.T) {
 	if snap.GetGroupCode() != "Д-А401" || len(snap.GetLessons()) != 73 {
 		t.Fatalf("snapshot %s lessons %d", snap.GetGroupCode(), len(snap.GetLessons()))
 	}
+	if !stream.Receive() {
+		t.Fatal("bootstrap omitted campus", stream.Err())
+	}
+	graph := stream.Msg()
+	var graphOp syncv1.SyncOp
+	if graph.GetCollection() != ingest.CollectionCampus || graph.GetScopeId() != ingest.ScopeCampus || proto.Unmarshal(graph.GetOp(), &graphOp) != nil || graphOp.GetCampus() == nil {
+		t.Fatal("invalid campus frame")
+	}
+	sum := sha256.Sum256(graphOp.GetCampus().GetPackJson())
+	if graphOp.GetCampus().GetSnapshotHash() != hex.EncodeToString(sum[:]) || len(graphOp.GetCampus().GetPackJson()) < 1_000_000 {
+		t.Fatal("campus data/hash mismatch")
+	}
+	if graph.GetLsn() != 1 {
+		t.Fatal("reimport duplicated the campus version")
+	}
+	if directory.GetServerTimeUnixMs() != frame.GetServerTimeUnixMs() || frame.GetServerTimeUnixMs() != graph.GetServerTimeUnixMs() {
+		t.Fatal("bundle has inconsistent server times")
+	}
 	if stream.Receive() {
-		t.Fatal("bootstrap sent more than the snapshot")
+		t.Fatal("bootstrap sent more than the three snapshots")
 	}
 	if err := stream.Err(); err != nil {
 		t.Fatal(err)
@@ -125,6 +153,30 @@ func TestImportAndGuestBootstrap(t *testing.T) {
 	}
 	if snap.GetSnapshotHash() != string(bytesTrim(raw)) {
 		t.Fatalf("hash %s", snap.GetSnapshotHash())
+	}
+	defaultStream, err := client.Bootstrap(ctx, connect.NewRequest(&syncv1.BootstrapRequest{ReplicaId: uuid.NewString()}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var defaults []*syncv1.BootstrapResponse
+	for defaultStream.Receive() {
+		defaults = append(defaults, defaultStream.Msg())
+	}
+	if defaultStream.Err() != nil || len(defaults) != 3 || defaults[1].GetScopeId() == "" {
+		t.Fatal("first-start bootstrap is incomplete", defaultStream.Err())
+	}
+	if _, err := pool.Exec(ctx, "DELETE FROM sync_log WHERE collection=$1", ingest.CollectionCampus); err != nil {
+		t.Fatal(err)
+	}
+	incomplete, err := client.Bootstrap(ctx, connect.NewRequest(&syncv1.BootstrapRequest{ReplicaId: uuid.NewString(), GroupCode: "Д-А401"}))
+	if err == nil {
+		if incomplete.Receive() {
+			t.Fatal("incomplete bootstrap emitted a successful partial bundle")
+		}
+		err = incomplete.Err()
+	}
+	if connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatal("incomplete bundle did not return not_found", err)
 	}
 }
 

@@ -5,7 +5,7 @@ The retained `data/campus-source.json` and derived `data/campus-pack.json` conta
 Rebuild deterministically, without network access:
 
 ```powershell
-python platform/campus/import_osm.py platform/campus/data/campus-source.json --retrieved-on 2026-10-01
+python platform/campus/import_osm.py platform/campus/data/campus-source.json --retrieved-on 2026-10-01 --install
 ```
 
 The original bounded API download is cached locally as `.cache/phase8-campus.osm`. Contributor account metadata is not needed by the map and is excluded from the retained data.

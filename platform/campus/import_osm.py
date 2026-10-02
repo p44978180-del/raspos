@@ -9,6 +9,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import shutil
 import struct
 import xml.etree.ElementTree as ET
 
@@ -179,7 +180,7 @@ def build_pack(source):
 
 def write_json(path, value):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    path.write_text(json.dumps(value, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8", newline="\n")
 
 
 def main():
@@ -187,11 +188,16 @@ def main():
     parser.add_argument("source", type=Path, help="OSM XML download or retained campus-source.json")
     parser.add_argument("--retrieved-on", required=True)
     parser.add_argument("--output", type=Path, default=Path(__file__).parent / "data")
+    parser.add_argument("--install", action="store_true", help="Copy the derived pack into the server's embedded data")
     args = parser.parse_args()
     source = json.loads(args.source.read_text(encoding="utf-8")) if args.source.suffix == ".json" else read_source(args.source, args.retrieved_on)
     pack = build_pack(source)
     write_json(args.output / "campus-source.json", source)
     write_json(args.output / "campus-pack.json", pack)
+    if args.install:
+        destination = Path(__file__).parent.parent / "server/internal/campus/data/campus-pack.json"
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(args.output / "campus-pack.json", destination)
     print(json.dumps({"nodes": len(pack["nodes"]), "features": len(pack["map"]["features"]), "presets": pack["presets"], "omitted": pack["omittedIncompleteBuildings"], "packBytes": (args.output / "campus-pack.json").stat().st_size}, ensure_ascii=False))
 
 

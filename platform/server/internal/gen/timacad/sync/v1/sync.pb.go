@@ -781,6 +781,7 @@ type SyncOp struct {
 	//
 	//	*SyncOp_Directory
 	//	*SyncOp_Lessons
+	//	*SyncOp_Campus
 	Body          isSyncOp_Body `protobuf_oneof:"body"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -841,6 +842,15 @@ func (x *SyncOp) GetLessons() *LessonSnapshot {
 	return nil
 }
 
+func (x *SyncOp) GetCampus() *CampusSnapshot {
+	if x != nil {
+		if x, ok := x.Body.(*SyncOp_Campus); ok {
+			return x.Campus
+		}
+	}
+	return nil
+}
+
 type isSyncOp_Body interface {
 	isSyncOp_Body()
 }
@@ -853,9 +863,67 @@ type SyncOp_Lessons struct {
 	Lessons *LessonSnapshot `protobuf:"bytes,2,opt,name=lessons,proto3,oneof"`
 }
 
+type SyncOp_Campus struct {
+	Campus *CampusSnapshot `protobuf:"bytes,3,opt,name=campus,proto3,oneof"`
+}
+
 func (*SyncOp_Directory) isSyncOp_Body() {}
 
 func (*SyncOp_Lessons) isSyncOp_Body() {}
+
+func (*SyncOp_Campus) isSyncOp_Body() {}
+
+type CampusSnapshot struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SnapshotHash  string                 `protobuf:"bytes,1,opt,name=snapshot_hash,json=snapshotHash,proto3" json:"snapshot_hash,omitempty"`
+	PackJson      []byte                 `protobuf:"bytes,2,opt,name=pack_json,json=packJson,proto3" json:"pack_json,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CampusSnapshot) Reset() {
+	*x = CampusSnapshot{}
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CampusSnapshot) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CampusSnapshot) ProtoMessage() {}
+
+func (x *CampusSnapshot) ProtoReflect() protoreflect.Message {
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CampusSnapshot.ProtoReflect.Descriptor instead.
+func (*CampusSnapshot) Descriptor() ([]byte, []int) {
+	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *CampusSnapshot) GetSnapshotHash() string {
+	if x != nil {
+		return x.SnapshotHash
+	}
+	return ""
+}
+
+func (x *CampusSnapshot) GetPackJson() []byte {
+	if x != nil {
+		return x.PackJson
+	}
+	return nil
+}
 
 type BootstrapRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -867,7 +935,7 @@ type BootstrapRequest struct {
 
 func (x *BootstrapRequest) Reset() {
 	*x = BootstrapRequest{}
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[11]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -879,7 +947,7 @@ func (x *BootstrapRequest) String() string {
 func (*BootstrapRequest) ProtoMessage() {}
 
 func (x *BootstrapRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[11]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -892,7 +960,7 @@ func (x *BootstrapRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BootstrapRequest.ProtoReflect.Descriptor instead.
 func (*BootstrapRequest) Descriptor() ([]byte, []int) {
-	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{11}
+	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *BootstrapRequest) GetReplicaId() string {
@@ -923,7 +991,7 @@ type BootstrapResponse struct {
 
 func (x *BootstrapResponse) Reset() {
 	*x = BootstrapResponse{}
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[12]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -935,7 +1003,7 @@ func (x *BootstrapResponse) String() string {
 func (*BootstrapResponse) ProtoMessage() {}
 
 func (x *BootstrapResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[12]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -948,7 +1016,7 @@ func (x *BootstrapResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BootstrapResponse.ProtoReflect.Descriptor instead.
 func (*BootstrapResponse) Descriptor() ([]byte, []int) {
-	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{12}
+	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *BootstrapResponse) GetLsn() int64 {
@@ -1005,7 +1073,7 @@ type PullRequest struct {
 
 func (x *PullRequest) Reset() {
 	*x = PullRequest{}
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[13]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1017,7 +1085,7 @@ func (x *PullRequest) String() string {
 func (*PullRequest) ProtoMessage() {}
 
 func (x *PullRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[13]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1030,7 +1098,7 @@ func (x *PullRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PullRequest.ProtoReflect.Descriptor instead.
 func (*PullRequest) Descriptor() ([]byte, []int) {
-	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{13}
+	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *PullRequest) GetCollection() string {
@@ -1074,7 +1142,7 @@ type PullResponse struct {
 
 func (x *PullResponse) Reset() {
 	*x = PullResponse{}
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[14]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1086,7 +1154,7 @@ func (x *PullResponse) String() string {
 func (*PullResponse) ProtoMessage() {}
 
 func (x *PullResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[14]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1099,7 +1167,7 @@ func (x *PullResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PullResponse.ProtoReflect.Descriptor instead.
 func (*PullResponse) Descriptor() ([]byte, []int) {
-	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{14}
+	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *PullResponse) GetLsn() int64 {
@@ -1149,7 +1217,7 @@ type PushOperation struct {
 
 func (x *PushOperation) Reset() {
 	*x = PushOperation{}
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[15]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1161,7 +1229,7 @@ func (x *PushOperation) String() string {
 func (*PushOperation) ProtoMessage() {}
 
 func (x *PushOperation) ProtoReflect() protoreflect.Message {
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[15]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1174,7 +1242,7 @@ func (x *PushOperation) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PushOperation.ProtoReflect.Descriptor instead.
 func (*PushOperation) Descriptor() ([]byte, []int) {
-	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{15}
+	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *PushOperation) GetCollection() string {
@@ -1215,7 +1283,7 @@ type PushRequest struct {
 
 func (x *PushRequest) Reset() {
 	*x = PushRequest{}
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[16]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1227,7 +1295,7 @@ func (x *PushRequest) String() string {
 func (*PushRequest) ProtoMessage() {}
 
 func (x *PushRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[16]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1240,7 +1308,7 @@ func (x *PushRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PushRequest.ProtoReflect.Descriptor instead.
 func (*PushRequest) Descriptor() ([]byte, []int) {
-	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{16}
+	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *PushRequest) GetReplicaId() string {
@@ -1269,7 +1337,7 @@ type PushAckItem struct {
 
 func (x *PushAckItem) Reset() {
 	*x = PushAckItem{}
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[17]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1281,7 +1349,7 @@ func (x *PushAckItem) String() string {
 func (*PushAckItem) ProtoMessage() {}
 
 func (x *PushAckItem) ProtoReflect() protoreflect.Message {
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[17]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1294,7 +1362,7 @@ func (x *PushAckItem) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PushAckItem.ProtoReflect.Descriptor instead.
 func (*PushAckItem) Descriptor() ([]byte, []int) {
-	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{17}
+	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *PushAckItem) GetClientSeq() int64 {
@@ -1334,7 +1402,7 @@ type PushResponse struct {
 
 func (x *PushResponse) Reset() {
 	*x = PushResponse{}
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[18]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1346,7 +1414,7 @@ func (x *PushResponse) String() string {
 func (*PushResponse) ProtoMessage() {}
 
 func (x *PushResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_timacad_sync_v1_sync_proto_msgTypes[18]
+	mi := &file_timacad_sync_v1_sync_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1359,7 +1427,7 @@ func (x *PushResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PushResponse.ProtoReflect.Descriptor instead.
 func (*PushResponse) Descriptor() ([]byte, []int) {
-	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{18}
+	return file_timacad_sync_v1_sync_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *PushResponse) GetItems() []*PushAckItem {
@@ -1435,11 +1503,15 @@ const file_timacad_sync_v1_sync_proto_rawDesc = "" +
 	"\bThreadOp\x121\n" +
 	"\x04post\x18\x01 \x01(\v2\x1b.timacad.sync.v1.ThreadPostH\x00R\x04post\x121\n" +
 	"\x04hide\x18\x02 \x01(\v2\x1b.timacad.sync.v1.ThreadHideH\x00R\x04hideB\x06\n" +
-	"\x04body\"\x91\x01\n" +
+	"\x04body\"\xcc\x01\n" +
 	"\x06SyncOp\x12B\n" +
 	"\tdirectory\x18\x01 \x01(\v2\".timacad.sync.v1.DirectorySnapshotH\x00R\tdirectory\x12;\n" +
-	"\alessons\x18\x02 \x01(\v2\x1f.timacad.sync.v1.LessonSnapshotH\x00R\alessonsB\x06\n" +
-	"\x04body\"P\n" +
+	"\alessons\x18\x02 \x01(\v2\x1f.timacad.sync.v1.LessonSnapshotH\x00R\alessons\x129\n" +
+	"\x06campus\x18\x03 \x01(\v2\x1f.timacad.sync.v1.CampusSnapshotH\x00R\x06campusB\x06\n" +
+	"\x04body\"R\n" +
+	"\x0eCampusSnapshot\x12#\n" +
+	"\rsnapshot_hash\x18\x01 \x01(\tR\fsnapshotHash\x12\x1b\n" +
+	"\tpack_json\x18\x02 \x01(\fR\bpackJson\"P\n" +
 	"\x10BootstrapRequest\x12\x1d\n" +
 	"\n" +
 	"replica_id\x18\x01 \x01(\tR\treplicaId\x12\x1d\n" +
@@ -1512,7 +1584,7 @@ func file_timacad_sync_v1_sync_proto_rawDescGZIP() []byte {
 }
 
 var file_timacad_sync_v1_sync_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_timacad_sync_v1_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_timacad_sync_v1_sync_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_timacad_sync_v1_sync_proto_goTypes = []any{
 	(ReplicationMode)(0),      // 0: timacad.sync.v1.ReplicationMode
 	(*CanonicalLesson)(nil),   // 1: timacad.sync.v1.CanonicalLesson
@@ -1526,14 +1598,15 @@ var file_timacad_sync_v1_sync_proto_goTypes = []any{
 	(*ThreadHide)(nil),        // 9: timacad.sync.v1.ThreadHide
 	(*ThreadOp)(nil),          // 10: timacad.sync.v1.ThreadOp
 	(*SyncOp)(nil),            // 11: timacad.sync.v1.SyncOp
-	(*BootstrapRequest)(nil),  // 12: timacad.sync.v1.BootstrapRequest
-	(*BootstrapResponse)(nil), // 13: timacad.sync.v1.BootstrapResponse
-	(*PullRequest)(nil),       // 14: timacad.sync.v1.PullRequest
-	(*PullResponse)(nil),      // 15: timacad.sync.v1.PullResponse
-	(*PushOperation)(nil),     // 16: timacad.sync.v1.PushOperation
-	(*PushRequest)(nil),       // 17: timacad.sync.v1.PushRequest
-	(*PushAckItem)(nil),       // 18: timacad.sync.v1.PushAckItem
-	(*PushResponse)(nil),      // 19: timacad.sync.v1.PushResponse
+	(*CampusSnapshot)(nil),    // 12: timacad.sync.v1.CampusSnapshot
+	(*BootstrapRequest)(nil),  // 13: timacad.sync.v1.BootstrapRequest
+	(*BootstrapResponse)(nil), // 14: timacad.sync.v1.BootstrapResponse
+	(*PullRequest)(nil),       // 15: timacad.sync.v1.PullRequest
+	(*PullResponse)(nil),      // 16: timacad.sync.v1.PullResponse
+	(*PushOperation)(nil),     // 17: timacad.sync.v1.PushOperation
+	(*PushRequest)(nil),       // 18: timacad.sync.v1.PushRequest
+	(*PushAckItem)(nil),       // 19: timacad.sync.v1.PushAckItem
+	(*PushResponse)(nil),      // 20: timacad.sync.v1.PushResponse
 }
 var file_timacad_sync_v1_sync_proto_depIdxs = []int32{
 	2,  // 0: timacad.sync.v1.DirectorySnapshot.groups:type_name -> timacad.sync.v1.DirectoryEntry
@@ -1543,19 +1616,20 @@ var file_timacad_sync_v1_sync_proto_depIdxs = []int32{
 	9,  // 4: timacad.sync.v1.ThreadOp.hide:type_name -> timacad.sync.v1.ThreadHide
 	3,  // 5: timacad.sync.v1.SyncOp.directory:type_name -> timacad.sync.v1.DirectorySnapshot
 	4,  // 6: timacad.sync.v1.SyncOp.lessons:type_name -> timacad.sync.v1.LessonSnapshot
-	16, // 7: timacad.sync.v1.PushRequest.operations:type_name -> timacad.sync.v1.PushOperation
-	18, // 8: timacad.sync.v1.PushResponse.items:type_name -> timacad.sync.v1.PushAckItem
-	12, // 9: timacad.sync.v1.SyncService.Bootstrap:input_type -> timacad.sync.v1.BootstrapRequest
-	14, // 10: timacad.sync.v1.SyncService.Pull:input_type -> timacad.sync.v1.PullRequest
-	17, // 11: timacad.sync.v1.SyncService.Push:input_type -> timacad.sync.v1.PushRequest
-	13, // 12: timacad.sync.v1.SyncService.Bootstrap:output_type -> timacad.sync.v1.BootstrapResponse
-	15, // 13: timacad.sync.v1.SyncService.Pull:output_type -> timacad.sync.v1.PullResponse
-	19, // 14: timacad.sync.v1.SyncService.Push:output_type -> timacad.sync.v1.PushResponse
-	12, // [12:15] is the sub-list for method output_type
-	9,  // [9:12] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	12, // 7: timacad.sync.v1.SyncOp.campus:type_name -> timacad.sync.v1.CampusSnapshot
+	17, // 8: timacad.sync.v1.PushRequest.operations:type_name -> timacad.sync.v1.PushOperation
+	19, // 9: timacad.sync.v1.PushResponse.items:type_name -> timacad.sync.v1.PushAckItem
+	13, // 10: timacad.sync.v1.SyncService.Bootstrap:input_type -> timacad.sync.v1.BootstrapRequest
+	15, // 11: timacad.sync.v1.SyncService.Pull:input_type -> timacad.sync.v1.PullRequest
+	18, // 12: timacad.sync.v1.SyncService.Push:input_type -> timacad.sync.v1.PushRequest
+	14, // 13: timacad.sync.v1.SyncService.Bootstrap:output_type -> timacad.sync.v1.BootstrapResponse
+	16, // 14: timacad.sync.v1.SyncService.Pull:output_type -> timacad.sync.v1.PullResponse
+	20, // 15: timacad.sync.v1.SyncService.Push:output_type -> timacad.sync.v1.PushResponse
+	13, // [13:16] is the sub-list for method output_type
+	10, // [10:13] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_timacad_sync_v1_sync_proto_init() }
@@ -1570,6 +1644,7 @@ func file_timacad_sync_v1_sync_proto_init() {
 	file_timacad_sync_v1_sync_proto_msgTypes[10].OneofWrappers = []any{
 		(*SyncOp_Directory)(nil),
 		(*SyncOp_Lessons)(nil),
+		(*SyncOp_Campus)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -1577,7 +1652,7 @@ func file_timacad_sync_v1_sync_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_timacad_sync_v1_sync_proto_rawDesc), len(file_timacad_sync_v1_sync_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   19,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -47,6 +47,10 @@ func main() {
 		os.Exit(1)
 	}
 	defer pool.Close()
+	if err := ingest.ImportCampus(ctx, pool); err != nil {
+		slog.Error("campus snapshot", "err", err)
+		os.Exit(1)
+	}
 	queries := db.New(pool)
 	service := &syncsvc.Service{Pool: pool, Queries: queries}
 	if apiURL := os.Getenv("OPENFGA_API_URL"); apiURL != "" {
