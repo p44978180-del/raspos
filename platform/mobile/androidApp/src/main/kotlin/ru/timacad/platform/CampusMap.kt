@@ -69,17 +69,20 @@ private class CampusRenderer(val view: MapView) {
             hash = model.hash
             loaded.cameraPosition = CameraPosition.Builder().target(LatLng(model.center.lat, model.center.lon)).zoom(CampusScheme.cameraZoom).build()
         }
-        if (markers != model.markersJson) {
+        val endpointsChanged = markers != model.markersJson
+        val routeChanged = route != model.routeJson
+        if (endpointsChanged) {
             ready.getSourceAs<GeoJsonSource>("endpoints")!!.setGeoJson(model.markersJson)
             markers = model.markersJson
         }
-        if (route != model.routeJson) {
+        if (routeChanged) {
             ready.getSourceAs<GeoJsonSource>("route")!!.setGeoJson(model.routeJson)
             route = model.routeJson
-            model.routeBounds?.let { bounds ->
-                val area = LatLngBounds.from(bounds.north + 0.0002, bounds.east + 0.0002, bounds.south - 0.0002, bounds.west - 0.0002)
-                view.post { if (!destroyed && pending === model) loaded.moveCamera(CameraUpdateFactory.newLatLngBounds(area, 36)) }
-            }
+        }
+        if (routeChanged || endpointsChanged) {
+            val bounds = model.cameraBounds
+            val area = LatLngBounds.from(bounds.north + 0.0002, bounds.east + 0.0002, bounds.south - 0.0002, bounds.west - 0.0002)
+            view.post { if (!destroyed && pending === model) loaded.moveCamera(CameraUpdateFactory.newLatLngBounds(area, 36)) }
         }
     }
     fun start() { if (!started && !destroyed) { view.onStart(); started = true } }

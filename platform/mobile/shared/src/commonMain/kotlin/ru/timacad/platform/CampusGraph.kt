@@ -21,7 +21,7 @@ data class CampusBounds(val west: Double, val south: Double, val east: Double, v
 data class CampusView(
     val hash: String, val schemeJson: String, val center: CampusPoint,
     val presets: List<CampusPreset>, val from: Int, val to: Int,
-    val markersJson: String, val routeJson: String, val routeBounds: CampusBounds?,
+    val markersJson: String, val routeJson: String, val cameraBounds: CampusBounds,
     val message: String, val attribution: String, val attributionUrl: String,
 )
 
@@ -60,7 +60,8 @@ class CampusGraph internal constructor(
             put("properties", buildJsonObject { put("name", preset.name); put("role", role) })
             put("geometry", buildJsonObject { put("type", "Point"); put("coordinates", nodes.getValue(preset.id).point().coordinate()) })
         } })
-        val bounds = points.takeIf { it.isNotEmpty() }?.let { CampusBounds(it.minOf { p -> p.lon }, it.minOf { p -> p.lat }, it.maxOf { p -> p.lon }, it.maxOf { p -> p.lat }) }
+        val focus = points.ifEmpty { listOf(nodes.getValue(start.id).point(), nodes.getValue(end.id).point()) }
+        val bounds = CampusBounds(focus.minOf { it.lon }, focus.minOf { it.lat }, focus.maxOf { it.lon }, focus.maxOf { it.lat })
         return CampusView(hash, schemeJson, center, presets, start.id, end.id, markers, route, bounds,
             if (result.found) "Маршрут по нанесённым дорожкам" else "Маршрут не найден в доступном графе. Закрытые проходы не учитываются.",
             attribution, attributionUrl)

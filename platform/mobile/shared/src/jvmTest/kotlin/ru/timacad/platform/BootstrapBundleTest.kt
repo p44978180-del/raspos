@@ -118,8 +118,11 @@ class BootstrapBundleTest {
         assertEquals(37.5548196, coordinates.first().jsonArray[0].jsonPrimitive.double)
         assertEquals(55.8305063, coordinates.first().jsonArray[1].jsonPrimitive.double)
         assertTrue(coordinates.size > 2)
-        assertNotNull(route.routeBounds)
-        assertEquals(EMPTY_GEOJSON, graph.view(3167, 3222, NativeCampusRouter()).routeJson)
+        assertTrue(route.cameraBounds.north >= 55.8305063)
+        val gated = graph.view(3167, 3222, NativeCampusRouter())
+        assertEquals(EMPTY_GEOJSON, gated.routeJson)
+        assertEquals(55.8364142, gated.cameraBounds.north)
+        assertEquals(55.8305063, gated.cameraBounds.south)
         val original = Json.parseToJsonElement(campusBytes.decodeToString()).jsonObject
         val changes = listOf(
             "topologyBase64" to JsonPrimitive("VE1HMf//////////"),

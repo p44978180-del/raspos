@@ -251,7 +251,13 @@ private class PlatformExecutor(
     private suspend fun filterGroups() {
         val current = state()
         val picker = withContext(Dispatchers.IO) {
-            val matches = if (current.picker.query.isBlank()) emptyList() else database { schedule.search(current.picker.query) }
+            val matches = if (current.picker.query.isBlank()) emptyList() else database {
+                val started = System.nanoTime()
+                val found = schedule.search(current.picker.query)
+                val elapsedUs = (System.nanoTime() - started) / 1_000
+                Log.i("TimFts", "search_us=$elapsedUs matches=${found.size} groups=${current.groups.size}")
+                found
+            }
             groupPickerView(current.groups, current.picker, matches)
         }
         update { if (it.picker == current.picker && it.groups === current.groups) it.copy(picker = picker) else it }

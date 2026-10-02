@@ -1,0 +1,71 @@
+{
+  "checkedAtUtc": "2026-10-02T14:25:00Z",
+  "apkSha256": "827b66675e4b0f3d3766de74b4251d99398aa6b847e23478ef356076905865d9",
+  "device": "timacad_phase8_network / API 35 Google APIs / x86_64",
+  "transport": "Local Docker Caddy Connect-RPC via 10.0.2.2:8088; public HTTPS is not proven",
+  "wireFrames": [
+    {
+      "collection": "group_directory",
+      "scope": "catalog",
+      "lsn": 1,
+      "reset": 1,
+      "groups": 805
+    },
+    {
+      "collection": "lesson",
+      "scope": "Д-А401",
+      "lsn": 1,
+      "reset": 1,
+      "lessons": 73
+    },
+    {
+      "collection": "campus_graph",
+      "scope": "campus",
+      "lsn": 1,
+      "reset": 1,
+      "hash": "d0e2e4e9290866b000a804c5d4fcf39c82180983c5f62588733848052c75058d",
+      "nodes": 5392,
+      "bytes": 1388807
+    }
+  ],
+  "androidBootstrap": {
+    "pid": 3615,
+    "groups": 805,
+    "group": "ДА 01-25",
+    "lessons": 130,
+    "campusNodes": 5392,
+    "campusHash": "d0e2e4e9290866b000a804c5d4fcf39c82180983c5f62588733848052c75058d"
+  },
+  "route": {
+    "from": "Корпус 15 · вход",
+    "to": "Корпус 5 · подход",
+    "nativeNodeIds": [
+      3167,
+      3140
+    ],
+    "drawn": true,
+    "screenshot": "phase8-campus-route.png"
+  },
+  "privateGate": {
+    "to": "Корпус 18 · вход",
+    "routeFound": false,
+    "routeLineCleared": true,
+    "screenshot": "phase8-campus-private.png"
+  },
+  "offline": {
+    "airplaneMode": true,
+    "wifiDisabled": true,
+    "newPid": 4316,
+    "campusLoadedFromSqlite": true,
+    "routeDrawn": true,
+    "coldLaunchMs": 801,
+    "startup100msGatePassed": false,
+    "screenshot": "phase8-campus-offline.png"
+  },
+  "limits": [
+    "No ARM64 device installation",
+    "No Android biometric ceremony",
+    "No physical 120 Hz profiling",
+    "Follow-up camera framing change requires another APK check"
+  ]
+}
