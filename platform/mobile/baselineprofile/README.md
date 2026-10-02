@@ -2,6 +2,8 @@
 
 This producer captures real cached schedule startup and the GroupPicker → DaySchedule journey. It does not seed synthetic lessons. Install the non-minified app, let its real Bootstrap finish, then disable networking before collecting the offline profile. Use a dedicated API 33+ emulator or test device; collection resets compilation state and stops the app repeatedly.
 
+`android.injected.androidTest.leaveApksInstalledAfterRun=true` keeps both APKs installed after connected tests, including failed runs. AGP's default teardown uninstalls the target and deletes its SQLite cache and Keystore session. Keep this setting enabled while collecting profiles or measuring cached startup; remove test packages manually only after the device's acceptance checks are complete.
+
 ```powershell
 ./gradlew.bat :androidApp:assembleNonMinifiedRelease :baselineprofile:assembleNonMinifiedRelease
 # Install androidApp/build/outputs/apk/nonMinifiedRelease/androidApp-nonMinifiedRelease.apk.
