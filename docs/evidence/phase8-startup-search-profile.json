@@ -1,0 +1,294 @@
+{
+  "recorded_at": "2026-10-02",
+  "device": "API 35 Google APIs x86_64 emulator-5556",
+  "dataset_groups": 805,
+  "baseline": {
+    "apk_sha256": "c4cef8fc41db1710b871288f5a8ff993daee19200a16fb4a3d966a45fac16292",
+    "build": "diagnostic instrumentation based on ed97b49; not final release",
+    "airplane_mode": true,
+    "wifi_enabled": false,
+    "process_id": 2241,
+    "cold_total_ms": 4128,
+    "fully_drawn_ms": 7901,
+    "startup_stages": [
+      {
+        "stage": "super",
+        "activity_us": 13233
+      },
+      {
+        "stage": "database",
+        "activity_us": 18321
+      },
+      {
+        "stage": "store",
+        "activity_us": 314963
+      },
+      {
+        "stage": "navigation",
+        "activity_us": 359406
+      },
+      {
+        "stage": "set_content",
+        "activity_us": 548627
+      },
+      {
+        "stage": "local_content_frame",
+        "activity_us": 6826020
+      }
+    ],
+    "fts_samples": [
+      {
+        "search_us": 66627,
+        "matches": 188,
+        "groups": 805,
+        "stages_us": {
+          "tokenize": 219,
+          "ensure_table": 338,
+          "execute_query": 64090,
+          "read_rows": 56079
+        }
+      },
+      {
+        "search_us": 4356,
+        "matches": 28,
+        "groups": 805,
+        "stages_us": {
+          "tokenize": 251,
+          "ensure_table": 788,
+          "execute_query": 1691,
+          "read_rows": 1389
+        }
+      },
+      {
+        "search_us": 6901,
+        "matches": 28,
+        "groups": 805,
+        "stages_us": {
+          "tokenize": 296,
+          "ensure_table": 375,
+          "execute_query": 4551,
+          "read_rows": 4273
+        }
+      },
+      {
+        "search_us": 42011,
+        "matches": 28,
+        "groups": 805,
+        "stages_us": {
+          "tokenize": 450,
+          "ensure_table": 195,
+          "execute_query": 40733,
+          "read_rows": 40564
+        }
+      },
+      {
+        "search_us": 5842,
+        "matches": 10,
+        "groups": 805,
+        "stages_us": {
+          "tokenize": 186,
+          "ensure_table": 179,
+          "execute_query": 676,
+          "read_rows": 303
+        }
+      }
+    ],
+    "trace_logging_inside_search_timer": true
+  },
+  "limitations": [
+    "One baseline after a fresh emulator boot, with a large personal archive; not a controlled physical-device benchmark.",
+    "FTS baseline total includes separate per-stage log calls. SQL stages isolate the main cursor-reading delay.",
+    "100 ms cold-start and 3 ms FTS gates are not passed by this baseline.",
+    "Updated launch is a fresh app process after Android/JIT/filesystem warm-up; baseline after emulator boot and updated results are not a controlled before/after benchmark."
+  ],
+  "updated_release": {
+    "source_commit": "913a691e57b7dc4b7ee90adcbb0629db751d8d25",
+    "apk_sha256": "e75f8167c6d134f996c79a67308e4cf53bea748eee969268a88f4a7dc9d84ff7",
+    "apk_bytes": 39649659,
+    "jvm_tests": 43,
+    "release_build": "BUILD SUCCESSFUL in 3m 18s; 107 tasks, 25 executed",
+    "v2_signature": true,
+    "v3_signature": true,
+    "zip_16k_alignment": true,
+    "abis": [
+      "arm64-v8a",
+      "x86_64"
+    ],
+    "native_libraries": 10,
+    "native_alignment_evidence": "All ten libraries byte-match the extracted ELF files previously checked directly with llvm-readelf; all LOAD segments have p_align 0x4000.",
+    "runtime": "Installed successfully on API 35 x86_64",
+    "offline_launch": {
+      "launch_state": "COLD",
+      "total_ms": 484,
+      "fully_drawn_ms": 622,
+      "pid": 3429,
+      "airplane_mode": true,
+      "wifi_enabled": false,
+      "startup_stages": [
+        {
+          "stage": "super",
+          "activity_us": 359
+        },
+        {
+          "stage": "database",
+          "activity_us": 2657
+        },
+        {
+          "stage": "store",
+          "activity_us": 13277
+        },
+        {
+          "stage": "navigation",
+          "activity_us": 15017
+        },
+        {
+          "stage": "set_content",
+          "activity_us": 27630
+        },
+        {
+          "stage": "local_content_frame",
+          "activity_us": 407869
+        }
+      ]
+    },
+    "initial_warm_launch": {
+      "launch_state": "WARM",
+      "total_ms": 1065,
+      "fully_drawn_ms": 1562,
+      "pid": 3238,
+      "excluded_from_cold_start_claim": true
+    },
+    "fts_samples": [
+      {
+        "search_us": 27859,
+        "matches": 188,
+        "groups": 805,
+        "tokenize_us": 66,
+        "ensure_table_us": 675,
+        "execute_query_us": 24549,
+        "read_rows_us": 23723
+      },
+      {
+        "search_us": 1435,
+        "matches": 28,
+        "groups": 805,
+        "tokenize_us": 76,
+        "ensure_table_us": 17,
+        "execute_query_us": 1245,
+        "read_rows_us": 776
+      },
+      {
+        "search_us": 1289,
+        "matches": 28,
+        "groups": 805,
+        "tokenize_us": 62,
+        "ensure_table_us": 14,
+        "execute_query_us": 1108,
+        "read_rows_us": 487
+      },
+      {
+        "search_us": 4882,
+        "matches": 28,
+        "groups": 805,
+        "tokenize_us": 140,
+        "ensure_table_us": 23,
+        "execute_query_us": 4604,
+        "read_rows_us": 4229
+      },
+      {
+        "search_us": 968,
+        "matches": 10,
+        "groups": 805,
+        "tokenize_us": 84,
+        "ensure_table_us": 17,
+        "execute_query_us": 759,
+        "read_rows_us": 429
+      },
+      {
+        "search_us": 3388,
+        "matches": 28,
+        "groups": 805,
+        "tokenize_us": 97,
+        "ensure_table_us": 19,
+        "execute_query_us": 3174,
+        "read_rows_us": 708
+      },
+      {
+        "search_us": 686,
+        "matches": 10,
+        "groups": 805,
+        "tokenize_us": 74,
+        "ensure_table_us": 17,
+        "execute_query_us": 483,
+        "read_rows_us": 263
+      },
+      {
+        "search_us": 702,
+        "matches": 28,
+        "groups": 805,
+        "tokenize_us": 51,
+        "ensure_table_us": 17,
+        "execute_query_us": 536,
+        "read_rows_us": 363
+      },
+      {
+        "search_us": 2946,
+        "matches": 10,
+        "groups": 805,
+        "tokenize_us": 487,
+        "ensure_table_us": 14,
+        "execute_query_us": 2267,
+        "read_rows_us": 1903
+      }
+    ],
+    "fts_logging_inside_search_timer": false,
+    "realtime": {
+      "lsn": 10,
+      "applied": 1,
+      "widget_updates": 1,
+      "pid_before": 3429,
+      "pid_after": 3429,
+      "card_text": "Phase8 realtime decoder E",
+      "widget_text": "Phase8 realtime decoder E",
+      "card_screenshot": "phase8-realtime-decoder-card.png",
+      "widget_screenshot": "phase8-realtime-decoder-widget.png",
+      "synthetic": true,
+      "limits": "Actual server publication confirms the new Android decoder path and card/Glance updates. Multi-reply batching is covered by JVM tests; this publication does not prove the server batched it. The connection later failed with SocketException and repeated connect timeouts; no uninterrupted connection or root-cause fix is claimed. The same process 3429 recovered automatically at 15:36:55 and loaded all 113 ordinary lessons before the later cleanup restart."
+    },
+    "last_anr": "No ANR since boot",
+    "cleanup": {
+      "temporary_html_deleted": true,
+      "ordinary_v4_import": {
+        "groups": 805,
+        "lessons": 47068
+      },
+      "android_restoration": {
+        "automatic_recovery_pid": 3429,
+        "recovered_at": "2026-10-02 15:36:55.911 UTC",
+        "groups": 805,
+        "lessons_for_selected_group": 113,
+        "after_cleanup_restart_pid": 4110,
+        "after_cleanup_restart_groups": 805,
+        "after_cleanup_restart_lessons": 113,
+        "ordinary_card_inspected": true
+      },
+      "ordinary_widget_inspected": true,
+      "ordinary_widget_text": "день / Пар нет",
+      "emulator_stopped": true,
+      "airplane_mode_restored": false
+    },
+    "ios_ci": {
+      "url": "https://github.com/p44978180-del/raspos/actions/runs/37026913907",
+      "status": "completed",
+      "conclusion": "success",
+      "jobs": {
+        "iosApp": "success",
+        "widgetkit": "success"
+      }
+    }
+  },
+  "acceptance": {
+    "cold_start_100ms": false,
+    "fts_3ms": false
+  }
+}

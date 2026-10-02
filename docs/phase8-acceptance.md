@@ -81,6 +81,17 @@ The phase is **not accepted yet**. This ledger distinguishes observed behavior f
 - Actual Android FTS5 measurements on 805 groups mostly took 0.717–1.419 ms. The first prefix query took 179.435 ms and another took 28.853 ms. The ≤3 ms gate is therefore **not passed**; the cold/contended path needs further investigation. These measurements include SQL execution and Kotlin result projection, not keystroke-to-display latency.
 - Both iOS jobs passed at mobile commit `ed97b49`: [run 37020518886](https://github.com/p44978180-del/raspos/actions/runs/37020518886). [Portable checkpoint details](evidence/phase8-mobile-runtime-checkpoint.json).
 
+## Startup, search and realtime follow-up — 2 October
+
+- At mobile commit `913a691`, cached schedule rows are projected on IO before personal-history loading. Campus preparation runs independently, and Ktor/OkHttp clients initialize only on an IO request. Personal editing appears after the account's initial content loads. Startup instrumentation calls `reportFullyDrawn` after the local-content composition reaches the next frame.
+- FTS5 reuses its prepared MATCH statement and token patterns, and avoids repeated DDL after committed initialization. Initialization inside a Bootstrap transaction is not cached, so a rolled-back CREATE remains retryable. Per-stage logs are emitted after the total search timer stops.
+- Centrifugo frames now parse structural JSON and dispatch every newline-separated reply, including whitespace pings, Unicode escapes and multiple hints. Command errors and disconnects terminate the connection; unrelated payload fields named `error` do not. Bounds limit frames and batch sizes. Three new protocol tests passed; all 43 JVM tests passed.
+- Release assembly succeeded in 3m 18s. APK SHA-256 `e75f8167c6d134f996c79a67308e4cf53bea748eee969268a88f4a7dc9d84ff7`, 39,649,659 bytes. V2/V3 and 16 KiB ZIP alignment passed. All ten ARM64/x86_64 native libraries byte-match the extracted ELF files previously checked directly with `llvm-readelf` for `0x4000`. Installation succeeded on API 35 x86_64.
+- A fresh app process in airplane mode with Wi-Fi disabled measured 484 ms to the first window and 622 ms fully drawn with SQLite schedule rows. This remains above 100 ms. The instrumented baseline immediately after emulator boot took 4,128/7,901 ms; these are not controlled before/after benchmarks. An initial updated launch reported WARM and is explicitly excluded from the cold-start claim.
+- Actual FTS5 search on 805 groups measured 27.859 ms for the first broad prefix; the remaining eight queries took 0.686–4.882 ms, with two exceeding 3 ms. Cursor reads dominated the first query. The ≤3 ms gate remains open.
+- A real publication through Docker produced `hint=lesson lsn=10 applied=1 widgets=1`. Both the [card](evidence/phase8-realtime-decoder-card.png) and [Glance widget](evidence/phase8-realtime-decoder-widget.png) displayed the synthetic E lesson, with PID 3429 unchanged. Multi-reply batching is covered by the JVM tests; this publication is not proof of a batched server frame. A later SocketException and repeated connect timeouts recovered automatically in the same process at 15:36:55, loading the ordinary 113-lesson selected schedule. The test HTML was deleted and ordinary v4 data reimported (805 groups, 47,068 lessons). The subsequent cleanup launch displayed ordinary lessons, and no ANR was recorded since boot.
+- Both iOS jobs at `913a691` passed in [run 37026913907](https://github.com/p44978180-del/raspos/actions/runs/37026913907). [Portable startup/search/release evidence](evidence/phase8-startup-search-profile.json).
+
 ## Remaining requirements and evidence gaps
 
 | Requirement | Current limitation / required proof |
@@ -89,10 +100,10 @@ The phase is **not accepted yet**. This ledger distinguishes observed behavior f
 | Production endpoint | Release defaults are local emulator endpoints. HTTPS/Caddy templates exist, but no user-selected public domain is deployed or verified. |
 | Bootstrap of directory, schedule and campus graph atomically | Implemented, tested for rollback/reset and verified through Android network load plus SQLite restoration in airplane mode. |
 | Full personal Loro flow | Native editing, atomic persistence, v4 parsing, account separation and large-update chunking are implemented and covered by tests above. Android CRUD, cancellation and small/10,000-task backup checks passed. Live authenticated account sync and recovery after compaction still need runtime checks. |
-| Decompose Child Stack and MVIKotlin | Integrated and checked on Android/JVM. Both iOS jobs passed at `ed97b49`; the post-refactor reactive card/Glance check passed as above. |
+| Decompose Child Stack and MVIKotlin | Integrated and checked on Android/JVM. Both iOS jobs passed at `913a691`; the reactive card/Glance checks passed as above. |
 | Campus route rendering | Real synced graph, native routes, offline restoration and unreachable-endpoint framing passed Android checks above. |
 | Offline cold start ≤100 ms | Not demonstrated. Observed release launches on this host exceed the limit. A JVM in-memory read test is not an application startup measurement. |
-| FTS5 ≤3 ms on Android | Actual 805-group queries usually take about 1 ms, but 179.435/28.853 ms outliers exceed the gate. Cold/contended execution remains to be investigated. |
+| FTS5 ≤3 ms on Android | Latest actual 805-group measurements include 27.859 ms on the first broad prefix and later 4.882/3.388 ms outliers. Cold cursor reads remain to be investigated; the gate is not passed. |
 | Glance after package update | Latest APK update and reactive widget rendering passed on API 35; no ANR was recorded since that boot. The prior emulator package-receiver ANR remains historical evidence, not a guarantee for other devices. |
 | Full semester data | Imported source window is 14 September–2 November, not proof of all semester dates. 342 catalog groups have an empty electronic source. Do not invent lessons. |
 | ARM64 device installation | ELF and APK contents checked; no ARM64 runtime installation log yet. |
