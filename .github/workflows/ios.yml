@@ -1,33 +1,50 @@
-name: ios
+name: iOS verification
 
 on:
   workflow_dispatch:
   push:
+    branches: [main]
+    tags: ['v*']
     paths:
       - platform/rust/timacad-core/**
       - platform/mobile/**
+      - platform/testdata/**
       - .github/workflows/ios.yml
   pull_request:
     paths:
       - platform/rust/timacad-core/**
       - platform/mobile/**
+      - platform/testdata/**
       - .github/workflows/ios.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   widgetkit:
+    name: Rust framework and WidgetKit
     runs-on: macos-latest
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: dtolnay/rust-toolchain@stable
       - name: Compile SharedCore.xcframework and the WidgetKit target
         run: bash platform/mobile/ios-extensions/build-widget.sh
 
   iosApp:
+    name: Compose iOS framework
     runs-on: macos-latest
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -49,6 +66,7 @@ jobs:
         if: always()
         with:
           name: ios-build-${{ github.sha }}
+          retention-days: 7
           path: |
             platform/mobile/ios-build.log
             platform/mobile/shared/build/bin/iosSimulatorArm64/debugFramework/

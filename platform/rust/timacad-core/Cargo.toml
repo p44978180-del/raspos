@@ -3,7 +3,7 @@ name = "timacad-core"
 version = "0.1.0"
 edition = "2021"
 rust-version = "1.85"
-description = "Shared core for the TIM platform. Phase 0 exports the UniFFI identity string."
+description = "Shared TIM platform core for campus routing, personal data synchronization and mini-apps."
 license = "MIT"
 
 [lib]

@@ -1,0 +1,133 @@
+name: Platform verification
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - platform/**
+      - .github/workflows/platform.yml
+  pull_request:
+    paths:
+      - platform/**
+      - .github/workflows/platform.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: platform-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sources:
+    name: Schedule parser and campus importer
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: node --test platform/tools/official-source-parser.test.mjs platform/tools/sync-schedule.test.mjs
+      - run: python -m unittest discover -s platform/campus -p 'test_*.py'
+
+  rust:
+    name: Rust core tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: platform/rust/timacad-core
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: rust-${{ runner.os }}-${{ hashFiles('platform/rust/timacad-core/Cargo.lock') }}
+          restore-keys: rust-${{ runner.os }}-
+      - run: cargo test --locked --jobs 2
+
+  server:
+    name: Server tests with PostgreSQL and OpenFGA
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: platform/server
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: platform/server/go.mod
+          cache-dependency-path: platform/server/go.sum
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Install matching OpenFGA integration dependency
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'openfga_1.21.0_windows_amd64.tar.gz'
+          Invoke-WebRequest 'https://github.com/openfga/openfga/releases/download/v1.21.0/openfga_1.21.0_windows_amd64.tar.gz' -OutFile $archive
+          $expected = '5a5e34bf7fc9a719de1b924d453764d2862a63c6c52c34c474c556aca0e57ddc'
+          if ((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expected) {
+            throw 'OpenFGA archive checksum mismatch'
+          }
+          $binDir = Join-Path $env:USERPROFILE '.cache/raspos-platform/bin'
+          New-Item -ItemType Directory -Path $binDir -Force | Out-Null
+          tar -xzf $archive -C $binDir
+          if ($LASTEXITCODE -ne 0) { throw 'OpenFGA archive extraction failed' }
+          & (Join-Path $binDir 'openfga.exe') version
+      - name: Build native helpers for server integration tests
+        working-directory: platform/rust/timacad-core
+        run: cargo build --locked --no-default-features --bin compact-doc --bin personal-fixture --jobs 2
+      - name: Verify Go packages
+        run: go vet ./...
+      - name: Run server tests with real dependencies
+        run: go test -count=1 -p=1 -timeout=25m ./...
+
+  protobuf:
+    name: Protobuf contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: platform/server/go.mod
+          cache-dependency-path: platform/server/go.sum
+      - uses: bufbuild/buf-setup-action@v1
+        with:
+          version: '1.50.0'
+          github_token: ${{ github.token }}
+      - name: Verify contracts
+        working-directory: platform/proto
+        run: |
+          buf lint
+          buf build
+      - name: Install pinned generators
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.6
+          go install connectrpc.com/connect/cmd/protoc-gen-connect-go@v1.18.1
+      - name: Verify generated Go contracts
+        working-directory: platform/proto
+        run: |
+          buf generate --clean
+          git diff --exit-code -- ../server/internal/gen
+          if [ -n "$(git status --porcelain -- ../server/internal/gen)" ]; then
+            git status --short -- ../server/internal/gen
+            exit 1
+          fi

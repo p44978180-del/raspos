@@ -214,12 +214,12 @@ func findPublic(t *testing.T) string {
 		t.Fatal(err)
 	}
 	for range 8 {
-		if _, err := os.Stat(filepath.Join(dir, "public", "data", "official-schedule.json")); err == nil {
-			return filepath.Join(dir, "public")
+		if _, err := os.Stat(filepath.Join(dir, "fixtures", "schedule", "data", "official-schedule.json")); err == nil {
+			return filepath.Join(dir, "fixtures", "schedule")
 		}
 		dir = filepath.Dir(dir)
 	}
-	t.Fatal("public data not found")
+	t.Fatal("platform/fixtures/schedule data not found")
 	return ""
 }
 

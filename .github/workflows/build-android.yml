@@ -1,34 +1,86 @@
 name: Android verification
+
 on:
-  pull_request:
   workflow_dispatch:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths:
+      - platform/mobile/**
+      - platform/rust/timacad-core/**
+      - platform/testdata/**
+      - .github/workflows/build-android.yml
+  pull_request:
+    paths:
+      - platform/mobile/**
+      - platform/rust/timacad-core/**
+      - platform/testdata/**
+      - .github/workflows/build-android.yml
+
 permissions:
   contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    name: JVM tests and native Android packages
     runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: platform/mobile
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
         with:
-          node-version: 22
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.34.3
+          persist-credentials: false
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 21
+          java-version: '21'
       - uses: android-actions/setup-android@v3
-      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
-      - run: pnpm install --frozen-lockfile
-      - run: chmod +x android/gradlew
-      - run: pnpm run build:android:debug
-      - uses: actions/upload-artifact@v4
         with:
-          name: tim-campus-development-apk
-          path: releases/*-debug.apk
+          packages: platform-tools platforms;android-36 build-tools;36.0.0 ndk;27.2.12479018
+          log-accepted-android-sdk-licenses: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: android-${{ runner.os }}-${{ hashFiles('platform/mobile/**/libs.versions.toml', 'platform/mobile/**/*.gradle.kts', 'platform/mobile/gradle/wrapper/gradle-wrapper.properties', 'platform/rust/timacad-core/Cargo.lock') }}
+          restore-keys: android-${{ runner.os }}-
+      - name: Configure unsigned verification packages
+        run: |
+          cat > "$RUNNER_TEMP/unsigned-release.gradle" <<'GRADLE'
+          gradle.beforeProject { project ->
+              project.plugins.withId('com.android.application') {
+                  project.extensions.getByName('androidComponents').finalizeDsl { android ->
+                      android.buildTypes.getByName('release').signingConfig = null
+                  }
+              }
+          }
+          GRADLE
+      - name: Test shared core and build APK and AAB
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --console=plain --max-workers=2 \
+            '-Dorg.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8' \
+            -Pkotlin.compiler.execution.strategy=in-process \
+            --init-script "$RUNNER_TEMP/unsigned-release.gradle" \
+            :shared:jvmTest :androidApp:assembleRelease :androidApp:bundleRelease
+      - name: Upload unsigned verification packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-unsigned-${{ github.sha }}
+          path: |
+            platform/mobile/androidApp/build/outputs/apk/release/*.apk
+            platform/mobile/androidApp/build/outputs/bundle/release/*.aab
           if-no-files-found: error
           retention-days: 7
-      # Public signed releases are built by scripts/build-android.mjs with the
-      # project's protected signing key, verified, and published separately.

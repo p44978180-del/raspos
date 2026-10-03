@@ -11,11 +11,8 @@ if (-not $publicUri.IsAbsoluteUri -or $publicUri.Scheme -ne 'https' -or
     throw 'Supply only a public HTTPS origin, for example https://your-tunnel.example.com'
 }
 
-$workspacePath = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
 $composePath = Join-Path $PSScriptRoot 'docker-compose.yml'
 $mainEnvPath = Join-Path $PSScriptRoot '.env'
-$cachePath = Join-Path $workspacePath '.cache'
-$overridePath = Join-Path $cachePath 'phase8-passkey-tunnel.env'
 $assetlinksPath = Join-Path $PSScriptRoot 'well-known\assetlinks.json'
 $links = Get-Content -LiteralPath $assetlinksPath -Raw | ConvertFrom-Json
 $target = $links | Where-Object { $_.target.package_name -eq 'ru.timacad.platform' }
@@ -34,10 +31,12 @@ $matching = $publicLinks | Where-Object {
 }
 if (-not $matching) { throw 'Public Digital Asset Links do not match the release certificate' }
 
-New-Item -ItemType Directory -Path $cachePath -Force | Out-Null
-$content = "WEBAUTHN_RP_ID=$($publicUri.IdnHost)`nWEBAUTHN_EXTRA_ORIGINS=$androidOrigin`n"
-[IO.File]::WriteAllText($overridePath, $content, [Text.UTF8Encoding]::new($false))
-& docker compose -f $composePath --env-file $mainEnvPath --env-file $overridePath --profile full up -d --no-deps server
+$existing = Get-Content -LiteralPath $mainEnvPath | Where-Object {
+    $_ -notmatch '^\s*WEBAUTHN_(RP_ID|EXTRA_ORIGINS)\s*='
+}
+$content = ($existing -join "`n").TrimEnd() + "`nWEBAUTHN_RP_ID=$($publicUri.IdnHost)`nWEBAUTHN_EXTRA_ORIGINS=$androidOrigin`n"
+[IO.File]::WriteAllText($mainEnvPath, $content, [Text.UTF8Encoding]::new($false))
+& docker compose -f $composePath --env-file $mainEnvPath --profile full up -d --no-deps server
 if ($LASTEXITCODE -ne 0) { throw 'Cannot apply the RP configuration' }
 
 Write-Output "RP: $($publicUri.IdnHost)"

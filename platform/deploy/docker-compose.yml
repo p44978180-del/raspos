@@ -155,7 +155,7 @@ services:
       FIXTURE_DIR: /fixtures
       COMPACT_DOC_BIN: /usr/local/bin/compact-doc
     volumes:
-      - ../../docs/evidence:/fixtures:ro
+      - ../testdata/journal:/fixtures:ro
     depends_on:
       postgres:
         condition: service_healthy

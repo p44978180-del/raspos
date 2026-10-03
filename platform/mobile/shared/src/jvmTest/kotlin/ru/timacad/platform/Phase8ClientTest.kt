@@ -192,7 +192,7 @@ class Phase8ClientTest {
 
     @Test
     fun catalogOf805GroupsIsSearchableInsideThreeMilliseconds() {
-        val catalog = File("../../../public/data/official-schedule.json")
+        val catalog = File("../../fixtures/schedule/data/official-schedule.json")
         val text = catalog.readText()
         val total = Regex(""""totalGroups"\s*:\s*(\d+)""").find(text)?.groupValues?.get(1)?.toInt()
         assertEquals(805, total)

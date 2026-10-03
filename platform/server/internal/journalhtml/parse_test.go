@@ -63,13 +63,13 @@ func readEvidence(t *testing.T, name string) []byte {
 		t.Fatal(err)
 	}
 	for range 8 {
-		path := filepath.Join(dir, "docs", "evidence", name)
+		path := filepath.Join(dir, "testdata", "journal", name)
 		raw, err := os.ReadFile(path)
 		if err == nil {
 			return raw
 		}
 		dir = filepath.Dir(dir)
 	}
-	t.Fatalf("docs/evidence/%s not found", name)
+	t.Fatalf("platform/testdata/journal/%s not found", name)
 	return nil
 }

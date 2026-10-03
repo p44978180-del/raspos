@@ -79,13 +79,13 @@ func findPublic(t *testing.T) string {
 		t.Fatal(err)
 	}
 	for range 8 {
-		candidate := filepath.Join(dir, "public", "data", "official-schedule.json")
+		candidate := filepath.Join(dir, "fixtures", "schedule", "data", "official-schedule.json")
 		if _, err := os.Stat(candidate); err == nil {
-			return filepath.Join(dir, "public")
+			return filepath.Join(dir, "fixtures", "schedule")
 		}
 		dir = filepath.Dir(dir)
 	}
-	t.Fatal("public/data/official-schedule.json not found")
+	t.Fatal("platform/fixtures/schedule/data/official-schedule.json not found")
 	return ""
 }
 

@@ -90,12 +90,12 @@ mod tests {
     #[test]
     fn golden_group_matches_committed_hash() {
         let catalog: Value = serde_json::from_str(
-            &fs::read_to_string("../../../public/data/official-schedule.json").expect("catalog"),
+            &fs::read_to_string("../../fixtures/schedule/data/official-schedule.json").expect("catalog"),
         )
         .expect("catalog json");
         let group = &catalog["groups"]["Д-А401"];
         let relative = group["schedulePath"].as_str().expect("path");
-        let file = format!("../../../public/{relative}");
+        let file = format!("../../fixtures/schedule/{relative}");
         let parsed: Value = serde_json::from_str(&fs::read_to_string(&file).expect("group")).expect("group json");
         let mut lessons = Vec::new();
         for day in parsed["schedule"].as_array().expect("schedule") {

@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	data := flag.String("data", "", "path to the public directory that contains data/")
+	data := flag.String("data", "", "path to the schedule dataset directory that contains data/")
 	flag.Parse()
 	databaseURL := os.Getenv("DATABASE_URL")
 	if databaseURL == "" || *data == "" {

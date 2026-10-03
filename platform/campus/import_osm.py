@@ -1,7 +1,7 @@
 """Build a reproducible, offline campus dataset from a bounded OSM API extract.
 
 No inferred entrances or straight-line connections are added. The retained OSM
-source and derived pack are ODbL data; see README.md. Uses only Python's stdlib.
+source and derived pack are ODbL data; see ../../README.md. Uses only Python's stdlib.
 """
 import argparse
 import base64

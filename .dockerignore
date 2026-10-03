@@ -1,0 +1,15 @@
+**
+!platform/
+!platform/deploy/
+!platform/deploy/Dockerfile
+!platform/server/
+!platform/server/**
+!platform/rust/
+!platform/rust/timacad-core/
+!platform/rust/timacad-core/**
+**/target/**
+**/build/**
+**/__pycache__/**
+**/.env*
+**/*.log
+**/*_test.go

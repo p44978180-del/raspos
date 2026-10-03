@@ -1,9 +1,0 @@
---------- beginning of main
-10-03 00:10:04.387 10537 10537 I TimStartup: stage=super activity_us=386
-10-03 00:10:04.388 10537 10537 I TimStartup: stage=database activity_us=1188
-10-03 00:10:04.401 10537 10537 I TimStartup: stage=store activity_us=14003
-10-03 00:10:04.405 10537 10537 I TimStartup: stage=navigation activity_us=18366
-10-03 00:10:04.422 10537 10537 I TimStartup: stage=set_content activity_us=34939
-10-03 00:10:04.716 10537 10537 I TimStartup: stage=local_content_frame activity_us=328550
-10-03 00:10:07.063 10537 10537 I TimSync : groups=805 group=Д-А401 lessons=73
-10-03 00:10:07.178 10537 10537 I TimCampus: cached hash=d0e2e4e9290866b000a804c5d4fcf39c82180983c5f62588733848052c75058d nodes=5392

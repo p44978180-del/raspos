@@ -71,7 +71,7 @@ type catalogFile struct {
 	Groups map[string]groupJSON `json:"groups"`
 }
 
-// LoadCatalog reads the v4 catalog. Root is the public directory that contains data/.
+// LoadCatalog reads the schedule catalog. Root is the dataset directory that contains data/.
 func LoadCatalog(publicRoot string) (Catalog, error) {
 	path := filepath.Join(publicRoot, "data", "official-schedule.json")
 	raw, err := os.ReadFile(path)
