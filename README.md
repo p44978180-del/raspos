@@ -1,5 +1,9 @@
 # ТИМ Кампус
 
+[![Android](https://github.com/p44978180-del/raspos/actions/workflows/build-android.yml/badge.svg)](https://github.com/p44978180-del/raspos/actions/workflows/build-android.yml)
+[![iOS](https://github.com/p44978180-del/raspos/actions/workflows/ios.yml/badge.svg)](https://github.com/p44978180-del/raspos/actions/workflows/ios.yml)
+[![Platform](https://github.com/p44978180-del/raspos/actions/workflows/platform.yml/badge.svg)](https://github.com/p44978180-del/raspos/actions/workflows/platform.yml)
+
 Расписание и личный планировщик для студентов РГАУ-МСХА имени К. А. Тимирязева. Мобильная платформа на Kotlin Multiplatform с офлайн-базой SQLite, нативным ядром Rust и сервером Go.
 
 [Скачать Android APK](https://github.com/p44978180-del/raspos/releases/download/v8.0.0-platform/androidApp-release.apk) · [Android App Bundle](https://github.com/p44978180-del/raspos/releases/download/v8.0.0-platform/androidApp-release.aab) · [Все выпуски](https://github.com/p44978180-del/raspos/releases)
